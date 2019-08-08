@@ -7,7 +7,7 @@ Clone the repository
 $ git clone https://github.com/gridap/Tutorials.git
 ```
 
-Move into the folder and open a julia REPL setting the current folder as the project environment
+Move into the folder and open a julia REPL setting the current folder as the project environment. NOTE: use at least Julia 1.1
 ```
 $ cd Tutorials
 $ julia --project=.
@@ -36,5 +36,5 @@ Open the notebooks
 julia> using IJulia
 julia> notebook(dir=pwd())
 ```
-This will open a browser window. Navigate to the `notebooks` folder and open the tutorial you want.
+This will open a browser window. Navigate to the `notebooks` folder and open the tutorial you want. Enjoy!
 

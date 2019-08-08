@@ -1,0 +1,236 @@
+# This file is machine-generated - editing it directly is not advised
+
+[[Base64]]
+uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
+
+[[BinDeps]]
+deps = ["Compat", "Libdl", "SHA", "URIParser"]
+git-tree-sha1 = "12093ca6cdd0ee547c39b1870e0c9c3f154d9ca9"
+uuid = "9e28174c-4ba2-5203-b857-d8d62c4213ee"
+version = "0.8.10"
+
+[[BinaryProvider]]
+deps = ["Libdl", "Logging", "SHA"]
+git-tree-sha1 = "c7361ce8a2129f20b0e05a89f7070820cfed6648"
+uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
+version = "0.5.6"
+
+[[CodecZlib]]
+deps = ["BinaryProvider", "Libdl", "TranscodingStreams"]
+git-tree-sha1 = "05916673a2627dd91b4969ff8ba6941bc85a960e"
+uuid = "944b1d66-785c-5afd-91f1-9de20f533193"
+version = "0.6.0"
+
+[[Combinatorics]]
+deps = ["LinearAlgebra", "Polynomials", "Test"]
+git-tree-sha1 = "50b3ae4d643dc27eaff69fb6be06ee094d5500c9"
+uuid = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+version = "0.7.0"
+
+[[Compat]]
+deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
+git-tree-sha1 = "84aa74986c5b9b898b0d1acaf3258741ee64754f"
+uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
+version = "2.1.0"
+
+[[DataStructures]]
+deps = ["InteractiveUtils", "OrderedCollections", "Random", "Serialization", "Test"]
+git-tree-sha1 = "ca971f03e146cf144a9e2f2ce59674f5bf0e8038"
+uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+version = "0.15.0"
+
+[[Dates]]
+deps = ["Printf"]
+uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
+
+[[DelimitedFiles]]
+deps = ["Mmap"]
+uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+
+[[Distributed]]
+deps = ["Random", "Serialization", "Sockets"]
+uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+
+[[FastGaussQuadrature]]
+deps = ["Compat", "LinearAlgebra", "SpecialFunctions"]
+git-tree-sha1 = "769ac4057ed875f433372e9a571a2cb86347d1be"
+uuid = "442a2c76-b920-505d-bb47-c5924d526838"
+version = "0.3.3"
+
+[[Gridap]]
+deps = ["Combinatorics", "FastGaussQuadrature", "JSON", "LinearAlgebra", "QuadGK", "Reexport", "SparseArrays", "StaticArrays", "TensorPolynomialBases", "TensorValues", "Test", "UnstructuredGrids", "WriteVTK"]
+git-tree-sha1 = "c60b4131370b56869911d6596645d57ad4f5c801"
+repo-rev = "master"
+repo-url = "https://github.com/gridap/Gridap.jl.git"
+uuid = "56d4f2e9-7ea1-5844-9cf6-b9c51ca7ce8e"
+version = "0.3.0"
+
+[[GridapGmsh]]
+deps = ["Gridap", "Libdl", "StaticArrays", "UnstructuredGrids"]
+git-tree-sha1 = "91ef6b2b36a02cc8e2c4dae95bf5b048c92d00e1"
+repo-rev = "master"
+repo-url = "https://github.com/gridap/GridapGmsh.jl"
+uuid = "3025c34a-b394-11e9-2a55-3fee550c04c8"
+version = "0.1.0"
+
+[[InteractiveUtils]]
+deps = ["Markdown"]
+uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+
+[[JSON]]
+deps = ["Dates", "Mmap", "Parsers", "Unicode"]
+git-tree-sha1 = "b34d7cef7b337321e97d22242c3c2b91f476748e"
+uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+version = "0.21.0"
+
+[[LibGit2]]
+uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
+
+[[Libdl]]
+uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+
+[[LightXML]]
+deps = ["BinaryProvider", "Libdl", "Test"]
+git-tree-sha1 = "aeec7a341652d47bc773475a42952fa78eccd7cc"
+uuid = "9c8b4983-aa76-5018-a973-4c85ecc9e179"
+version = "0.8.0"
+
+[[LinearAlgebra]]
+deps = ["Libdl"]
+uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+
+[[Logging]]
+uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
+
+[[Markdown]]
+deps = ["Base64"]
+uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
+
+[[Mmap]]
+uuid = "a63ad114-7e13-5084-954f-fe012c677804"
+
+[[OrderedCollections]]
+deps = ["Random", "Serialization", "Test"]
+git-tree-sha1 = "c4c13474d23c60d20a67b217f1d7f22a40edf8f1"
+uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
+version = "1.1.0"
+
+[[Parsers]]
+deps = ["Dates", "Test"]
+git-tree-sha1 = "db2b35dedab3c0e46dc15996d170af07a5ab91c9"
+uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
+version = "0.3.6"
+
+[[Pkg]]
+deps = ["Dates", "LibGit2", "Markdown", "Printf", "REPL", "Random", "SHA", "UUIDs"]
+uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+
+[[Polynomials]]
+deps = ["LinearAlgebra", "SparseArrays", "Test"]
+git-tree-sha1 = "62142bd65d3f8aeb2226ec64dd8493349147df94"
+uuid = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
+version = "0.5.2"
+
+[[Printf]]
+deps = ["Unicode"]
+uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+
+[[QuadGK]]
+deps = ["DataStructures", "LinearAlgebra"]
+git-tree-sha1 = "438630b843c210b375b2a246329200c113acc61b"
+uuid = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
+version = "2.1.0"
+
+[[REPL]]
+deps = ["InteractiveUtils", "Markdown", "Sockets"]
+uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
+
+[[Random]]
+deps = ["Serialization"]
+uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[[Reexport]]
+deps = ["Pkg"]
+git-tree-sha1 = "7b1d07f411bc8ddb7977ec7f377b97b158514fe0"
+uuid = "189a3867-3050-52da-a836-e630ba90ab69"
+version = "0.2.0"
+
+[[SHA]]
+uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+
+[[Serialization]]
+uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+
+[[SharedArrays]]
+deps = ["Distributed", "Mmap", "Random", "Serialization"]
+uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
+
+[[Sockets]]
+uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
+
+[[SparseArrays]]
+deps = ["LinearAlgebra", "Random"]
+uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[[SpecialFunctions]]
+deps = ["BinDeps", "BinaryProvider", "Libdl", "Test"]
+git-tree-sha1 = "0b45dc2e45ed77f445617b99ff2adf0f5b0f23ea"
+uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
+version = "0.7.2"
+
+[[StaticArrays]]
+deps = ["InteractiveUtils", "LinearAlgebra", "Random", "Statistics", "Test"]
+git-tree-sha1 = "3841b39ed5f047db1162627bf5f80a9cd3e39ae2"
+uuid = "90137ffa-7385-5640-81b9-e52037218182"
+version = "0.10.3"
+
+[[Statistics]]
+deps = ["LinearAlgebra", "SparseArrays"]
+uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+
+[[TensorPolynomialBases]]
+deps = ["StaticArrays", "TensorValues", "Test"]
+git-tree-sha1 = "895ecafdb83f1d691c3afa20be839a61ff7236d2"
+uuid = "f77b161d-e03a-5d68-b365-d5306aabeaa6"
+version = "0.1.3"
+
+[[TensorValues]]
+deps = ["LinearAlgebra", "StaticArrays"]
+git-tree-sha1 = "a998c534421283d1ad7cec699964600223be5357"
+uuid = "31c64edf-cdeb-50e4-845d-ed2334360c20"
+version = "0.3.4"
+
+[[Test]]
+deps = ["Distributed", "InteractiveUtils", "Logging", "Random"]
+uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[[TranscodingStreams]]
+deps = ["Random", "Test"]
+git-tree-sha1 = "7c53c35547de1c5b9d46a4797cf6d8253807108c"
+uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
+version = "0.9.5"
+
+[[URIParser]]
+deps = ["Test", "Unicode"]
+git-tree-sha1 = "6ddf8244220dfda2f17539fa8c9de20d6c575b69"
+uuid = "30578b45-9adc-5946-b283-645ec420af67"
+version = "0.4.0"
+
+[[UUIDs]]
+deps = ["Random", "SHA"]
+uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+
+[[Unicode]]
+uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+
+[[UnstructuredGrids]]
+deps = ["WriteVTK"]
+git-tree-sha1 = "be2bed74dcb7372dbea714d4d6385c3e083c0da1"
+uuid = "9cd2e232-b78e-5341-8154-33bf4eafe965"
+version = "0.2.2"
+
+[[WriteVTK]]
+deps = ["Base64", "CodecZlib", "LightXML", "Random", "TranscodingStreams"]
+git-tree-sha1 = "1a2b0723c5db05c511e2f06093079a2833081674"
+uuid = "64499a7a-5c06-52f2-abe2-ccb03c286192"
+version = "1.2.0"

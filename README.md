@@ -34,7 +34,7 @@ Open the notebooks
 ```
 # Type Ctrl+C to get back to command mode
 julia> using IJulia
-julia> notebook(dir=pwr())
+julia> notebook(dir=pwd())
 ```
 This will open a browser window. Navigate to the `notebooks` folder and open the tutorial you want.
 

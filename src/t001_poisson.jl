@@ -8,7 +8,7 @@
 # 
 # Formally, the problem to solve is: find $u$ such that
 # 
-# \begin{equation}
+# ```math
 # \left\lbrace
 # \begin{aligned}
 # -\Delta u = f  \ \text{in} \ \Omega\\
@@ -16,16 +16,16 @@
 # \nabla u\cdot n = h \ \text{on}\  \Gamma_{\rm N}\\
 # \end{aligned}
 # \right.
-# \end{equation}
+# ```
 # 
 # being $n$ the outwards unit normal vector to the Neumann boundary $\Gamma_{\rm N} \doteq \Gamma_{\rm G}\cup\Gamma_{\rm Y}\cup\Gamma_{\rm B}\cup\Gamma_{\rm W}$. For simplicity, we chose $f(x) = 1$, $g(x) = 2$, and $h(x)=3$ on $\Gamma_{\rm G}\cup\Gamma_{\rm Y}\cup\Gamma_{\rm B}$ and $h(x)=0$ on $\Gamma_{\rm W}$. The variable $x$ is the position vector $x=(x_1,x_2,x_3)$. 
 # 
 # ## Numerical scheme
 # 
 # In this first tutorial, we use a conventional Galerkin finite element (FE) method with conforming Lagrangian finite element spaces. In that case, the model problem reduces to the weak equation: find $u\in U_g$ such that $ a(v,u) = b(v) $ for all $v\in V_0$, where $U_g$ and $V_0$ are the subset of functions in $H^1(\Omega)$ that fulfill the Dirichlet boundary condition $g$ and $0$ respectively. The bilinear and linear forms for this problems are
-# $$
+# ```math
 # a(v,u) \doteq \int_{\Omega} \nabla v \cdot \nabla u \ {\rm d}\Omega, \quad b(v) \doteq \int_{\Omega} v\ f  \ {\rm  d}\Omega + \int_{\Gamma_{\rm N}} v\ g \ {\rm d}\Gamma_{\rm N}
-# $$
+# ```
 # 
 # While solving this problem in Gridap, we are going to build the main objects that are involved in this equation in a very inuitive way.
 # 
@@ -40,7 +40,9 @@ using Gridap
 model = DiscreteModelFromFile("../models/model.json");
 
 # You can easily inspect the generated model in Paraview by writting it to `vtk` format. 
-#
+
+writevtk(model,"model");
+
 # Previous line generates four different files `model_0.vtu`, `model_1.vtu`, `model_2.vtu`, and `model_3.vtu` containing the vertices, edges, faces, and cells present in the discrete model. Moreover, you can easily inspect, which boundaries are defined within the model. 
 #
 # For instance, if we want to see which faces of the model are on the boundary $\Gamma_{\rm B}$ (i.e., the walls of the circular hole), open the file `model_2.vtu` and chose coloring by the element field "circle". You should see that only the faces on the circular hole hava a value different from 0.
@@ -57,34 +59,48 @@ order = 1
 diritag = "sides"
 fespace = ConformingFESpace(Float64,model,order,diritag);
 
+# Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+
 g(x) = 2.0
 V = TestFESpace(fespace)
 U = TrialFESpace(fespace,g);
 
+# Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+
 trian = Triangulation(model)
 quad = CellQuadrature(trian,order=2);
+
+# Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
 
 neumanntags = ["circle", "triangle", "square"]
 btrian = BoundaryTriangulation(model,neumanntags)
 bquad = CellQuadrature(btrian,order=2);
+
+# Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
 
 f(x) = 1.0
 a(v,u) = inner( ∇(v), ∇(u) )
 b_Ω(v) = inner(v, f)
 t_Ω = AffineFETerm(a,b_Ω,trian,quad);
 
+# Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+
 h(x) = 3.0
 b_Γ(v) = inner(v, h)
 t_Γ = FESource(b_Γ,btrian,bquad);
 
-assem = SparseMatrixAssembler(V,U);
+# Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
 
+assem = SparseMatrixAssembler(V,U)
 op = LinearFEOperator(V,U,assem,t_Ω,t_Γ);
 
-ls = LUSolver()
-solver = LinearFESolver(ls);
+# Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
 
+ls = LUSolver()
+solver = LinearFESolver(ls)
 uh = solve(solver,op);
+
+# Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
 
 writevtk(trian,"results",cellfields=["uh"=>uh]);
 

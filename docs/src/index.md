@@ -50,6 +50,12 @@ Instantiate the environment. This will automatically download all required packa
 Tutorials> instantiate
 ```
 
+Build the notebooks
+```
+# Type ] to enter in pkg mode
+Tutorials> build
+```
+
 Open the notebooks
 ```
 # Type Ctrl+C to get back to command mode
@@ -71,10 +77,11 @@ Open Julia REPL
 $ julia --project=.
 
 ```
-and instantiate the environment again
+and instantiate and build the environment again
 ```
 # Type ] to enter in pkg mode
 Tutorials> instantiate
+Tutorials> build
 ```
 
 Done!

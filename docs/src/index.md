@@ -27,7 +27,7 @@ Clone the repository
 $ git clone https://github.com/gridap/Tutorials.git
 ```
 
-Move into the folder and open a julia REPL setting the current folder as the project environment. NOTE: use at least Julia 1.1
+Move into the folder and open a Julia REPL setting the current folder as the project environment. NOTE: use at least Julia 1.1
 ```
 $ cd Tutorials
 $ julia --project=.

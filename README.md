@@ -14,11 +14,11 @@ The tutorials are available in two formats:
 
 - As jupyter notebooks, allowing an interactive learning experience. **This is the recommended way to follow the tutorials**
 
-- As HTML pages, allowint a rapid access into the material with out the need of any setup.
+- As HTML pages, allowing a rapid access into the material with out the need of any setup.
 
 ## How
 
-Visit one of the follwoing pages, depending of your needs, and start enjoying!
+Visit one of the following pages, depending of your needs, and start enjoying!
 
 - [**STABLE**](https://gridap.github.io/Tutorials/stable) &mdash; **Tutorials for the most recently tagged version of Gridap.jl.**
 - [**DEVEL**](https://gridap.github.io/Tutorials/dev) &mdash; *Tutorials for the in-development version of Gridap.jl.*

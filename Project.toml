@@ -1,4 +1,18 @@
+name = "Tutorials"
+uuid = "ab87341f-2653-5384-8dc6-691ea82e91b3"
+authors = ["Santiago Badia <sbadia@cimne.upc.edu>", "Francesc Verdugo <fverdugo@cimne.upc.edu>"]
+version = "0.1.0"
+
 [deps]
 Gridap = "56d4f2e9-7ea1-5844-9cf6-b9c51ca7ce8e"
 IJulia = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
+
+[compat]
+julia = "1.1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

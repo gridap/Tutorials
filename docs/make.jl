@@ -10,10 +10,7 @@ assets_dst = joinpath(@__DIR__,"src","assets")
 Sys.rm(models_dst;recursive=true,force=true)
 Sys.rm(assets_dst;recursive=true,force=true)
 
-Sys.mkdir(models_dst)
-fn = "model-r1.png"
-Sys.cp(joinpath(models_src,fn),joinpath(models_dst,fn))
-
+Sys.cp(models_src,models_dst)
 Sys.cp(assets_src,assets_dst)
 
 pages_dir = joinpath(@__DIR__,"src","pages")

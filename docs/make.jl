@@ -1,15 +1,15 @@
 using Documenter
 using Literate
 
-Sys.rm("src/models";recursive=true)
-Sys.rm("src/assets";recursive=true)
+Sys.rm("docs/src/models";recursive=true,force=true)
+Sys.rm("docs/src/assets";recursive=true,force=true)
 
-Sys.mkdir("src/models")
-Sys.cp("../models/model-r1.png","src/models/model-r1.png")
+Sys.mkdir("docs/src/models")
+Sys.cp("models/model-r1.png","docs/src/models/model-r1.png")
 
-Sys.cp("../assets","src/assets")
+Sys.cp("assets","src/assets")
 
-Literate.markdown("../src/t001_poisson.jl", "src/pages";codefence="```julia" => "```")
+Literate.markdown("src/t001_poisson.jl", "docs/src/pages";codefence="```julia" => "```")
 
 makedocs(
     sitename = "Gridap tutorials",

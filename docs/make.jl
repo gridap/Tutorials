@@ -32,7 +32,7 @@ end
 makedocs(
     sitename = "Gridap tutorials",
     format = Documenter.HTML(),
-    pages =["Home"=> "index.md", "1 Poisson equation" => "pages/t001_poisson.md"]
+    pages =["Introduction"=> "index.md", "1 Poisson equation" => "pages/t001_poisson.md"]
 )
 
 # Documenter can also automatically deploy documentation to gh-pages.

@@ -1,5 +1,7 @@
 # Gridap tutorials
 
+[![Build Status](https://travis-ci.com/gridap/Gridap.jl.svg?branch=master)](https://travis-ci.com/gridap/Tutorials)
+
 ## How to start
 
 Clone the repository

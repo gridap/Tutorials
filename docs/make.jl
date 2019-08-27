@@ -1,15 +1,33 @@
 using Documenter
 using Literate
 
-Sys.rm("docs/src/models";recursive=true,force=true)
-Sys.rm("docs/src/assets";recursive=true,force=true)
+models_src = joinpath(@__DIR__,"..","models")
+models_dst = joinpath(@__DIR__,"src","models")
 
-Sys.mkdir("docs/src/models")
-Sys.cp("models/model-r1.png","docs/src/models/model-r1.png")
+assets_src = joinpath(@__DIR__,"..","assets")
+assets_dst = joinpath(@__DIR__,"src","assets")
 
-Sys.cp("assets","docs/src/assets")
+Sys.rm(models_dst;recursive=true,force=true)
+Sys.rm(assets_dst;recursive=true,force=true)
 
-Literate.markdown("src/t001_poisson.jl", "docs/src/pages";codefence="```julia" => "```")
+Sys.mkdir(models_dst)
+fn = "model-r1.png"
+Sys.cp(joinpath(models_src,fn),joinpath(models_dst,fn))
+
+Sys.cp(assets_src,assets_dst)
+
+pages_dir = joinpath(@__DIR__,"src","pages")
+notebooks_dir = joinpath(@__DIR__,"src","notebooks")
+
+repo_src = joinpath(@__DIR__,"..","src")
+
+files = ["t001_poisson"]
+
+for file in files
+  file_jl = file*".jl"
+  Literate.markdown(joinpath(repo_src,file_jl), pages_dir; codefence="```julia" => "```")
+  Literate.notebook(joinpath(repo_src,file_jl), notebooks_dir; documenter=false, execute=false)
+end
 
 makedocs(
     sitename = "Gridap tutorials",

@@ -7,7 +7,7 @@ Sys.rm("docs/src/assets";recursive=true,force=true)
 Sys.mkdir("docs/src/models")
 Sys.cp("models/model-r1.png","docs/src/models/model-r1.png")
 
-Sys.cp("assets","src/assets")
+Sys.cp("assets","docs/src/assets")
 
 Literate.markdown("src/t001_poisson.jl", "docs/src/pages";codefence="```julia" => "```")
 

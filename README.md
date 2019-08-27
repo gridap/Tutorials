@@ -38,3 +38,33 @@ julia> notebook(dir=pwd())
 ```
 This will open a browser window. Navigate to the `notebooks` folder and open the tutorial you want. Enjoy!
 
+## How to pull the latest version of the tutorials
+
+Go to the Tutorials repo folder and git pull
+```
+$ git pull
+```
+Open Julia REPL
+```
+$ julia --project=.
+               _
+   _       _ _(_)_     |  Documentation: https://docs.julialang.org
+  (_)     | (_) (_)    |
+   _ _   _| |_  __ _   |  Type "?" for help, "]?" for Pkg help.
+  | | | | | | |/ _` |  |
+  | | |_| | | | (_| |  |  Version 1.1.0 (2019-01-21)
+ _/ |\__'_|_|_|\__'_|  |  Official https://julialang.org/ release
+|__/                   |
+
+julia> 
+
+```
+
+and instantiate the environment again
+```
+# Type ] to enter in pkg mode
+Tutorials> instantiate
+```
+
+Done!
+

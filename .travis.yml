@@ -4,6 +4,7 @@ os:
   - linux
 julia:
   - 1.1
+  - 1.2
 matrix:
   fast_finish: true
 notifications:
@@ -14,7 +15,7 @@ notifications:
 jobs:
   include:
     - stage: "Documentation"
-      julia: 1.1
+      julia: 1.2
       os: linux
       script:
         - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'

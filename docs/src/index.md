@@ -52,7 +52,6 @@ Tutorials> instantiate
 
 Build the notebooks
 ```
-# Type ] to enter in pkg mode
 Tutorials> build
 ```
 

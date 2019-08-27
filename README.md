@@ -4,61 +4,19 @@
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://gridap.github.io/Tutorials/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://gridap.github.io/Tutorials/dev)
 
-## How to start
+## What
 
-Clone the repository
-```
-$ git clone https://github.com/gridap/Tutorials.git
-```
+This repo contains a set of tutorials to learn how to solve partial differential equations (PDEs) in Julia with the [Gridap.jl](https://github.com/gridap/Gridap.jl) library.
 
-Move into the folder and open a julia REPL setting the current folder as the project environment. NOTE: use at least Julia 1.1
-```
-$ cd Tutorials
-$ julia --project=.
-               _
-   _       _ _(_)_     |  Documentation: https://docs.julialang.org
-  (_)     | (_) (_)    |
-   _ _   _| |_  __ _   |  Type "?" for help, "]?" for Pkg help.
-  | | | | | | |/ _` |  |
-  | | |_| | | | (_| |  |  Version 1.1.0 (2019-01-21)
- _/ |\__'_|_|_|\__'_|  |  Official https://julialang.org/ release
-|__/                   |
+The tutorials are available in two formats:
 
-julia> 
+- As jupyter notebooks, allowing an interactive learning experience. **This is the recommended way to follow the tutorials**
 
-```
+- As HTML pages, allowint a rapid access into the material with out the need of any setup.
 
-Instantiate the environment. This will automatically download all required packages.
-```
-# Type ] to enter in pkg mode
-Tutorials> instantiate
-```
+## How
 
-Open the notebooks
-```
-# Type Ctrl+C to get back to command mode
-julia> using IJulia
-julia> notebook(dir=pwd())
-```
-This will open a browser window. Navigate to the `notebooks` folder and open the tutorial you want. Enjoy!
+Visit one of the follwoing pages, depending of your needs, and start enjoying!
 
-## How to pull the latest version of the tutorials
-
-Go to the Tutorials repo folder and git pull
-```
-$ git pull
-```
-Open Julia REPL
-```
-$ julia --project=.
-
-```
-
-and instantiate the environment again
-```
-# Type ] to enter in pkg mode
-Tutorials> instantiate
-```
-
-Done!
-
+- [**STABLE**](https://gridap.github.io/Tutorials/stable) &mdash; **Tutorials for the most recently tagged version of Gridap.jl.**
+- [**DEVEL**](https://gridap.github.io/Tutorials/dev) &mdash; *Tutorials for the in-development version of Gridap.jl.*

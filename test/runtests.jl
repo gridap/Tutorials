@@ -7,12 +7,17 @@ using Test
 @testset "t001_poisson" begin include("../src/t001_poisson.jl") end
 end # module
 
-module t002_elasticity
+module t002_validation
 using Test
-@testset "t002_elasticity" begin include("../src/t002_elasticity.jl") end
+@testset "t002_validation" begin include("../src/t002_validation.jl") end
 end # module
 
-module t003_hyperelasticity
+module t003_elasticity
 using Test
-@testset "t003_hyperelasticity" begin include("../src/t003_hyperelasticity.jl") end
+@testset "t003_elasticity" begin include("../src/t003_elasticity.jl") end
+end # module
+
+module t004_hyperelasticity
+using Test
+@testset "t004_hyperelasticity" begin include("../src/t004_hyperelasticity.jl") end
 end # module

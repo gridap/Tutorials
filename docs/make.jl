@@ -18,7 +18,7 @@ notebooks_dir = joinpath(@__DIR__,"src","notebooks")
 
 repo_src = joinpath(@__DIR__,"..","src")
 
-files = ["t001_poisson"]
+files = ["t001_poisson","t002_elasticity", "t003_hyperelasticity"]
 
 for file in files
   file_jl = file*".jl"
@@ -26,10 +26,16 @@ for file in files
   Literate.notebook(joinpath(repo_src,file_jl), notebooks_dir; documenter=false, execute=false)
 end
 
+pages = [
+  "Introduction"=> "index.md",
+  "1 Poisson equation" => "pages/t001_poisson.md",
+  "2 Linear elasticity" => "pages/t002_elasticity.md",
+  "3 Hyper-elasticity" => "pages/t003_hyperelasticity.md"]
+
 makedocs(
     sitename = "Gridap tutorials",
     format = Documenter.HTML(),
-    pages =["Introduction"=> "index.md", "1 Poisson equation" => "pages/t001_poisson.md"]
+    pages = pages
 )
 
 # Documenter can also automatically deploy documentation to gh-pages.

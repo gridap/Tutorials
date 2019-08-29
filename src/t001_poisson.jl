@@ -47,7 +47,7 @@ using Gridap
 
 # ### Discrete model
 
-# As in any FE simulation, we need a discretization of the computational domain (i.e a FE mesh), which contains information of the different boundaries to impose boundary conditions. All geometrical data needed for solving a FE problem is provided in Gridap by objects inheriting from the abstract type `DiscreteModel`. In the following line, we build an instance of `DiscreteModel` by loading a model from a `json` file.
+# As in any FE simulation, we need a discretization of the computational domain (i.e a FE mesh), which contains information of the different boundaries to impose boundary conditions. All geometrical data needed for solving a FE problem is provided in Gridap by types inheriting from the abstract type `DiscreteModel`. In the following line, we build an instance of `DiscreteModel` by loading a model from a `json` file.
 
 model = DiscreteModelFromFile("../models/model.json");
 
@@ -86,7 +86,7 @@ g(x) = 2.0
 V0 = TestFESpace(V)
 Ug = TrialFESpace(V,g);
 
-# Note that functions in the test space are always constrained to 0 on the Dirichlet boundary, whereas functions on the test space are constrained to the given boundary function. In this case, function $g$.
+# Note that functions in the test space are always constrained to 0 on the Dirichlet boundary, whereas functions on the trial space are constrained to the given boundary function. In this case, function $g$.
 #
 # ### Numerical integration
 #
@@ -163,7 +163,7 @@ writevtk(trian,"results",cellfields=["uh"=>uh]);
 #
 # ## Summary
 #
-# Since this has been a quite long tutorial, we end up by wrapping all the code we have use to solve the problem
+# Since this has been a quite long tutorial, we end up by wrapping all the code we have used.
 
 using Gridap
 
@@ -211,4 +211,8 @@ uh = solve(solver,op)
 
 #Write results
 writevtk(trian,"results",cellfields=["uh"=>uh])
+
+# 
+#  Congrats, tutorial done!
+#
 

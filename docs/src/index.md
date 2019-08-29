@@ -4,7 +4,7 @@ Welcome to the tutorial pages of the [Gridap.jl](https://github.com/gridap/Grida
 
 ## How to start
 
-The easiest way to start using the tutorials is to click in one of the following links to start reading the html version of the tutorials.
+The easiest way to start using the tutorials is to click in one of the following links to start reading the html version of the tutorial you want.
 
 ```@contents
 Depth = 1

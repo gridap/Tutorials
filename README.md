@@ -14,7 +14,7 @@ The tutorials are available in two formats:
 
 - As jupyter notebooks, allowing an interactive learning experience. **This is the recommended way to follow the tutorials**
 
-- As HTML pages, allowing a rapid access into the material with out the need of any setup.
+- As HTML pages, allowing a rapid access into the material without the need of any setup.
 
 ## How
 

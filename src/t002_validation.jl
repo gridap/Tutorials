@@ -104,7 +104,7 @@ b(v) = inner(v,f)
 t_Ω = AffineFETerm(a,b,trian,quad)
 op = LinearFEOperator(V0,U,t_Ω)
 
-uh = solve(op)
+uh = solve(op);
 
 # Note that we are imposing Dirichlet boundary conditions on the objects tagged as "boundary" and that we are using the manufactured solution `u` to construct the trial FE space. Not also that we are not explicitly constructing an `Assembler` object nor a `FESolver`. We are relying on default values.
 #
@@ -113,7 +113,7 @@ uh = solve(op)
 #
 # Our goal is to check that the discratization error associated with the computed approximation `uh` is near machine precision. To this end, the first step is to compute the discretization error, which is done as you would expect:
 
-e = u - uh
+e = u - uh;
 
 # Once the error is defined, you can, e.g., visualize it.
 

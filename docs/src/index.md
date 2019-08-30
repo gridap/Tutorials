@@ -52,12 +52,12 @@ Tutorials> instantiate
 
 Build the notebooks
 ```
-Tutorials> build
+# Type Ctrl+C to get back to command mode
+julia> include("deps/build.jl")
 ```
 
 Open the notebooks
 ```
-# Type Ctrl+C to get back to command mode
 julia> using IJulia
 julia> notebook(dir=pwd())
 ```
@@ -76,11 +76,13 @@ Open Julia REPL
 $ julia --project=.
 
 ```
-and instantiate and build the environment again
+and instantiate the environment and build the notebooks again
 ```
 # Type ] to enter in pkg mode
 Tutorials> instantiate
-Tutorials> build
+
+# Type Ctrl+C to get back to command mode
+julia> include("deps/build.jl")
 ```
 
 Done!

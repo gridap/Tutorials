@@ -7,6 +7,7 @@ version = "0.1.0"
 Gridap = "56d4f2e9-7ea1-5844-9cf6-b9c51ca7ce8e"
 IJulia = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 
 [compat]
 julia = "1.1"

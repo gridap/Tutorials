@@ -55,7 +55,7 @@ import Gridap: ∇
 
 # ## Cartesian mesh generation
 #
-# In order to discretized the geometry of the unit square, we use the Cartesian mesh generator available in Gridap:
+# In order to discretize the geometry of the unit square, we use the Cartesian mesh generator available in Gridap:
 
 limits = (0.0, 1.0, 0.0, 1.0)
 model = CartesianDiscreteModel(domain=limits, partition=(4,4));

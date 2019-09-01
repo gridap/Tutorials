@@ -82,6 +82,8 @@ writevtk(model,"model");
 # and these the facets
 #
 # ![](../assets/t002_validation/model_1.png)
+#
+# As you can see in the pictures, the objects on the boundary are correctly tagged with the name "boundary".
 
 
 # ## FE approximation

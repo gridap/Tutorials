@@ -24,6 +24,7 @@ using Gridap
 
 const E = 70.0e9
 const ν = 0.33
+
 const λ = (E*ν)/((1+ν)*(1-2*ν))
 const μ = E/(2*(1+ν))
 
@@ -55,9 +56,90 @@ op = LinearFEOperator(V0,U,t_Ω)
 
 uh = solve(op)
 
-writevtk(trian,"results",cellfields=["uh"=>uh])
+writevtk(trian,"results",cellfields=["uh"=>uh,"epsi"=>ε(uh),"sigma"=>σ(ε(uh))])
 
 # Deformation magnified 40 times
 # ![](../assets/t003_elasticity/disp_ux_40.png)
+
+
+# ## Multi-material solids
+#
+# ![](../models/solid-mat.png)
+#
+
+function lame_parameters(E,ν)
+  λ = (E*ν)/((1+ν)*(1-2*ν))
+  μ = E/(2*(1+ν))
+  (λ, μ)
+end
+
+const E_alu = 70.0e9
+const ν_alu = 0.33
+const (λ_alu,μ_alu) = lame_parameters(E_alu,ν_alu)
+
+const E_steel = 200.0e9
+const ν_steel = 0.33
+const (λ_steel,μ_steel) = lame_parameters(E_steel,ν_steel)
+
+# ### First option: Split triangulation (Not yet implemented)
+#
+# Perhaps too lengthy
+
+@law σ_alu(x,ε) = λ_alu*tr(ε)*one(ε) + 2*μ_alu*ε
+@law σ_steel(x,ε) = λ_steel*tr(ε)*one(ε) + 2*μ_steel*ε
+
+trian_alu = Triangulation(model,"material_1")
+trian_steel = Triangulation(model,"material_2")
+
+quad_alu = CellQuadrature(trian_alu,order=2)
+quad_steel = CellQuadrature(trian_steel,order=2)
+
+a_alu(v,u) = inner( ε(v), σ_alu(ε(u)) )
+t_Ω_alu = LinearFETerm(a_alu,trian_alu,quad_alu)
+
+a_steel(v,u) = inner( ε(v), σ_steel(ε(u)) )
+t_Ω_steel = LinearFETerm(a_steel,trian_steel,quad_steel)
+
+op = LinearFEOperator(V0,U,t_Ω_alu,t_Ω_steel)
+uh = solve(op)
+
+uh_alu = restrict(uh,trian_alu)
+uh_steel = restrict(uh,trian_steel)
+
+writevtk(trian_alu,"results_alu", cellfields=
+  ["uh"=>uh_alu,"epsi"=>ε(uh_alu),"sigma"=>σ_alu(ε(uh_alu))])
+
+writevtk(trian_steel,"results_steel", cellfields=
+  ["uh"=>uh_steel,"epsi"=>ε(uh_steel),"sigma"=>σ_steel(ε(uh_steel))])
+
+# ### Second option: Pass mask to constitutive law (Not yet implemented)
+#
+# I think, I will implement this one
+
+@law function σ_bimat(x,ε,mask)
+  if mask
+    return λ_alu*tr(ε)*one(ε) + 2*μ_alu*ε
+  else
+    return λ_steel*tr(ε)*one(ε) + 2*μ_steel*ε
+  end
+end
+
+mask = is_cell_on_tag(model,"material_1")
+
+a(v,u) = inner( ε(v), σ_bimat(ε(u),mask) )
+t_Ω = LinearFETerm(a,trian,quad)
+
+op = LinearFEOperator(V0,U,t_Ω)
+
+uh = solve(op)
+
+writevtk(trian,"results",cellfields=
+  ["uh"=>uh,"epsi"=>ε(uh),"sigma"=>σ_bimat(ε(uh),mask)])
+
+
+#
+#
+#
+#
 #
 #  Tutorial done!

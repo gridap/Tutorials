@@ -12,10 +12,10 @@ using Test
 @testset "t002_validation" begin include("../src/t002_validation.jl") end
 end # module
 
-module t003_elasticity
-using Test
-@testset "t003_elasticity" begin include("../src/t003_elasticity.jl") end
-end # module
+#module t003_elasticity
+#using Test
+#@testset "t003_elasticity" begin include("../src/t003_elasticity.jl") end
+#end # module
 
 module t004_hyperelasticity
 using Test

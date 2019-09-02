@@ -2,7 +2,7 @@
 #
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t002_validation.ipynb)
 #md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t002_validation.ipynb)
-# 
+#
 # ## Learning outcomes
 #
 # - How to implement the method of manufactured solutions
@@ -88,7 +88,7 @@ writevtk(model,"model");
 
 # ## FE approximation
 #
-# We compute a FE approximation of the Poisson problem above by following the steps detailed in previous tutorial:
+# We compute a FE approximation of the Poisson problem above by following the steps detailed in the previous tutorial:
 
 order = 1
 diritag = "boundary"
@@ -113,7 +113,7 @@ uh = solve(op);
 #
 # ## Measuring the discretization error
 #
-# Our goal is to check that the discratization error associated with the computed approximation `uh` is near machine precision. To this end, the first step is to compute the discretization error, which is done as you would expect:
+# Our goal is to check that the discratization error associated with the computed approximation `uh` is close to machine precision. To this end, the first step is to compute the discretization error, which is done as you would expect:
 
 e = u - uh;
 
@@ -128,9 +128,8 @@ writevtk(trian,"error",cellfields=["e" => e]);
 # A more rigorous way of quantifying the error is to measure it with a norm. Here, we use the $L^2$ and $H^1$ norms, which are defined as
 #
 # ```math
-# \| w \|_{L^2}^2 \doteq \int_{\Omega} w^2 \ \text{d}\Omega, \quad 
+# \| w \|_{L^2}^2 \doteq \int_{\Omega} w^2 \ \text{d}\Omega, \quad
 # \| w \|_{H^1}^2 \doteq \int_{\Omega} w^2 + \nabla w \cdot \nabla w \ \text{d}\Omega.
-#
 # ```
 #
 # In order to compute these norms, we are going to use the `integrate` function. To this end, we need to define the integrands that we want to integrate, namely
@@ -174,23 +173,23 @@ function run(n,order)
 
   limits = (0.0, 1.0, 0.0, 1.0)
   model = CartesianDiscreteModel(domain=limits, partition=(n,n))
-  
+
   diritag = "boundary"
   V = CLagrangianFESpace(Float64,model,order,diritag)
-  
+
   V0 = TestFESpace(V)
   U = TrialFESpace(V,u)
-  
+
   trian = Triangulation(model)
   quad = CellQuadrature(trian,order=order+2)
-  
+
   t_Ω = AffineFETerm(a,b,trian,quad)
   op = LinearFEOperator(V0,U,t_Ω)
-  
+
   uh = solve(op)
-  
+
   e = u - uh
-  
+
   el2 = sqrt(sum( integrate(l2(e),trian,quad) ))
   eh1 = sqrt(sum( integrate(h1(e),trian,quad) ))
 
@@ -263,5 +262,3 @@ slope(hs,eh1s)
 # the slopes for the $L^2$ and $H^1$ error norms are circa 3 and 2 respectively (as one expects for interpolation order 2)
 #
 # Congrats, another tutorial done!
-
-

@@ -11,15 +11,15 @@
 # - How to define the different terms in a weak form
 # - How to impose Dirichlet and Neumann boundary conditions
 # - How to visualize results
-# 
+#
 # ## Problem statement
-# 
+#
 # We want to solve the Poisson equation on the 3D domain depicted in the figure below with Dirichlet and Neumann boundary conditions. Dirichlet boundary conditions are applied on $\Gamma_{\rm D}$, being the outer sides of the prism (marked in red). Non-homogeneous Neumann conditions are applied to the internal boundaries $\Gamma_{\rm G}$, $\Gamma_{\rm Y}$, and $\Gamma_{\rm B}$ (marked in green, yellow and blue respectively). And homogeneous Neumann boundary conditions are applied in $\Gamma_{\rm W}$, the remaining portion of the boundary (marked in white).
-# 
+#
 # ![model](../models/model-r1.png)
-# 
+#
 # Formally, the problem to solve is: find $u$ such that
-# 
+#
 # ```math
 # \left\lbrace
 # \begin{aligned}
@@ -29,19 +29,19 @@
 # \end{aligned}
 # \right.
 # ```
-# 
-# being $n$ the outwards unit normal vector to the Neumann boundary $\Gamma_{\rm N} \doteq \Gamma_{\rm G}\cup\Gamma_{\rm Y}\cup\Gamma_{\rm B}\cup\Gamma_{\rm W}$. For simplicity, we chose $f(x) = 1$, $g(x) = 2$, and $h(x)=3$ on $\Gamma_{\rm G}\cup\Gamma_{\rm Y}\cup\Gamma_{\rm B}$ and $h(x)=0$ on $\Gamma_{\rm W}$. The variable $x$ is the position vector $x=(x_1,x_2,x_3)$. 
-# 
+#
+# being $n$ the outwards unit normal vector to the Neumann boundary $\Gamma_{\rm N} \doteq \Gamma_{\rm G}\cup\Gamma_{\rm Y}\cup\Gamma_{\rm B}\cup\Gamma_{\rm W}$. For simplicity, we chose $f(x) = 1$, $g(x) = 2$, and $h(x)=3$ on $\Gamma_{\rm G}\cup\Gamma_{\rm Y}\cup\Gamma_{\rm B}$ and $h(x)=0$ on $\Gamma_{\rm W}$. The variable $x$ is the position vector $x=(x_1,x_2,x_3)$.
+#
 # ## Numerical scheme
-# 
+#
 # In this first tutorial, we use a conventional Galerkin finite element (FE) method with conforming Lagrangian finite element spaces. The model problem reduces to the weak equation: find $u\in U_g$ such that $ a(v,u) = b(v) $ for all $v\in V_0$, where $U_g$ and $V_0$ are the subset of functions in $H^1(\Omega)$ that fulfill the Dirichlet boundary condition $g$ and $0$ respectively. The bilinear and linear forms for this problems are
 # ```math
 # a(v,u) \doteq \int_{\Omega} \nabla v \cdot \nabla u \ {\rm d}\Omega, \quad b(v) \doteq \int_{\Omega} v\ f  \ {\rm  d}\Omega + \int_{\Gamma_{\rm N}} v\ g \ {\rm d}\Gamma_{\rm N}
 # ```
-# 
+#
 # ## Implementation
-# 
-# In order to solve this problem in Gridap,  we are going to build the main objects that are involved in the weak formulation.  The step number 0, is to load the Gridap project. If you have configured your environment properly, it is simply done like this:
+#
+# In order to solve this problem in Gridap,  we are going to build the main objects that are involved in the weak formulation.  The step number 0 is to load the Gridap project. If you have configured your environment properly, it is simply done like this:
 
 using Gridap
 
@@ -51,11 +51,11 @@ using Gridap
 
 model = DiscreteModelFromFile("../models/model.json");
 
-# You can easily inspect the generated model in Paraview by writting it to `vtk` format. 
+# You can easily inspect the generated model in Paraview by writing it in `vtk` format.
 
 writevtk(model,"model");
 
-# Previous line generates four different files `model_0.vtu`, `model_1.vtu`, `model_2.vtu`, and `model_3.vtu` containing the vertices, edges, faces, and cells present in the discrete model. Moreover, you can easily inspect, which boundaries are defined within the model. 
+# The previous line generates four different files `model_0.vtu`, `model_1.vtu`, `model_2.vtu`, and `model_3.vtu` containing the vertices, edges, faces, and cells present in the discrete model. Moreover, you can easily inspect which boundaries are defined within the model.
 #
 # For instance, if we want to see which faces of the model are on the boundary $\Gamma_{\rm B}$ (i.e., the walls of the circular hole), open the file `model_2.vtu` and chose coloring by the element field "circle". You should see that only the faces on the circular hole have a value different from 0.
 #
@@ -98,7 +98,7 @@ quad = CellQuadrature(trian,order=2);
 # Note that in this simple case, we are using the cells of the model as integration cells, but in more complex formulations (e.g., embedded finite element computations) the integration cells can be different from the cells on the background FE mesh. Note also, that we are constructing a quadrature of order 2 in the cells of the integration mesh. This is enough for integrating all terms of the weak form exactly for an interpolation of order 1.
 
 #
-# On the other hand, we need a special type of integration mesh, represented by the type `BoundaryTriangulation`, to integrate on the boundary. We build an instance of this type from the discrete model and the names used to identify on the Neumann boundary as follows:
+# On the other hand, we need a special type of integration mesh, represented by the type `BoundaryTriangulation`, to integrate on the boundary. We build an instance of this type from the discrete model and the names used to identify the Neumann boundary as follows:
 
 neumanntags = ["circle", "triangle", "square"]
 btrian = BoundaryTriangulation(model,neumanntags)
@@ -108,17 +108,17 @@ bquad = CellQuadrature(btrian,order=2);
 #
 # ### Weak form
 #
-# With all the ingredients presented so far, we are ready to set up define our FE problem.  First, we need to define the weak form of the problem at hand. This is done by means of types inheriting from the abstract type `FETerm`. In this tutorial, we will use the sub types `AffineFETerm` and `FESource`. An `AffineFETerm` is a term that contributes both to the system matrix and the right-hand-side vector, whereas a `FESource` only contributes to the right hand side vector. 
+# With all the ingredients presented so far, we are ready to define our FE problem.  First, we need to define the weak form of the problem at hand. This is done by means of types inheriting from the abstract type `FETerm`. In this tutorial, we will use the sub-types `AffineFETerm` and `FESource`. An `AffineFETerm` is a term that contributes both to the system matrix and the right-hand-side vector, whereas a `FESource` only contributes to the right hand side vector.
 #
 # In this example, we use an `AffineFETerm` to represent all the terms in the weak form that are integrated over the interior of the domain $\Omega$. It is constructed like this:
-# 
+#
 
 f(x) = 1.0
 a(v,u) = inner( ∇(v), ∇(u) )
 b_Ω(v) = inner(v, f)
 t_Ω = AffineFETerm(a,b_Ω,trian,quad);
 
-# 
+#
 # In the first argument, we pass a function that represents the integrand of the bilinear form $a(\cdot,\cdot)$, the second argument is a function that represents the integrand of part of the billinar form $b(\cdot)$ that is integrated over the domain $\Omega$. The third argument is the `Triangulation` on which we want to perform the integration (in that case the integration mesh for $\Omega$), and the last argument is the `CellQuadrature` needed to perform the integration numerically.
 #
 # Note that the contribution associated with the Neumann condition is integrated over a different domain, and thus, cannot be included in the previous `AffineFETerm`. To account for it, we use a `FESource` object:
@@ -127,13 +127,13 @@ h(x) = 3.0
 b_Γ(v) = inner(v, h)
 t_Γ = FESource(b_Γ,btrian,bquad);
 
-# Here, we pass in the first argument the integrand of the Neumann boundary condition, and in the lasts arguments we pass the integration mesh and quadrature for the Neumann boundary.
+# Here, we pass in the first argument the integrand of the Neumann boundary condition, and in the last arguments we pass the integration mesh and quadrature for the Neumann boundary.
 #
 # Presenting the precise notation used to define the integrands of the weak form is out of the scope of this first tutorial. But for the moment, the following remarks are enough. Variables `v` and `u`  represents a test and trial function respectively. The function `∇` represents the gradient operator. The function `inner` represents the inner product. It is extremely important to be aware that the *implementation* of the `inner` function is not commutative! The first argument is always for the test function (which will be associated with the rows of the system matrix or the right hand side vector depending on the case). Not following this rule can end up with matrices that are the transpose of the matrix you really want or with code crashes in the worst case. Note that we have always correctly placed the test function `v` in the first argument.
 #
 # ### FE problem
 #
-# At this point, we can combine all ingredients and formulate our FE problem. A FE problem (both for linear and non-linear cases) is represented in the code by types inheriting from the abstract type `FEOperator`. Since we want to solve a linear problem, we use the concrete type `LinearFEOperator`:
+# At this point, we can combine all ingredients and formulate our FE problem. A FE problem (both for linear and nonlinear cases) is represented in the code by types inheriting from the abstract type `FEOperator`. Since we want to solve a linear problem, we use the concrete type `LinearFEOperator`:
 
 assem = SparseMatrixAssembler(V0,Ug)
 op = LinearFEOperator(V0,Ug,assem,t_Ω,t_Γ);
@@ -212,7 +212,6 @@ uh = solve(solver,op)
 #Write results
 writevtk(trian,"results",cellfields=["uh"=>uh])
 
-# 
+#
 #  Congrats, tutorial done!
 #
-

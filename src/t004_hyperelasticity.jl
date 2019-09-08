@@ -48,13 +48,28 @@ E(F) = 0.5*( F'*F - I )
 
 @law dE(x,∇du,∇u) = 0.5*( ∇du*F(∇u) + (∇du*F(∇u))' )
 
-#Constitutive law (St. Venant–Kirchhoff Material)
+##Constitutive law (St. Venant–Kirchhoff Material)
+#
+#_S(E) = λ*trace(E)*I + 2*μ*E # TODO trace
+#
+#@law S(x,∇u) = _S( E(F(∇u)) )
+#
+#@law dS(x,∇du,∇u) = _S( dE(x,∇du,∇u) )
 
-_S(E) = λ*trace(E)*I + 2*μ*E # TODO trace
+#Constitutive law (Neo hookean)
 
-@law S(x,∇u) = _S( E(F(∇u)) )
+C(F) = (F')*F
 
-@law dS(x,∇du,∇u) = _S( dE(x,∇du,∇u) )
+@law function S(x,∇u)
+  Cinv = inv(C(F(∇u)))
+  μ*(I-Cinv) + λ*log(J(F(∇u)))*Cinv
+end
+
+@law function dS(x,∇du,∇u)
+  Cinv = inv(C(F(∇u)))
+  _dE = dE(x,∇du,∇u)
+  λ*inner(Cinv,_dE)*Cinv + 2*(μ-λ*log(J(F(∇u))))*Cinv*_dE*(Cinv')
+end
 
 # Cauchy stress tensor
 

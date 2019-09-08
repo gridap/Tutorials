@@ -1,35 +1,20 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>4 Hyper-elasticity · Gridap tutorials</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link href="../../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>Gridap tutorials</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../../">Introduction</a></li><li><a class="toctext" href="../t001_poisson/">1 Poisson equation</a></li><li><a class="toctext" href="../t002_validation/">2 Code validation</a></li><li><a class="toctext" href="../t003_elasticity/">3 Linear elasticity</a></li><li class="current"><a class="toctext" href>4 Hyper-elasticity</a><ul class="internal"><li><a class="toctext" href="#Problem-statement-1">Problem statement</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li><a href>4 Hyper-elasticity</a></li></ul><a class="edit-page" href="https://github.com/gridap/Tutorials/blob/master/src/t004_hyperelasticity.jl"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>4 Hyper-elasticity</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Tutorial-4:-Hyperelasticity-1" href="#Tutorial-4:-Hyperelasticity-1">Tutorial 4: Hyperelasticity</a></h1><p><a href="https://mybinder.org/v2/gh/gridap/Tutorials/gh-pages?filepath=dev/notebooks/t004_hyperelasticity.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt/></a> <a href="https://nbviewer.jupyter.org/github/gridap/Tutorials/blob/gh-pages/dev/notebooks/t004_hyperelasticity.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt/></a></p><h2><a class="nav-anchor" id="Problem-statement-1" href="#Problem-statement-1">Problem statement</a></h2><pre><code class="language-julia">using Gridap
-using LinearAlgebra
-
-#Model
-#model = CartesianDiscreteModel(domain=(0.0,0.5,0.0,10.0), partition=(4,80))
-model = CartesianDiscreteModel(domain=(0.0,1.0,0.0,1.0), partition=(20,20))
-
-#Construct the FEspace
-order = 1
+using LinearAlgebra</code></pre><p>Model</p><pre><code class="language-julia">#model = CartesianDiscreteModel(domain=(0.0,0.5,0.0,10.0), partition=(4,80))
+model = CartesianDiscreteModel(domain=(0.0,1.0,0.0,1.0), partition=(20,20))</code></pre><p>Construct the FEspace</p><pre><code class="language-julia">order = 1
 diritags = [1,2,5]
 T = VectorValue{2,Float64}
 fespace = CLagrangianFESpace(T,model,order,diritags)
 
 g(x) = zero(T)
 V = TestFESpace(fespace)
-U = TrialFESpace(fespace,g)
-
-#Setup integration
-trian = Triangulation(model)
+U = TrialFESpace(fespace,g)</code></pre><p>Setup integration</p><pre><code class="language-julia">trian = Triangulation(model)
 quad = CellQuadrature(trian,order=2)
 
 neumtag = 6
 btrian = BoundaryTriangulation(model,neumtag)
-bquad = CellQuadrature(btrian,order=2)
-
-#Material parameters
-const λ = 30.0
-const μ = 40.0
-
-#Identity tensor
-const I = one(TensorValue{2,Float64,4})</code></pre><p>Deformation Gradient</p><pre><code class="language-julia">F(∇u) = I + ∇u&#39;
+bquad = CellQuadrature(btrian,order=2)</code></pre><p>Material parameters</p><pre><code class="language-julia">const λ = 30.0
+const μ = 40.0</code></pre><p>Identity tensor</p><pre><code class="language-julia">const I = one(TensorValue{2,Float64,4})</code></pre><p>Deformation Gradient</p><pre><code class="language-julia">F(∇u) = I + ∇u&#39;
 
 J(F) = det(F)
 
@@ -37,15 +22,7 @@ J(F) = det(F)
 
 E(F) = 0.5*( F&#39;*F - I )
 
-@law dE(x,∇du,∇u) = 0.5*( ∇du*F(∇u) + (∇du*F(∇u))&#39; )
-
-##Constitutive law (St. Venant–Kirchhoff Material)</code></pre><pre><code class="language-julia">#_S(E) = λ*trace(E)*I + 2*μ*E # TODO trace</code></pre><pre><code class="language-julia">#@law S(x,∇u) = _S( E(F(∇u)) )</code></pre><pre><code class="language-julia">#@law dS(x,∇du,∇u) = _S( dE(x,∇du,∇u) )
-
-#Constitutive law (Neo hookean)
-
-C(F) = (F&#39;)*F
-
-@law function S(x,∇u)
+@law dE(x,∇du,∇u) = 0.5*( ∇du*F(∇u) + (∇du*F(∇u))&#39; )</code></pre><p>Right Cauchy-green deformation tensor</p><pre><code class="language-julia">C(F) = (F&#39;)*F</code></pre><p>Constitutive law (Neo hookean)</p><pre><code class="language-julia">@law function S(x,∇u)
   Cinv = inv(C(F(∇u)))
   μ*(I-Cinv) + λ*log(J(F(∇u)))*Cinv
 end
@@ -68,13 +45,7 @@ t(x) = VectorValue(0.00,50.0)
 
 source(v) = inner(v, t)
 
-t_Γ = FESource(source,btrian,bquad)
-
-#FE problem
-op = NonLinearFEOperator(V,U,t_Ω,t_Γ)
-
-#Define the FESolver
-ls = LUSolver()
+t_Γ = FESource(source,btrian,bquad)</code></pre><p>FE problem</p><pre><code class="language-julia">op = NonLinearFEOperator(V,U,t_Ω,t_Γ)</code></pre><p>Define the FESolver</p><pre><code class="language-julia">ls = LUSolver()
 tol = 1.e-10
 maxiters = 20
 nls = NewtonRaphsonSolver(ls,tol,maxiters)

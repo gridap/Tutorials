@@ -8,11 +8,11 @@
 using Gridap
 using LinearAlgebra
 
-#Model
+# Model
 #model = CartesianDiscreteModel(domain=(0.0,0.5,0.0,10.0), partition=(4,80))
 model = CartesianDiscreteModel(domain=(0.0,1.0,0.0,1.0), partition=(20,20))
 
-#Construct the FEspace
+# Construct the FEspace
 order = 1
 diritags = [1,2,5]
 T = VectorValue{2,Float64}
@@ -22,7 +22,7 @@ g(x) = zero(T)
 V = TestFESpace(fespace)
 U = TrialFESpace(fespace,g)
 
-#Setup integration
+# Setup integration
 trian = Triangulation(model)
 quad = CellQuadrature(trian,order=2)
 
@@ -30,11 +30,11 @@ neumtag = 6
 btrian = BoundaryTriangulation(model,neumtag)
 bquad = CellQuadrature(btrian,order=2)
 
-#Material parameters
+# Material parameters
 const λ = 30.0
 const μ = 40.0
 
-#Identity tensor
+# Identity tensor
 const I = one(TensorValue{2,Float64,4})
 
 # Deformation Gradient
@@ -48,17 +48,11 @@ E(F) = 0.5*( F'*F - I )
 
 @law dE(x,∇du,∇u) = 0.5*( ∇du*F(∇u) + (∇du*F(∇u))' )
 
-##Constitutive law (St. Venant–Kirchhoff Material)
-#
-#_S(E) = λ*trace(E)*I + 2*μ*E # TODO trace
-#
-#@law S(x,∇u) = _S( E(F(∇u)) )
-#
-#@law dS(x,∇du,∇u) = _S( dE(x,∇du,∇u) )
-
-#Constitutive law (Neo hookean)
+# Right Cauchy-green deformation tensor
 
 C(F) = (F')*F
+
+# Constitutive law (Neo hookean)
 
 @law function S(x,∇u)
   Cinv = inv(C(F(∇u)))
@@ -93,10 +87,10 @@ source(v) = inner(v, t)
 
 t_Γ = FESource(source,btrian,bquad)
 
-#FE problem
+# FE problem
 op = NonLinearFEOperator(V,U,t_Ω,t_Γ)
 
-#Define the FESolver
+# Define the FESolver
 ls = LUSolver()
 tol = 1.e-10
 maxiters = 20

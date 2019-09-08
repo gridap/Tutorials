@@ -39,13 +39,22 @@ E(F) = 0.5*( F&#39;*F - I )
 
 @law dE(x,∇du,∇u) = 0.5*( ∇du*F(∇u) + (∇du*F(∇u))&#39; )
 
-#Constitutive law (St. Venant–Kirchhoff Material)
+##Constitutive law (St. Venant–Kirchhoff Material)</code></pre><pre><code class="language-julia">#_S(E) = λ*trace(E)*I + 2*μ*E # TODO trace</code></pre><pre><code class="language-julia">#@law S(x,∇u) = _S( E(F(∇u)) )</code></pre><pre><code class="language-julia">#@law dS(x,∇du,∇u) = _S( dE(x,∇du,∇u) )
 
-_S(E) = λ*trace(E)*I + 2*μ*E # TODO trace
+#Constitutive law (Neo hookean)
 
-@law S(x,∇u) = _S( E(F(∇u)) )
+C(F) = (F&#39;)*F
 
-@law dS(x,∇du,∇u) = _S( dE(x,∇du,∇u) )</code></pre><p>Cauchy stress tensor</p><pre><code class="language-julia">@law σ(x,∇u) = (1.0/J(F(∇u)))*F(∇u)*S(x,∇u)*(F(∇u))&#39;</code></pre><p>Weak form</p><pre><code class="language-julia">res(u,v) = inner( dE(∇(v),∇(u)) , S(∇(u)) )
+@law function S(x,∇u)
+  Cinv = inv(C(F(∇u)))
+  μ*(I-Cinv) + λ*log(J(F(∇u)))*Cinv
+end
+
+@law function dS(x,∇du,∇u)
+  Cinv = inv(C(F(∇u)))
+  _dE = dE(x,∇du,∇u)
+  λ*inner(Cinv,_dE)*Cinv + 2*(μ-λ*log(J(F(∇u))))*Cinv*_dE*(Cinv&#39;)
+end</code></pre><p>Cauchy stress tensor</p><pre><code class="language-julia">@law σ(x,∇u) = (1.0/J(F(∇u)))*F(∇u)*S(x,∇u)*(F(∇u))&#39;</code></pre><p>Weak form</p><pre><code class="language-julia">res(u,v) = inner( dE(∇(v),∇(u)) , S(∇(u)) )
 
 jac_mat(u,v,du) = inner( dE(∇(v),∇(u)), dS(∇(du),∇(u)) )
 

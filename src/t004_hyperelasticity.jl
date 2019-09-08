@@ -50,7 +50,7 @@ E(F) = 0.5*( F'*F - I )
 
 #Constitutive law (St. Venant–Kirchhoff Material)
 
-_S(E) = λ*tr(E)*I + 2*μ*E
+_S(E) = λ*trace(E)*I + 2*μ*E # TODO trace
 
 @law S(x,∇u) = _S( E(F(∇u)) )
 

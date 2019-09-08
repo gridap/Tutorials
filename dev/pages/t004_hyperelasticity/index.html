@@ -1,2 +1,76 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>4 Hyper-elasticity · Gridap tutorials</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link href="../../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>Gridap tutorials</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../../">Introduction</a></li><li><a class="toctext" href="../t001_poisson/">1 Poisson equation</a></li><li><a class="toctext" href="../t002_validation/">2 Code validation</a></li><li><a class="toctext" href="../t003_elasticity/">3 Linear elasticity</a></li><li class="current"><a class="toctext" href>4 Hyper-elasticity</a><ul class="internal"><li><a class="toctext" href="#Problem-statement-1">Problem statement</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li><a href>4 Hyper-elasticity</a></li></ul><a class="edit-page" href="https://github.com/gridap/Tutorials/blob/master/src/t004_hyperelasticity.jl"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>4 Hyper-elasticity</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Tutorial-4:-Hyperelasticity-1" href="#Tutorial-4:-Hyperelasticity-1">Tutorial 4: Hyperelasticity</a></h1><p><a href="https://mybinder.org/v2/gh/gridap/Tutorials/gh-pages?filepath=dev/notebooks/t004_hyperelasticity.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt/></a> <a href="https://nbviewer.jupyter.org/github/gridap/Tutorials/blob/gh-pages/dev/notebooks/t004_hyperelasticity.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt/></a></p><h2><a class="nav-anchor" id="Problem-statement-1" href="#Problem-statement-1">Problem statement</a></h2><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p><pre><code class="language-julia">using Gridap</code></pre><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p><footer><hr/><a class="previous" href="../t003_elasticity/"><span class="direction">Previous</span><span class="title">3 Linear elasticity</span></a></footer></article></body></html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>4 Hyper-elasticity · Gridap tutorials</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link href="../../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>Gridap tutorials</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../../">Introduction</a></li><li><a class="toctext" href="../t001_poisson/">1 Poisson equation</a></li><li><a class="toctext" href="../t002_validation/">2 Code validation</a></li><li><a class="toctext" href="../t003_elasticity/">3 Linear elasticity</a></li><li class="current"><a class="toctext" href>4 Hyper-elasticity</a><ul class="internal"><li><a class="toctext" href="#Problem-statement-1">Problem statement</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li><a href>4 Hyper-elasticity</a></li></ul><a class="edit-page" href="https://github.com/gridap/Tutorials/blob/master/src/t004_hyperelasticity.jl"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>4 Hyper-elasticity</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Tutorial-4:-Hyperelasticity-1" href="#Tutorial-4:-Hyperelasticity-1">Tutorial 4: Hyperelasticity</a></h1><p><a href="https://mybinder.org/v2/gh/gridap/Tutorials/gh-pages?filepath=dev/notebooks/t004_hyperelasticity.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt/></a> <a href="https://nbviewer.jupyter.org/github/gridap/Tutorials/blob/gh-pages/dev/notebooks/t004_hyperelasticity.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt/></a></p><h2><a class="nav-anchor" id="Problem-statement-1" href="#Problem-statement-1">Problem statement</a></h2><pre><code class="language-julia">using Gridap
+using LinearAlgebra
+
+#Model
+#model = CartesianDiscreteModel(domain=(0.0,0.5,0.0,10.0), partition=(4,80))
+model = CartesianDiscreteModel(domain=(0.0,1.0,0.0,1.0), partition=(20,20))
+
+#Construct the FEspace
+order = 1
+diritags = [1,2,5]
+T = VectorValue{2,Float64}
+fespace = CLagrangianFESpace(T,model,order,diritags)
+
+g(x) = zero(T)
+V = TestFESpace(fespace)
+U = TrialFESpace(fespace,g)
+
+#Setup integration
+trian = Triangulation(model)
+quad = CellQuadrature(trian,order=2)
+
+neumtag = 6
+btrian = BoundaryTriangulation(model,neumtag)
+bquad = CellQuadrature(btrian,order=2)
+
+#Material parameters
+const λ = 30.0
+const μ = 40.0
+
+#Identity tensor
+const I = one(TensorValue{2,Float64,4})</code></pre><p>Deformation Gradient</p><pre><code class="language-julia">F(∇u) = I + ∇u&#39;
+
+J(F) = det(F)
+
+#Green strain
+
+E(F) = 0.5*( F&#39;*F - I )
+
+@law dE(x,∇du,∇u) = 0.5*( ∇du*F(∇u) + (∇du*F(∇u))&#39; )
+
+#Constitutive law (St. Venant–Kirchhoff Material)
+
+_S(E) = λ*trace(E)*I + 2*μ*E # TODO trace
+
+@law S(x,∇u) = _S( E(F(∇u)) )
+
+@law dS(x,∇du,∇u) = _S( dE(x,∇du,∇u) )</code></pre><p>Cauchy stress tensor</p><pre><code class="language-julia">@law σ(x,∇u) = (1.0/J(F(∇u)))*F(∇u)*S(x,∇u)*(F(∇u))&#39;</code></pre><p>Weak form</p><pre><code class="language-julia">res(u,v) = inner( dE(∇(v),∇(u)) , S(∇(u)) )
+
+jac_mat(u,v,du) = inner( dE(∇(v),∇(u)), dS(∇(du),∇(u)) )
+
+jac_geo(u,v,du) = inner( ∇(v), S(∇(u))*∇(du) )
+
+jac(u,v,du) = jac_mat(u,v,du) + jac_geo(u,v,du)
+
+t_Ω = NonLinearFETerm(res,jac,trian,quad)
+
+t(x) = VectorValue(0.00,50.0)
+
+source(v) = inner(v, t)
+
+t_Γ = FESource(source,btrian,bquad)
+
+#FE problem
+op = NonLinearFEOperator(V,U,t_Ω,t_Γ)
+
+#Define the FESolver
+ls = LUSolver()
+tol = 1.e-10
+maxiters = 20
+nls = NewtonRaphsonSolver(ls,tol,maxiters)
+solver = NonLinearFESolver(nls)</code></pre><p>Solve!</p><pre><code class="language-julia">free_vals = 0.00001*rand(Float64,num_free_dofs(U))
+uh = FEFunction(U,free_vals)
+solve!(uh,solver,op)
+
+writevtk(trian,&quot;results&quot;,nref=2,cellfields=[&quot;uh&quot;=&gt;uh,&quot;sigma&quot;=&gt;σ(∇(uh))])</code></pre><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p><footer><hr/><a class="previous" href="../t003_elasticity/"><span class="direction">Previous</span><span class="title">3 Linear elasticity</span></a></footer></article></body></html>

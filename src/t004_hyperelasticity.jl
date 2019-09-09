@@ -9,7 +9,8 @@ using Gridap
 using LinearAlgebra
 
 # Model
-model = CartesianDiscreteModel(domain=(0.0,1.0,0.0,1.0), partition=(4,4))
+model = CartesianDiscreteModel(
+  domain=(0.0,0.1,0.0,1.0), partition=(3,20))
 
 # Construct the FEspace
 order = 1
@@ -18,7 +19,7 @@ T = VectorValue{2,Float64}
 fespace = CLagrangianFESpace(T,model,order,diritags)
 
 g0(x) = zero(T)
-g1(x) = VectorValue(0.0,0.015)
+g1(x) = VectorValue(0.0,-0.03)
 V = TestFESpace(fespace)
 U = TrialFESpace(fespace,[g0,g0,g0,g1,g1,g1])
 
@@ -82,12 +83,34 @@ t_Ω = NonLinearFETerm(res,jac,trian,quad)
 # FE problem
 op = NonLinearFEOperator(V,U,t_Ω)
 
-# Define the FESolver
-ls = LUSolver()
-tol = 1.e-3
-maxiters = 30
-nls = NewtonRaphsonSolver(ls,tol,maxiters)
-solver = NonLinearFESolver(nls)
+using NLsolve
+using Gridap.FEOperators: NonLinearOpFromFEOp
+
+alg_op = NonLinearOpFromFEOp(op)
+
+f!(r,x) = residual!(r,alg_op,x)
+j!(j,x) = jacobian!(j,alg_op,x)
+
+x0 = 0.001*rand(Float64,num_free_dofs(U))
+f0 = residual(alg_op,x0)
+j0 = jacobian(alg_op,x0)
+
+df = OnceDifferentiable(f!,j!,x0,f0,j0)
+
+r = nlsolve(df,x0,show_trace=true)
+
+uh = FEFunction(U,r.zero)
+
+writevtk(trian,"results",cellfields=["uh"=>uh])
+
+
+
+## Define the FESolver
+#ls = LUSolver()
+#tol = 1.e-3
+#maxiters = 30
+#nls = NewtonRaphsonSolver(ls,tol,maxiters)
+#solver = NonLinearFESolver(nls)
 
 ## Solve!
 #free_vals = 0.001*rand(Float64,num_free_dofs(U))
@@ -112,43 +135,43 @@ solver = NonLinearFESolver(nls)
 ##@show S2
 ##@show S1-S2
 
-d = 0.00001
-
-uh_vals = 0.1*rand(Float64,num_free_dofs(U))
-uh = FEFunction(U,uh_vals)
-
-duh_vals = d*0.01*rand(Float64,num_free_dofs(U))
-duh = FEFunction(V,duh_vals)
-
-r1 = residual(op,uh.cellfield+duh) #TODO
-
-r2 = residual(op,uh) + jacobian(op,uh)*duh_vals
-
-er = r1 - r2
-
-@show r1
-@show r2
-@show er
-
-eh = FEFunction(V,er)
-
-using Gridap.FEOperators: NonLinearOpFromFEOp
-
-alg_op = NonLinearOpFromFEOp(op)
-
-residual!(r1,alg_op,uh_vals+duh_vals)
-
-residual!(r2,alg_op,uh_vals)
-
-r2 = r2 + jacobian(alg_op,uh_vals)*duh_vals
-
-er = r1 - r2
-
-eh = FEFunction(V,er)
-
-@show r1
-@show r2
-@show er
-
-writevtk(trian,"results",cellfields=["eh"=>eh])
+#d = 0.00001
+#
+#uh_vals = 0.1*rand(Float64,num_free_dofs(U))
+#uh = FEFunction(U,uh_vals)
+#
+#duh_vals = d*0.01*rand(Float64,num_free_dofs(U))
+#duh = FEFunction(V,duh_vals)
+#
+#r1 = residual(op,uh.cellfield+duh) #TODO
+#
+#r2 = residual(op,uh) + jacobian(op,uh)*duh_vals
+#
+#er = r1 - r2
+#
+#@show r1
+#@show r2
+#@show er
+#
+#eh = FEFunction(V,er)
+#
+#using Gridap.FEOperators: NonLinearOpFromFEOp
+#
+#alg_op = NonLinearOpFromFEOp(op)
+#
+#residual!(r1,alg_op,uh_vals+duh_vals)
+#
+#residual!(r2,alg_op,uh_vals)
+#
+#r2 = r2 + jacobian(alg_op,uh_vals)*duh_vals
+#
+#er = r1 - r2
+#
+#eh = FEFunction(V,er)
+#
+#@show r1
+#@show r2
+#@show er
+#
+#writevtk(trian,"results",cellfields=["eh"=>eh])
 

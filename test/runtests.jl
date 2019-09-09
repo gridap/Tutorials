@@ -17,7 +17,7 @@ using Test
 @testset "t003_elasticity" begin include("../src/t003_elasticity.jl") end
 end # module
 
-module t004_hyperelasticity
-using Test
-@testset "t004_hyperelasticity" begin include("../src/t004_hyperelasticity.jl") end
-end # module
+#module t004_hyperelasticity
+#using Test
+#@testset "t004_hyperelasticity" begin include("../src/t004_hyperelasticity.jl") end
+#end # module

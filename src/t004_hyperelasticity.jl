@@ -9,23 +9,20 @@ using Gridap
 using LinearAlgebra
 using NLsolve # TODO
 using Gridap.FEOperators: NonLinearOpFromFEOp # TODO
+using ProgressMeter
 
 # Material parameters
 const λ = 100.0
 const μ = 1.0
 
-# Identity tensor
-#const I = one(TensorValue{2,Float64,4})
-const I = one(TensorValue{3,Float64,9})
-
 # Deformation Gradient
-F(∇u) = I + ∇u'
+F(∇u) = one(∇u) + ∇u'
 
 J(F) = sqrt(det(C(F)))
 
 #Green strain
 
-#E(F) = 0.5*( F'*F - I )
+#E(F) = 0.5*( F'*F - one(F) )
 
 @law dE(x,∇du,∇u) = 0.5*( ∇du*F(∇u) + (∇du*F(∇u))' )
 
@@ -37,7 +34,7 @@ C(F) = (F')*F
 
 @law function S(x,∇u)
   Cinv = inv(C(F(∇u)))
-  μ*(I-Cinv) + λ*log(J(F(∇u)))*Cinv
+  μ*(one(∇u)-Cinv) + λ*log(J(F(∇u)))*Cinv
 end
 
 @law function dS(x,∇du,∇u)
@@ -50,8 +47,6 @@ end
 
 @law σ(x,∇u) = (1.0/J(F(∇u)))*F(∇u)*S(x,∇u)*(F(∇u))'
 
-@law σ_lin(x,ε) = λ*trace(ε)*one(ε) + 2*μ*ε #TODO trace
-
 # Weak form
 
 res(u,v) = inner( dE(∇(v),∇(u)) , S(∇(u)) )
@@ -62,45 +57,44 @@ jac_geo(u,v,du) = inner( ∇(v), S(∇(u))*∇(du) )
 
 jac(u,v,du) = jac_mat(u,v,du) + jac_geo(u,v,du)
 
-## Model
-#model = CartesianDiscreteModel(
-#  domain=(0.0,0.1,0.0,4.0), partition=(3,40))
-#
-## Construct the FEspace
-#order = 1
-#diritags = [1,2,5,3,4,6] # TODO
-#T = VectorValue{2,Float64}
-#fespace = CLagrangianFESpace(T,model,order,diritags)
-
 # Model
-model = DiscreteModelFromFile("../models/cylinder.json")
+model = CartesianDiscreteModel(
+  domain=(0.0,1.0,0.0,1.0), partition=(20,20))
+
+model = CartesianDiscreteModel(
+  domain=(0.0,1.0,0.0,1.0,0.0,1.0), partition=(20,10,10))
+
+writevtk(model,"model")
 
 # Construct the FEspace
 order = 1
-diritags = ["bottom","bottom_c","top","top_c"] # TODO
+diritags = [1,3,7,2,4,8] # TODO
+diritags = [1,3,5,7,13,15,17,19,25,2,4,6,8,14,16,18,20,26] # TODO
 T = VectorValue{3,Float64}
 fespace = CLagrangianFESpace(T,model,order,diritags)
+V = TestFESpace(fespace)
 
 
 # Setup integration
 trian = Triangulation(model)
 quad = CellQuadrature(trian,order=2)
 
-V = TestFESpace(fespace)
-
-function run!(x0,disp_y,step,nsteps)
-
-  #x0[:] .+= 0.001*rand(length(x0))
+function run!(x0,disp_x,step,nsteps)
 
   g0(x) = zero(T)
-  g1(x) = VectorValue(0.0,disp_y,disp_y)
-  #U = TrialFESpace(fespace,[g0,g0,g0,g1,g1,g1]) # TODO
-  U = TrialFESpace(fespace,[g0,g0,g1,g1])
-  
-  # FE problem
+  g1(x) = VectorValue(disp_x,0.0,0.0) #TODO
+  #U = TrialFESpace(fespace,[g0,g0,g0,g1,g1,g1]) #TODO
+  U = TrialFESpace(fespace,[g0,g0,g0,g0,g0,g0,g0,g0,g0,g1,g1,g1,g1,g1,g1,g1,g1,g1]) #TODO
+
+  v = zeros(num_free_dofs(U))
+  uh = FEFunction(U,v)
+  writevtk(trian,"kk",cellfields=["uh"=>uh,"sigma"=>σ(∇(uh))])
+
+  #FE problem
   t_Ω = NonLinearFETerm(res,jac,trian,quad)
   op = NonLinearFEOperator(V,U,t_Ω)
   
+  #TODO
   alg_op = NonLinearOpFromFEOp(op)
   
   f!(r,x) = residual!(r,alg_op,x)
@@ -112,14 +106,13 @@ function run!(x0,disp_y,step,nsteps)
   df = OnceDifferentiable(f!,j!,x0,f0,j0)
   
   println()
-  println("+++ Solving for disp_y $disp_y in step $step of $nsteps +++")
+  println("+++ Solving for disp_x $disp_x in step $step of $nsteps +++")
   println()
   r = nlsolve(df,x0,show_trace=true)
   
   uh = FEFunction(U,r.zero)
   
-  #TODO counter with zeros
-  writevtk(trian,"results_$step",cellfields=["uh"=>uh,"sigma"=>σ(∇(uh))])
+  writevtk(trian,"results_$(lpad(step,3,'0'))",cellfields=["uh"=>uh,"sigma"=>σ(∇(uh))])
 
   x0[:] .= r.zero
 
@@ -127,88 +120,21 @@ end
 
 function runs()
 
- disp_max = -0.2
- disp_inc = 0.01
+ disp_max = 0.75
+ disp_inc = 0.02
  nsteps = ceil(Int,abs(disp_max)/disp_inc)
  
  x0 = zeros(Float64,num_free_dofs(fespace))
 
+ #@showprogress 0.5 "Computing load steps..."
  for step in 1:nsteps
-   disp_y = step * disp_max / nsteps
-   run!(x0,disp_y,step,nsteps)
+   disp_x = step * disp_max / nsteps
+   run!(x0,disp_x,step,nsteps)
  end
 
 end
 
+#Do the work!
 runs()
 
-## Define the FESolver
-#ls = LUSolver()
-#tol = 1.e-3
-#maxiters = 30
-#nls = NewtonRaphsonSolver(ls,tol,maxiters)
-#solver = NonLinearFESolver(nls)
-
-## Solve!
-#free_vals = 0.001*rand(Float64,num_free_dofs(U))
-#uh = FEFunction(U,free_vals)
-#solve!(uh,solver,op)
-#
-#writevtk(trian,"results",nref=3,cellfields=[
-#  "uh"=>uh,"sigma"=>σ(∇(uh)),"S"=>S(∇(uh)),
-#  "epsi"=>ε(uh),"dE"=>dE(∇(uh),∇(uh)),"sigma_lin"=>σ_lin(ε(uh))])
-
-### Check derivatives
-##
-##d = 0.0000001
-##∇u = TensorValue(1.0,1.0,2.0,3.0)
-##∇du = TensorValue(0.0,1.0,2.0,1.0)
-##x = zero(T)
-##
-##S1 = S(x,∇u+d*∇du)
-##S2 = S(x,∇u) + d*dS(x,∇du,∇u)
-##
-##@show S1
-##@show S2
-##@show S1-S2
-
-#d = 0.00001
-#
-#uh_vals = 0.1*rand(Float64,num_free_dofs(U))
-#uh = FEFunction(U,uh_vals)
-#
-#duh_vals = d*0.01*rand(Float64,num_free_dofs(U))
-#duh = FEFunction(V,duh_vals)
-#
-#r1 = residual(op,uh.cellfield+duh) #TODO
-#
-#r2 = residual(op,uh) + jacobian(op,uh)*duh_vals
-#
-#er = r1 - r2
-#
-#@show r1
-#@show r2
-#@show er
-#
-#eh = FEFunction(V,er)
-#
-#using Gridap.FEOperators: NonLinearOpFromFEOp
-#
-#alg_op = NonLinearOpFromFEOp(op)
-#
-#residual!(r1,alg_op,uh_vals+duh_vals)
-#
-#residual!(r2,alg_op,uh_vals)
-#
-#r2 = r2 + jacobian(alg_op,uh_vals)*duh_vals
-#
-#er = r1 - r2
-#
-#eh = FEFunction(V,er)
-#
-#@show r1
-#@show r2
-#@show er
-#
-#writevtk(trian,"results",cellfields=["eh"=>eh])
 

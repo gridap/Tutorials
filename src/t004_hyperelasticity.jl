@@ -7,25 +7,8 @@
 
 using Gridap
 using LinearAlgebra
-
-# Model
-model = CartesianDiscreteModel(
-  domain=(0.0,0.1,0.0,1.0), partition=(3,20))
-
-# Construct the FEspace
-order = 1
-diritags = [1,2,5,3,4,6]
-T = VectorValue{2,Float64}
-fespace = CLagrangianFESpace(T,model,order,diritags)
-
-g0(x) = zero(T)
-g1(x) = VectorValue(0.0,-0.03)
-V = TestFESpace(fespace)
-U = TrialFESpace(fespace,[g0,g0,g0,g1,g1,g1])
-
-# Setup integration
-trian = Triangulation(model)
-quad = CellQuadrature(trian,order=2)
+using NLsolve # TODO
+using Gridap.FEOperators: NonLinearOpFromFEOp # TODO
 
 # Material parameters
 const λ = 100.0
@@ -78,32 +61,73 @@ jac_geo(u,v,du) = inner( ∇(v), S(∇(u))*∇(du) )
 
 jac(u,v,du) = jac_mat(u,v,du) + jac_geo(u,v,du)
 
-t_Ω = NonLinearFETerm(res,jac,trian,quad)
+# Model
+model = CartesianDiscreteModel(
+  domain=(0.0,0.1,0.0,4.0), partition=(3,40))
 
-# FE problem
-op = NonLinearFEOperator(V,U,t_Ω)
+# Setup integration
+trian = Triangulation(model)
+quad = CellQuadrature(trian,order=2)
 
-using NLsolve
-using Gridap.FEOperators: NonLinearOpFromFEOp
+# Construct the FEspace
+order = 1
+diritags = [1,2,5,3,4,6] # TODO
+T = VectorValue{2,Float64}
+fespace = CLagrangianFESpace(T,model,order,diritags)
 
-alg_op = NonLinearOpFromFEOp(op)
+V = TestFESpace(fespace)
 
-f!(r,x) = residual!(r,alg_op,x)
-j!(j,x) = jacobian!(j,alg_op,x)
+function run!(x0,disp_y,step,nsteps)
 
-x0 = 0.001*rand(Float64,num_free_dofs(U))
-f0 = residual(alg_op,x0)
-j0 = jacobian(alg_op,x0)
+  x0[:] .+= 0.001*rand(length(x0))
 
-df = OnceDifferentiable(f!,j!,x0,f0,j0)
+  g0(x) = zero(T)
+  g1(x) = VectorValue(0.0,disp_y)
+  U = TrialFESpace(fespace,[g0,g0,g0,g1,g1,g1])
+  
+  # FE problem
+  t_Ω = NonLinearFETerm(res,jac,trian,quad)
+  op = NonLinearFEOperator(V,U,t_Ω)
+  
+  alg_op = NonLinearOpFromFEOp(op)
+  
+  f!(r,x) = residual!(r,alg_op,x)
+  j!(j,x) = jacobian!(j,alg_op,x)
+  
+  f0 = residual(alg_op,x0)
+  j0 = jacobian(alg_op,x0)
+  
+  df = OnceDifferentiable(f!,j!,x0,f0,j0)
+  
+  println()
+  println("+++ Solving for disp_y $disp_y in step $step of $nsteps +++")
+  println()
+  r = nlsolve(df,x0,show_trace=true)
+  
+  uh = FEFunction(U,r.zero)
+  
+  writevtk(trian,"results_$step",cellfields=["uh"=>uh,"sigma"=>σ(∇(uh))])
 
-r = nlsolve(df,x0,show_trace=true)
+  x0[:] .= r.zero
 
-uh = FEFunction(U,r.zero)
+end
 
-writevtk(trian,"results",cellfields=["uh"=>uh])
+function runs()
 
+ disp_max = -0.2
+ disp_inc = 0.01
+ nsteps = ceil(Int,abs(disp_max)/disp_inc)
+ 
+ x0 = zeros(Float64,num_free_dofs(fespace))
 
+ for step in 1:nsteps
+   disp_y = step * disp_max / nsteps
+   run!(x0,disp_y,step,nsteps)
+ end
+
+end
+
+runs()
 
 ## Define the FESolver
 #ls = LUSolver()

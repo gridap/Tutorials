@@ -15,7 +15,8 @@ const λ = 100.0
 const μ = 1.0
 
 # Identity tensor
-const I = one(TensorValue{2,Float64,4})
+#const I = one(TensorValue{2,Float64,4})
+const I = one(TensorValue{3,Float64,9})
 
 # Deformation Gradient
 F(∇u) = I + ∇u'
@@ -61,29 +62,40 @@ jac_geo(u,v,du) = inner( ∇(v), S(∇(u))*∇(du) )
 
 jac(u,v,du) = jac_mat(u,v,du) + jac_geo(u,v,du)
 
+## Model
+#model = CartesianDiscreteModel(
+#  domain=(0.0,0.1,0.0,4.0), partition=(3,40))
+#
+## Construct the FEspace
+#order = 1
+#diritags = [1,2,5,3,4,6] # TODO
+#T = VectorValue{2,Float64}
+#fespace = CLagrangianFESpace(T,model,order,diritags)
+
 # Model
-model = CartesianDiscreteModel(
-  domain=(0.0,0.1,0.0,4.0), partition=(3,40))
+model = DiscreteModelFromFile("../models/cylinder.json")
+
+# Construct the FEspace
+order = 1
+diritags = ["bottom","bottom_c","top","top_c"] # TODO
+T = VectorValue{3,Float64}
+fespace = CLagrangianFESpace(T,model,order,diritags)
+
 
 # Setup integration
 trian = Triangulation(model)
 quad = CellQuadrature(trian,order=2)
 
-# Construct the FEspace
-order = 1
-diritags = [1,2,5,3,4,6] # TODO
-T = VectorValue{2,Float64}
-fespace = CLagrangianFESpace(T,model,order,diritags)
-
 V = TestFESpace(fespace)
 
 function run!(x0,disp_y,step,nsteps)
 
-  x0[:] .+= 0.001*rand(length(x0))
+  #x0[:] .+= 0.001*rand(length(x0))
 
   g0(x) = zero(T)
-  g1(x) = VectorValue(0.0,disp_y)
-  U = TrialFESpace(fespace,[g0,g0,g0,g1,g1,g1])
+  g1(x) = VectorValue(0.0,disp_y,disp_y)
+  #U = TrialFESpace(fespace,[g0,g0,g0,g1,g1,g1]) # TODO
+  U = TrialFESpace(fespace,[g0,g0,g1,g1])
   
   # FE problem
   t_Ω = NonLinearFETerm(res,jac,trian,quad)
@@ -106,6 +118,7 @@ function run!(x0,disp_y,step,nsteps)
   
   uh = FEFunction(U,r.zero)
   
+  #TODO counter with zeros
   writevtk(trian,"results_$step",cellfields=["uh"=>uh,"sigma"=>σ(∇(uh))])
 
   x0[:] .= r.zero

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>4 Hyper-elasticity · Gridap tutorials</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link href="../../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>Gridap tutorials</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../../">Introduction</a></li><li><a class="toctext" href="../t001_poisson/">1 Poisson equation</a></li><li><a class="toctext" href="../t002_validation/">2 Code validation</a></li><li><a class="toctext" href="../t003_elasticity/">3 Linear elasticity</a></li><li class="current"><a class="toctext" href>4 Hyper-elasticity</a><ul class="internal"><li><a class="toctext" href="#Problem-statement-1">Problem statement</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li><a href>4 Hyper-elasticity</a></li></ul><a class="edit-page" href="https://github.com/gridap/Tutorials/blob/master/src/t004_hyperelasticity.jl"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>4 Hyper-elasticity</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Tutorial-4:-Hyperelasticity-1" href="#Tutorial-4:-Hyperelasticity-1">Tutorial 4: Hyperelasticity</a></h1><p><a href="https://mybinder.org/v2/gh/gridap/Tutorials/gh-pages?filepath=dev/notebooks/t004_hyperelasticity.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt/></a> <a href="https://nbviewer.jupyter.org/github/gridap/Tutorials/blob/gh-pages/dev/notebooks/t004_hyperelasticity.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt/></a></p><h2><a class="nav-anchor" id="Problem-statement-1" href="#Problem-statement-1">Problem statement</a></h2><pre><code class="language-julia">using Gridap
-using LinearAlgebra #TODO tr
-using LineSearches</code></pre><p>Material parameters</p><pre><code class="language-julia">const λ = 100.0
+using LinearAlgebra: inv, det
+using LineSearches: BackTracking</code></pre><p>Material parameters</p><pre><code class="language-julia">const λ = 100.0
 const μ = 1.0</code></pre><p>Deformation Gradient</p><pre><code class="language-julia">F(∇u) = one(∇u) + ∇u&#39;
 
 J(F) = sqrt(det(C(F)))
@@ -25,24 +25,20 @@ jac_mat(u,v,du) = inner( dE(∇(v),∇(u)), dS(∇(du),∇(u)) )
 
 jac_geo(u,v,du) = inner( ∇(v), S(∇(u))*∇(du) )
 
-jac(u,v,du) = jac_mat(u,v,du) + jac_geo(u,v,du)</code></pre><p>Model</p><pre><code class="language-julia">model = CartesianDiscreteModel(
-  domain=(0.0,1.0,0.0,1.0), partition=(20,20))
-
-#model = CartesianDiscreteModel(</code></pre><p>domain=(0.0,1.0,0.0,1.0,0.0,1.0), partition=(20,10,10))</p><pre><code class="language-julia">writevtk(model,&quot;model&quot;)</code></pre><p>Construct the FEspace</p><pre><code class="language-julia">order = 1
-diritags = [1,3,7,2,4,8] # TODO
-#diritags = [1,3,5,7,13,15,17,19,25,2,4,6,8,14,16,18,20,26] # TODO
+jac(u,v,du) = jac_mat(u,v,du) + jac_geo(u,v,du)</code></pre><p>Model</p><pre><code class="language-julia">model = CartesianDiscreteModel(domain=(0.0,1.0,0.0,1.0), partition=(20,20))</code></pre><p>Define new boundaries</p><pre><code class="language-julia">labels = FaceLabels(model)
+add_tag_from_tags!(labels,&quot;diri_0&quot;,[1,3,7])
+add_tag_from_tags!(labels,&quot;diri_1&quot;,[2,4,8])</code></pre><p>Construct the FEspace</p><pre><code class="language-julia">order = 1
+diritags = [&quot;diri_0&quot;, &quot;diri_1&quot;]
 T = VectorValue{2,Float64}
-fespace = CLagrangianFESpace(T,model,order,diritags)
+fespace = CLagrangianFESpace(T,model,labels,order,diritags)
 V = TestFESpace(fespace)</code></pre><p>Setup integration</p><pre><code class="language-julia">trian = Triangulation(model)
 quad = CellQuadrature(trian,order=2)
 
 function run(x0,disp_x,step,nsteps)
 
-  g0(x) = zero(T)
-  g1(x) = VectorValue(disp_x,0.0) #TODO
-  #g1(x) = VectorValue(disp_x,0.0,0.0) #TODO
-  U = TrialFESpace(fespace,[g0,g0,g0,g1,g1,g1]) #TODO
-  #U = TrialFESpace(fespace,[g0,g0,g0,g0,g0,g0,g0,g0,g0,g1,g1,g1,g1,g1,g1,g1,g1,g1]) #TODO
+  g0 = zero(T)
+  g1 = VectorValue(disp_x,0.0)
+  U = TrialFESpace(fespace,[g0,g1])
 
   #FE problem
   t_Ω = NonLinearFETerm(res,jac,trian,quad)

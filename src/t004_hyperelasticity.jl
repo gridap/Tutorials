@@ -6,7 +6,7 @@
 # ## Problem statement
 
 using Gridap
-using LinearAlgebra
+using LinearAlgebra #TODO tr
 using NLsolve # TODO
 using Gridap.FEOperators: NonLinearOpFromFEOp # TODO
 
@@ -86,10 +86,6 @@ function run!(x0,disp_x,step,nsteps)
   U = TrialFESpace(fespace,[g0,g0,g0,g1,g1,g1]) #TODO
   #U = TrialFESpace(fespace,[g0,g0,g0,g0,g0,g0,g0,g0,g0,g1,g1,g1,g1,g1,g1,g1,g1,g1]) #TODO
 
-  v = zeros(num_free_dofs(U))
-  uh = FEFunction(U,v)
-  writevtk(trian,"kk",cellfields=["uh"=>uh,"sigma"=>σ(∇(uh))])
-
   #FE problem
   t_Ω = NonLinearFETerm(res,jac,trian,quad)
   op = NonLinearFEOperator(V,U,t_Ω)
@@ -126,7 +122,6 @@ function runs()
  
  x0 = zeros(Float64,num_free_dofs(fespace))
 
- #@showprogress 0.5 "Computing load steps..." #TODO
  for step in 1:nsteps
    disp_x = step * disp_max / nsteps
    run!(x0,disp_x,step,nsteps)
@@ -136,5 +131,4 @@ end
 
 #Do the work!
 runs()
-
 

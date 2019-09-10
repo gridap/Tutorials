@@ -7,8 +7,7 @@
 
 using Gridap
 using LinearAlgebra #TODO tr
-using NLsolve # TODO
-using Gridap.FEOperators: NonLinearOpFromFEOp # TODO
+using LineSearches
 
 # Material parameters
 const λ = 100.0
@@ -78,7 +77,7 @@ V = TestFESpace(fespace)
 trian = Triangulation(model)
 quad = CellQuadrature(trian,order=2)
 
-function run!(x0,disp_x,step,nsteps)
+function run(x0,disp_x,step,nsteps)
 
   g0(x) = zero(T)
   g1(x) = VectorValue(disp_x,0.0) #TODO
@@ -89,28 +88,26 @@ function run!(x0,disp_x,step,nsteps)
   #FE problem
   t_Ω = NonLinearFETerm(res,jac,trian,quad)
   op = NonLinearFEOperator(V,U,t_Ω)
+
+  nls = JuliaNLSolver(
+    show_trace=true,
+    method=:newton,
+    linesearch=BackTracking())
+
+  solver = NonLinearFESolver(nls)
   
-  #TODO
-  alg_op = NonLinearOpFromFEOp(op)
-  
-  f!(r,x) = residual!(r,alg_op,x)
-  j!(j,x) = jacobian!(j,alg_op,x)
-  
-  f0 = residual(alg_op,x0)
-  j0 = jacobian(alg_op,x0)
-  
-  df = OnceDifferentiable(f!,j!,x0,f0,j0)
   
   println()
   println("+++ Solving for disp_x $disp_x in step $step of $nsteps +++")
   println()
-  r = nlsolve(df,x0,show_trace=true)
   
-  uh = FEFunction(U,r.zero)
+  uh = FEFunction(U,x0)
+
+  solve!(uh,solver,op)
   
   writevtk(trian,"results_$(lpad(step,3,'0'))",cellfields=["uh"=>uh,"sigma"=>σ(∇(uh))])
 
-  x0[:] .= r.zero
+  return free_dofs(uh)
 
 end
 
@@ -124,7 +121,7 @@ function runs()
 
  for step in 1:nsteps
    disp_x = step * disp_max / nsteps
-   run!(x0,disp_x,step,nsteps)
+   x0 = run(x0,disp_x,step,nsteps)
  end
 
 end

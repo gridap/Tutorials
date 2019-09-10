@@ -6,6 +6,7 @@ version = "0.1.0"
 [deps]
 Gridap = "56d4f2e9-7ea1-5844-9cf6-b9c51ca7ce8e"
 IJulia = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
+LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 NLsolve = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"

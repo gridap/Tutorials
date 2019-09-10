@@ -9,7 +9,6 @@ using Gridap
 using LinearAlgebra
 using NLsolve # TODO
 using Gridap.FEOperators: NonLinearOpFromFEOp # TODO
-using ProgressMeter
 
 # Material parameters
 const λ = 100.0
@@ -61,16 +60,16 @@ jac(u,v,du) = jac_mat(u,v,du) + jac_geo(u,v,du)
 model = CartesianDiscreteModel(
   domain=(0.0,1.0,0.0,1.0), partition=(20,20))
 
-model = CartesianDiscreteModel(
-  domain=(0.0,1.0,0.0,1.0,0.0,1.0), partition=(20,10,10))
+#model = CartesianDiscreteModel(
+#  domain=(0.0,1.0,0.0,1.0,0.0,1.0), partition=(20,10,10))
 
 writevtk(model,"model")
 
 # Construct the FEspace
 order = 1
 diritags = [1,3,7,2,4,8] # TODO
-diritags = [1,3,5,7,13,15,17,19,25,2,4,6,8,14,16,18,20,26] # TODO
-T = VectorValue{3,Float64}
+#diritags = [1,3,5,7,13,15,17,19,25,2,4,6,8,14,16,18,20,26] # TODO
+T = VectorValue{2,Float64}
 fespace = CLagrangianFESpace(T,model,order,diritags)
 V = TestFESpace(fespace)
 
@@ -82,9 +81,10 @@ quad = CellQuadrature(trian,order=2)
 function run!(x0,disp_x,step,nsteps)
 
   g0(x) = zero(T)
-  g1(x) = VectorValue(disp_x,0.0,0.0) #TODO
-  #U = TrialFESpace(fespace,[g0,g0,g0,g1,g1,g1]) #TODO
-  U = TrialFESpace(fespace,[g0,g0,g0,g0,g0,g0,g0,g0,g0,g1,g1,g1,g1,g1,g1,g1,g1,g1]) #TODO
+  g1(x) = VectorValue(disp_x,0.0) #TODO
+  #g1(x) = VectorValue(disp_x,0.0,0.0) #TODO
+  U = TrialFESpace(fespace,[g0,g0,g0,g1,g1,g1]) #TODO
+  #U = TrialFESpace(fespace,[g0,g0,g0,g0,g0,g0,g0,g0,g0,g1,g1,g1,g1,g1,g1,g1,g1,g1]) #TODO
 
   v = zeros(num_free_dofs(U))
   uh = FEFunction(U,v)
@@ -126,7 +126,7 @@ function runs()
  
  x0 = zeros(Float64,num_free_dofs(fespace))
 
- #@showprogress 0.5 "Computing load steps..."
+ #@showprogress 0.5 "Computing load steps..." #TODO
  for step in 1:nsteps
    disp_x = step * disp_max / nsteps
    run!(x0,disp_x,step,nsteps)

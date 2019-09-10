@@ -6,45 +6,22 @@
 # ## Problem statement
 
 using Gridap
-using LinearAlgebra
-
-# Model
-#model = CartesianDiscreteModel(domain=(0.0,0.5,0.0,10.0), partition=(4,80))
-model = CartesianDiscreteModel(domain=(0.0,1.0,0.0,1.0), partition=(20,20))
-
-# Construct the FEspace
-order = 1
-diritags = [1,2,5]
-T = VectorValue{2,Float64}
-fespace = CLagrangianFESpace(T,model,order,diritags)
-
-g(x) = zero(T)
-V = TestFESpace(fespace)
-U = TrialFESpace(fespace,g)
-
-# Setup integration
-trian = Triangulation(model)
-quad = CellQuadrature(trian,order=2)
-
-neumtag = 6
-btrian = BoundaryTriangulation(model,neumtag)
-bquad = CellQuadrature(btrian,order=2)
+using LinearAlgebra #TODO tr
+using NLsolve # TODO
+using Gridap.FEOperators: NonLinearOpFromFEOp # TODO
 
 # Material parameters
-const λ = 30.0
-const μ = 40.0
-
-# Identity tensor
-const I = one(TensorValue{2,Float64,4})
+const λ = 100.0
+const μ = 1.0
 
 # Deformation Gradient
-F(∇u) = I + ∇u'
+F(∇u) = one(∇u) + ∇u'
 
-J(F) = det(F)
+J(F) = sqrt(det(C(F)))
 
 #Green strain
 
-E(F) = 0.5*( F'*F - I )
+#E(F) = 0.5*( F'*F - one(F) )
 
 @law dE(x,∇du,∇u) = 0.5*( ∇du*F(∇u) + (∇du*F(∇u))' )
 
@@ -56,7 +33,7 @@ C(F) = (F')*F
 
 @law function S(x,∇u)
   Cinv = inv(C(F(∇u)))
-  μ*(I-Cinv) + λ*log(J(F(∇u)))*Cinv
+  μ*(one(∇u)-Cinv) + λ*log(J(F(∇u)))*Cinv
 end
 
 @law function dS(x,∇du,∇u)
@@ -79,28 +56,79 @@ jac_geo(u,v,du) = inner( ∇(v), S(∇(u))*∇(du) )
 
 jac(u,v,du) = jac_mat(u,v,du) + jac_geo(u,v,du)
 
-t_Ω = NonLinearFETerm(res,jac,trian,quad)
+# Model
+model = CartesianDiscreteModel(
+  domain=(0.0,1.0,0.0,1.0), partition=(20,20))
 
-t(x) = VectorValue(0.00,50.0)
+#model = CartesianDiscreteModel(
+#  domain=(0.0,1.0,0.0,1.0,0.0,1.0), partition=(20,10,10))
 
-source(v) = inner(v, t)
+writevtk(model,"model")
 
-t_Γ = FESource(source,btrian,bquad)
+# Construct the FEspace
+order = 1
+diritags = [1,3,7,2,4,8] # TODO
+#diritags = [1,3,5,7,13,15,17,19,25,2,4,6,8,14,16,18,20,26] # TODO
+T = VectorValue{2,Float64}
+fespace = CLagrangianFESpace(T,model,order,diritags)
+V = TestFESpace(fespace)
 
-# FE problem
-op = NonLinearFEOperator(V,U,t_Ω,t_Γ)
 
-# Define the FESolver
-ls = LUSolver()
-tol = 1.e-10
-maxiters = 20
-nls = NewtonRaphsonSolver(ls,tol,maxiters)
-solver = NonLinearFESolver(nls)
+# Setup integration
+trian = Triangulation(model)
+quad = CellQuadrature(trian,order=2)
 
-# Solve!
-free_vals = 0.00001*rand(Float64,num_free_dofs(U))
-uh = FEFunction(U,free_vals)
-solve!(uh,solver,op)
+function run!(x0,disp_x,step,nsteps)
 
-writevtk(trian,"results",nref=2,cellfields=["uh"=>uh,"sigma"=>σ(∇(uh))])
+  g0(x) = zero(T)
+  g1(x) = VectorValue(disp_x,0.0) #TODO
+  #g1(x) = VectorValue(disp_x,0.0,0.0) #TODO
+  U = TrialFESpace(fespace,[g0,g0,g0,g1,g1,g1]) #TODO
+  #U = TrialFESpace(fespace,[g0,g0,g0,g0,g0,g0,g0,g0,g0,g1,g1,g1,g1,g1,g1,g1,g1,g1]) #TODO
+
+  #FE problem
+  t_Ω = NonLinearFETerm(res,jac,trian,quad)
+  op = NonLinearFEOperator(V,U,t_Ω)
+  
+  #TODO
+  alg_op = NonLinearOpFromFEOp(op)
+  
+  f!(r,x) = residual!(r,alg_op,x)
+  j!(j,x) = jacobian!(j,alg_op,x)
+  
+  f0 = residual(alg_op,x0)
+  j0 = jacobian(alg_op,x0)
+  
+  df = OnceDifferentiable(f!,j!,x0,f0,j0)
+  
+  println()
+  println("+++ Solving for disp_x $disp_x in step $step of $nsteps +++")
+  println()
+  r = nlsolve(df,x0,show_trace=true)
+  
+  uh = FEFunction(U,r.zero)
+  
+  writevtk(trian,"results_$(lpad(step,3,'0'))",cellfields=["uh"=>uh,"sigma"=>σ(∇(uh))])
+
+  x0[:] .= r.zero
+
+end
+
+function runs()
+
+ disp_max = 0.75
+ disp_inc = 0.02
+ nsteps = ceil(Int,abs(disp_max)/disp_inc)
+ 
+ x0 = zeros(Float64,num_free_dofs(fespace))
+
+ for step in 1:nsteps
+   disp_x = step * disp_max / nsteps
+   run!(x0,disp_x,step,nsteps)
+ end
+
+end
+
+#Do the work!
+runs()
 

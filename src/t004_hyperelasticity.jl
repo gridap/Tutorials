@@ -6,8 +6,8 @@
 # ## Problem statement
 
 using Gridap
-using LinearAlgebra #TODO tr
-using LineSearches
+using LinearAlgebra: inv, det
+using LineSearches: BackTracking
 
 # Material parameters
 const λ = 100.0
@@ -56,22 +56,19 @@ jac_geo(u,v,du) = inner( ∇(v), S(∇(u))*∇(du) )
 jac(u,v,du) = jac_mat(u,v,du) + jac_geo(u,v,du)
 
 # Model
-model = CartesianDiscreteModel(
-  domain=(0.0,1.0,0.0,1.0), partition=(20,20))
+model = CartesianDiscreteModel(domain=(0.0,1.0,0.0,1.0), partition=(20,20))
 
-#model = CartesianDiscreteModel(
-#  domain=(0.0,1.0,0.0,1.0,0.0,1.0), partition=(20,10,10))
-
-writevtk(model,"model")
+# Define new boundaries
+labels = FaceLabels(model)
+add_tag_from_tags!(labels,"diri_0",[1,3,7])
+add_tag_from_tags!(labels,"diri_1",[2,4,8])
 
 # Construct the FEspace
 order = 1
-diritags = [1,3,7,2,4,8] # TODO
-#diritags = [1,3,5,7,13,15,17,19,25,2,4,6,8,14,16,18,20,26] # TODO
+diritags = ["diri_0", "diri_1"]
 T = VectorValue{2,Float64}
-fespace = CLagrangianFESpace(T,model,order,diritags)
+fespace = CLagrangianFESpace(T,model,labels,order,diritags)
 V = TestFESpace(fespace)
-
 
 # Setup integration
 trian = Triangulation(model)
@@ -79,11 +76,9 @@ quad = CellQuadrature(trian,order=2)
 
 function run(x0,disp_x,step,nsteps)
 
-  g0(x) = zero(T)
-  g1(x) = VectorValue(disp_x,0.0) #TODO
-  #g1(x) = VectorValue(disp_x,0.0,0.0) #TODO
-  U = TrialFESpace(fespace,[g0,g0,g0,g1,g1,g1]) #TODO
-  #U = TrialFESpace(fespace,[g0,g0,g0,g0,g0,g0,g0,g0,g0,g1,g1,g1,g1,g1,g1,g1,g1,g1]) #TODO
+  g0 = zero(T)
+  g1 = VectorValue(disp_x,0.0)
+  U = TrialFESpace(fespace,[g0,g1])
 
   #FE problem
   t_Ω = NonLinearFETerm(res,jac,trian,quad)

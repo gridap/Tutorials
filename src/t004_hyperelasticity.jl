@@ -74,6 +74,18 @@ V = TestFESpace(fespace)
 trian = Triangulation(model)
 quad = CellQuadrature(trian,order=2)
 
+# Setup weak form terms
+t_Ω = NonLinearFETerm(res,jac,trian,quad)
+
+# Setup non-linear solver
+nls = JuliaNLSolver(
+  show_trace=true,
+  method=:newton,
+  linesearch=BackTracking())
+
+solver = NonLinearFESolver(nls)
+
+
 function run(x0,disp_x,step,nsteps)
 
   g0 = zero(T)
@@ -81,20 +93,9 @@ function run(x0,disp_x,step,nsteps)
   U = TrialFESpace(fespace,[g0,g1])
 
   #FE problem
-  t_Ω = NonLinearFETerm(res,jac,trian,quad)
   op = NonLinearFEOperator(V,U,t_Ω)
-
-  nls = JuliaNLSolver(
-    show_trace=true,
-    method=:newton,
-    linesearch=BackTracking())
-
-  solver = NonLinearFESolver(nls)
   
-  
-  println()
-  println("+++ Solving for disp_x $disp_x in step $step of $nsteps +++")
-  println()
+  println("\n+++ Solving for disp_x $disp_x in step $step of $nsteps +++\n")
   
   uh = FEFunction(U,x0)
 
@@ -123,4 +124,10 @@ end
 
 #Do the work!
 runs()
+
+# Picture of the last load step
+# ![](../assets/t004_hyperelasticity/neo_hook_2d.png)
+#
+#src #  Exercice: extension to 3d
+#src # ![](../assets/t004_hyperelasticity/neo_hook_3d.png)
 

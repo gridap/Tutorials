@@ -32,7 +32,13 @@ diritags = [&quot;diri_0&quot;, &quot;diri_1&quot;]
 T = VectorValue{2,Float64}
 fespace = CLagrangianFESpace(T,model,labels,order,diritags)
 V = TestFESpace(fespace)</code></pre><p>Setup integration</p><pre><code class="language-julia">trian = Triangulation(model)
-quad = CellQuadrature(trian,order=2)
+quad = CellQuadrature(trian,order=2)</code></pre><p>Setup weak form terms</p><pre><code class="language-julia">t_Ω = NonLinearFETerm(res,jac,trian,quad)</code></pre><p>Setup non-linear solver</p><pre><code class="language-julia">nls = JuliaNLSolver(
+  show_trace=true,
+  method=:newton,
+  linesearch=BackTracking())
+
+solver = NonLinearFESolver(nls)
+
 
 function run(x0,disp_x,step,nsteps)
 
@@ -41,20 +47,9 @@ function run(x0,disp_x,step,nsteps)
   U = TrialFESpace(fespace,[g0,g1])
 
   #FE problem
-  t_Ω = NonLinearFETerm(res,jac,trian,quad)
   op = NonLinearFEOperator(V,U,t_Ω)
 
-  nls = JuliaNLSolver(
-    show_trace=true,
-    method=:newton,
-    linesearch=BackTracking())
-
-  solver = NonLinearFESolver(nls)
-
-
-  println()
-  println(&quot;+++ Solving for disp_x $disp_x in step $step of $nsteps +++&quot;)
-  println()
+  println(&quot;\n+++ Solving for disp_x $disp_x in step $step of $nsteps +++\n&quot;)
 
   uh = FEFunction(U,x0)
 
@@ -82,4 +77,4 @@ function runs()
 end
 
 #Do the work!
-runs()</code></pre><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p><footer><hr/><a class="previous" href="../t003_elasticity/"><span class="direction">Previous</span><span class="title">3 Linear elasticity</span></a></footer></article></body></html>
+runs()</code></pre><p>Picture of the last load step <img src="../../assets/t004_hyperelasticity/neo_hook_2d.png" alt/></p><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p><footer><hr/><a class="previous" href="../t003_elasticity/"><span class="direction">Previous</span><span class="title">3 Linear elasticity</span></a></footer></article></body></html>

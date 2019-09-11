@@ -7,16 +7,15 @@
 
 using Gridap
 using LineSearches: BackTracking
+using LinearAlgebra: norm
 import Random
 Random.seed!(1234)
 
 const p = 3
 
-norm(u) = sqrt(inner(u,u)) #TODO dot, norm
-
 @law j(x,∇u) = norm(∇u)^(p-2) * ∇u
 
-@law dj(x,∇du,∇u) = (p-2)*norm(∇u)^(p-4)*inner(∇u,∇du)*∇u + norm(∇u)^(p-2) * ∇du #TODO inner
+@law dj(x,∇du,∇u) = (p-2)*norm(∇u)^(p-4)*inner(∇u,∇du)*∇u + norm(∇u)^(p-2) * ∇du
 
 f(x) = 1.0
 

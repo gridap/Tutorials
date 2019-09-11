@@ -5,7 +5,12 @@ notebooks_dir = joinpath(@__DIR__,"..","notebooks")
 
 files = []
 
-files = ["t001_poisson","t002_validation","t003_elasticity", "t004_hyperelasticity"]
+files = [
+  "t001_poisson",
+  "t002_validation",
+  "t003_elasticity", 
+  "p_laplacian", 
+  "t004_hyperelasticity"]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)
 for file in files

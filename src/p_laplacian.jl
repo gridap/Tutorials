@@ -1,3 +1,9 @@
+# # Tutorial 4: p-Laplacian
+#
+#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/p_laplacian.ipynb)
+#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/p_laplacian.ipynb)
+# 
+# ## Problem statement
 
 using Gridap
 using LineSearches: BackTracking

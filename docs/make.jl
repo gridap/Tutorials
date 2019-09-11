@@ -18,7 +18,12 @@ notebooks_dir = joinpath(@__DIR__,"src","notebooks")
 
 repo_src = joinpath(@__DIR__,"..","src")
 
-files = ["t001_poisson","t002_validation","t003_elasticity", "t004_hyperelasticity"]
+files = [
+  "t001_poisson",
+  "t002_validation",
+  "t003_elasticity", 
+  "p_laplacian",
+  "t004_hyperelasticity"]
 
 for file in files
   file_jl = file*".jl"
@@ -31,7 +36,8 @@ pages = [
   "1 Poisson equation" => "pages/t001_poisson.md",
   "2 Code validation" => "pages/t002_validation.md",
   "3 Linear elasticity" => "pages/t003_elasticity.md",
-  "4 Hyper-elasticity" => "pages/t004_hyperelasticity.md"]
+  "4 p-Laplacian" => "pages/p_laplacian.md",
+  "5 Hyper-elasticity" => "pages/t004_hyperelasticity.md"]
 
 makedocs(
     sitename = "Gridap tutorials",

@@ -17,9 +17,9 @@ using Test
 @testset "t003_elasticity" begin include("../src/t003_elasticity.jl") end
 end # module
 
-module p_laplacian
+module t0041_p_laplacian
 using Test
-@testset "p_laplacian" begin include("../src/p_laplacian.jl") end
+@testset "t0041_p_laplacian" begin include("../src/t0041_p_laplacian.jl") end
 end # module
 
 module t004_hyperelasticity

@@ -1,7 +1,7 @@
 # # Tutorial 4: p-Laplacian
 #
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/p_laplacian.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/p_laplacian.ipynb)
+#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t0041_p_laplacian.ipynb)
+#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t0041_p_laplacian.ipynb)
 # 
 # ## Problem statement
 
@@ -66,3 +66,4 @@ cache = solve!(uh,solver,op)
 
 writevtk(trian,"results",cellfields=["uh"=>uh])
 
+# ![](../assets/t0041_p_laplacian/sol-plap.png)

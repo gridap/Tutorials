@@ -9,7 +9,7 @@ files = [
   "t001_poisson",
   "t002_validation",
   "t003_elasticity", 
-  "p_laplacian", 
+  "t0041_p_laplacian", 
   "t004_hyperelasticity"]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)

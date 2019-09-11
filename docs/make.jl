@@ -16,13 +16,16 @@ Sys.cp(assets_src,assets_dst)
 pages_dir = joinpath(@__DIR__,"src","pages")
 notebooks_dir = joinpath(@__DIR__,"src","notebooks")
 
+Sys.rm(pages_dir;recursive=true,force=true)
+Sys.rm(notebooks_dir;recursive=true,force=true)
+
 repo_src = joinpath(@__DIR__,"..","src")
 
 files = [
   "t001_poisson",
   "t002_validation",
   "t003_elasticity", 
-  "p_laplacian",
+  "t0041_p_laplacian",
   "t004_hyperelasticity"]
 
 for file in files
@@ -36,7 +39,7 @@ pages = [
   "1 Poisson equation" => "pages/t001_poisson.md",
   "2 Code validation" => "pages/t002_validation.md",
   "3 Linear elasticity" => "pages/t003_elasticity.md",
-  "4 p-Laplacian" => "pages/p_laplacian.md",
+  "4 p-Laplacian" => "pages/t0041_p_laplacian.md",
   "5 Hyper-elasticity" => "pages/t004_hyperelasticity.md"]
 
 makedocs(

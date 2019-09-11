@@ -1,5 +1,8 @@
 
 using Gridap
+using LineSearches: BackTracking
+import Random
+Random.seed!(1234)
 
 const p = 3
 
@@ -7,19 +10,53 @@ norm(u) = sqrt(inner(u,u)) #TODO dot, norm
 
 @law j(x,∇u) = norm(∇u)^(p-2) * ∇u
 
-@law dj(x,∇du,∇u) = (p-2)*norm(∇u)^(p-4)*inner(∇u,∇du)*∇u + norm(∇u)^(p-2) * ∇du
+@law dj(x,∇du,∇u) = (p-2)*norm(∇u)^(p-4)*inner(∇u,∇du)*∇u + norm(∇u)^(p-2) * ∇du #TODO inner
 
-f(x) = 0.0
+f(x) = 1.0
 
 res(u,v) = inner( ∇(v), j(∇(u)) ) - inner(v,f)
 
 jac(u,v,du) = inner(  ∇(v) , dj(∇(du),∇(u)) )
 
-h(x) = 0.0
-
-neum(v) = inner(v,h)
-
-model = CartesianDiscreteModel(domain=(0,1,0,1,0,1),partition=(10,10,10))
+model = DiscreteModelFromFile("../models/model.json");
 
 labels = FaceLabels(model)
+
+add_tag_from_tags!(labels,"diri0",["sides", "sides_c"])
+add_tag_from_tags!(labels,"diri1",
+  ["circle","circle_c", "triangle", "triangle_c", "square", "square_c"])
+
+order = 1
+diritags = ["diri0", "diri1"]
+V = CLagrangianFESpace(Float64,model,labels,order,diritags);
+
+V0 = TestFESpace(V)
+U = TrialFESpace(V,[0.0,1.0]);
+
+trian = Triangulation(model)
+quad = CellQuadrature(trian,order=2)
+
+t_Ω = NonLinearFETerm(res,jac,trian,quad)
+op = NonLinearFEOperator(V,U,t_Ω)
+
+# Setup linear solver
+ls = BackslashSolver()
+
+# Setup non-linear solver
+nls = JuliaNLSolver(
+  ls;
+  show_trace=true,
+  store_trace=true,
+  method=:newton,
+  linesearch=BackTracking())
+
+solver = NonLinearFESolver(nls)
+
+x = rand(Float64,num_free_dofs(U))
+
+uh = FEFunction(U,x)
+
+cache = solve!(uh,solver,op)
+
+writevtk(trian,"results",cellfields=["uh"=>uh])
 

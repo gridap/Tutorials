@@ -162,7 +162,7 @@ version = "0.7.4"
 
 [[Gridap]]
 deps = ["Combinatorics", "FastGaussQuadrature", "JSON", "LinearAlgebra", "NLsolve", "QuadGK", "Reexport", "SparseArrays", "StaticArrays", "TensorPolynomialBases", "TensorValues", "Test", "UnstructuredGrids", "WriteVTK"]
-git-tree-sha1 = "0530cccb918520dd882d394b965a3639694742ce"
+git-tree-sha1 = "b6876090790c12c3cbd424381c985e2552a5cfbe"
 repo-rev = "master"
 repo-url = "https://github.com/gridap/Gridap.jl.git"
 uuid = "56d4f2e9-7ea1-5844-9cf6-b9c51ca7ce8e"
@@ -270,9 +270,9 @@ version = "1.1.0"
 
 [[Parameters]]
 deps = ["OrderedCollections"]
-git-tree-sha1 = "1dfd7cd50a8eb06ef693a4c2bbe945943cd000c5"
+git-tree-sha1 = "b62b2558efb1eef1fa44e4be5ff58a515c287e38"
 uuid = "d96e819e-fc66-5662-9728-84c9c7592b0a"
-version = "0.11.0"
+version = "0.12.0"
 
 [[Parsers]]
 deps = ["Dates", "Test"]

@@ -7,13 +7,13 @@
 #
 # - How to solve a simple non-linear PDE in Gridap
 # - How to define the weak residual and its Jacobian
-# - How to setup and use a non-linear algebraic solver
-# - How to define new boundaries in a given discrete model
-# - How to interpolate a function into a FE space
+# - How to setup and use a non-linear solver
+# - How to define new boundaries from a given discrete model
+# - How to interpolate a function in a FE space
 #
 # ## Problem statement
 #
-# The goal of this tutorial is to show the solution of non-linear PDEs in Gridap. For the sake of a simple presentation, we consider the [p-Laplacian](https://en.wikipedia.org/wiki/P-Laplacian) as the model problem. However, we will consider much more complex PDEs in next tutorials. See, e.g., the tutorial on geometrically non-linear elasticity (hyper-elasticity). The PDE we want to solve here is
+# The goal of this tutorial is to solve a non-linear PDEs in Gridap. For the sake of simplicity, we consider the [p-Laplacian](https://en.wikipedia.org/wiki/P-Laplacian) as the model problem. More complex PDEs will be considered in other tutorials. See, e.g., the tutorial on geometrically non-linear elasticity (hyper-elasticity) or the one on the incompressible Navier-Stokes equation. In this tutorial, the PDE we want to solve is
 #
 # ```math
 # \left\lbrace
@@ -25,30 +25,31 @@
 # \end{aligned}
 # \right.
 # ```
-# That is, we consider the p-Laplacian PDE of degree $p>2$ with a source term $f$, with homogeneous Dirichlet and Neumann boundary conditions on $\Gamma_0$ and $\Gamma_{\rm N}$  respectively, and in-homogeneous Dirichlet conditions on $\Gamma_g$.  The domain $\Omega$ is the one depicted in the figure below. The Dirichlet boundaries $\Gamma_0$ and $\Gamma_g$ are defined as the closure of the green and blue surfaces respectively, whereas the Neumann boundary is the remaining portion of the boundary $\Gamma_{\rm N}\doteq\partial\Omega \setminus (\Gamma_0\cup\Gamma_g)$. In this example, we consider the values $p=3$, $f=1$, and $g=2$.
+# This PDE is the p-Laplacian equation of degree $p>2$, equipped with homogeneous Dirichlet and Neumann boundary conditions on $\Gamma_0$ and $\Gamma_{\rm N}$  respectively, and in-homogeneous Dirichlet conditions on $\Gamma_g$.  The domain $\Omega$ is the one depicted in the figure below. The Dirichlet boundaries $\Gamma_0$ and $\Gamma_g$ are defined as the closure of the green and blue surfaces respectively, whereas the Neumann boundary is the remaining portion of the boundary $\Gamma_{\rm N}\doteq\partial\Omega \setminus (\Gamma_0\cup\Gamma_g)$. In this example, we consider the values $p=3$, $f=1$, and $g=2$.
 #
 # ![](../assets/t0041_p_laplacian/model.png)
 #
 #
 # ## Numerical scheme
 #
-# As in previous tutorials, we discretize this PDE with conforming Lagrangian finite elements. For this formulation, the weak form of the problem reads: find $u\in U_g$ such that $[r(u)](v) = 0$ for all $v\in V_0$, where the weak residual $r: U_g \rightarrow (V_0)^\prime$ is defined as
+# As in previous tutorials, we discretize the problem with conforming Lagrangian FE spaces. For this formulation, the weak form reads: find $u\in U_g$ such that $[r(u)](v) = 0$ for all $v\in V_0$, where the weak residual $r: U_g \rightarrow (V_0)^\prime$ is defined as
 # ```math
-# [r(u)](v) \doteq \int_\Omega \nabla v \cdot \left( |\nabla u|^{p-2}\ \nabla u \right) \ {\rm d}\Omega - \int_\Omega v\ f \ {\rm d}\Omega
+# [r(u)](v) \doteq \int_\Omega \nabla v \cdot \left( |\nabla u|^{p-2}\ \nabla u \right) \ {\rm d}\Omega - \int_\Omega v\ f \ {\rm d}\Omega.
 # ```
-# and the spaces $U_g$ and $V_0$ are the set of functions in $H^1(\Omega)$ that fulfill the Dirichlet conditions of the problem and their homogeneous couterpart respectively.
+# The spaces $U_g$ is the set of functions in $H^1(\Omega)$ that fulfill the Dirichlet boundary conditions, whereas $V_0$ is composed by functions in $H^1(\Omega)$ that vanish at the Dirichlet boundary.
 #
-# In order to solve this non-linear weak equation, we consider a Newton-Raphson method. In this case, we need to perform the linearization  $[r(u+\delta u)](v)\approx [r(u)](v) + [j(u)](v,\delta u)$, where the Jacobian evaluated at $u\in U_g$ is the bilinear form defined as 
+# In order to solve this non-linear weak equation, we consider a Newton-Raphson method, which is associated with the following linearization of the problem:  $[r(u+\delta u)](v)\approx [r(u)](v) + [j(u)](v,\delta u)$. The Jacobian evaluated at $u\in U_g$ is the bilinear form defined as 
 # ```math
 # [j(u)](v,\delta u) \doteq \left.\dfrac{\rm d}{{\rm d} \varepsilon}\right|_{\varepsilon = 0} [r(u+\varepsilon \ \delta u)](v).
 # ```
 #
-# For the current example, the Jacobian is 
+# For the current example, we have
 #
 # ```math
 # [j(u)](v,\delta u) = \int_\Omega \nabla v \cdot \left( |\nabla u|^{p-2}\ \nabla \delta u \right) \ {\rm d}\Omega + (p-2) \int_\Omega \nabla v \cdot \left(  |\nabla u|^{p-4} (\nabla u \cdot \nabla \delta u) \nabla u  \right) \ {\rm d}\Omega.
 # ```
 #
+# Note that the solution of this non-linear PDE with the Newton-Raphson method, will require to discretize both the residual $r$ and the Jacobian $j$. In Gridap, this is done by following an approach similar to the one already shown in previous tutorials for discretizing the bilinear and linear forms associated with linear FE problems. The specific details are discussed in next section.
 #
 # ## Implementation
 #

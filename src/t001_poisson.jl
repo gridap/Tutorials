@@ -119,7 +119,7 @@ b_Ω(v) = inner(v, f)
 t_Ω = AffineFETerm(a,b_Ω,trian,quad);
 
 #
-# In the first argument, we pass a function that represents the integrand of the bilinear form $a(\cdot,\cdot)$, the second argument is a function that represents the integrand of part of the billinar form $b(\cdot)$ that is integrated over the domain $\Omega$. The third argument is the `Triangulation` on which we want to perform the integration (in that case the integration mesh for $\Omega$), and the last argument is the `CellQuadrature` needed to perform the integration numerically.
+# In the first argument, we pass a function that represents the integrand of the bilinear form $a(\cdot,\cdot)$, the second argument is a function that represents the integrand of part of the linear form $b(\cdot)$ that is integrated over the domain $\Omega$. The third argument is the `Triangulation` on which we want to perform the integration (in that case the integration mesh for $\Omega$), and the last argument is the `CellQuadrature` needed to perform the integration numerically.
 #
 # Note that the contribution associated with the Neumann condition is integrated over a different domain, and thus, cannot be included in the previous `AffineFETerm`. To account for it, we use a `FESource` object:
 

@@ -47,7 +47,7 @@ julia>
 Instantiate the environment. This will automatically download all required packages.
 ```
 # Type ] to enter in pkg mode
-Tutorials> instantiate
+(Tutorials) pkg> instantiate
 ```
 
 Build the notebooks
@@ -79,7 +79,7 @@ $ julia --project=.
 and instantiate the environment and build the notebooks again
 ```
 # Type ] to enter in pkg mode
-Tutorials> instantiate
+(Tutorials) pkg> instantiate
 
 # Type Ctrl+C to get back to command mode
 julia> include("deps/build.jl")

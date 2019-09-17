@@ -12,11 +12,11 @@ $ julia --project=.
 
 julia&gt; 
 </code></pre><p>Instantiate the environment. This will automatically download all required packages.</p><pre><code class="language-none"># Type ] to enter in pkg mode
-Tutorials&gt; instantiate</code></pre><p>Build the notebooks</p><pre><code class="language-none"># Type Ctrl+C to get back to command mode
+(Tutorials) pkg&gt; instantiate</code></pre><p>Build the notebooks</p><pre><code class="language-none"># Type Ctrl+C to get back to command mode
 julia&gt; include(&quot;deps/build.jl&quot;)</code></pre><p>Open the notebooks</p><pre><code class="language-none">julia&gt; using IJulia
 julia&gt; notebook(dir=pwd())</code></pre><p>This will open a browser window. Navigate to the <code>notebooks</code> folder and open the tutorial you want. Enjoy!</p><h2><a class="nav-anchor" id="How-to-pull-the-latest-version-of-the-tutorials-1" href="#How-to-pull-the-latest-version-of-the-tutorials-1">How to pull the latest version of the tutorials</a></h2><p>If you have cloned the repository a while ago, you can update to the newest version with these steps.</p><p>Go to the Tutorials repo folder and git pull</p><pre><code class="language-none">$ git pull</code></pre><p>Open Julia REPL</p><pre><code class="language-none">$ julia --project=.
 </code></pre><p>and instantiate the environment and build the notebooks again</p><pre><code class="language-none"># Type ] to enter in pkg mode
-Tutorials&gt; instantiate
+(Tutorials) pkg&gt; instantiate
 
 # Type Ctrl+C to get back to command mode
 julia&gt; include(&quot;deps/build.jl&quot;)</code></pre><p>Done!</p><footer><hr/><a class="next" href="pages/t001_poisson/"><span class="direction">Next</span><span class="title">1 Poisson equation</span></a></footer></article></body></html>

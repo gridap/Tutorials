@@ -1,5 +1,3 @@
-module StokesLidDrivenCavity
-
 # Driver that computes the lid-driven cavity benchmark at low Reynolds numbers
 # when using a mixed FE Q(k)/Pdisc(k-1).
 
@@ -72,4 +70,3 @@ uh = solve(op)
 # and write the results
 writevtk(trian,"../tmp/stokesresults",cellfields=["uh"=>uh[1],"ph"=>uh[2]])
 ##
-end # module

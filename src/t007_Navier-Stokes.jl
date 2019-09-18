@@ -40,6 +40,13 @@ Re = 1.0
 @law conv(x,u,∇u) = Re*adjoint(∇u)*u
 @law dconv(x,du,∇du,u,∇u) = conv(x,u,∇du)+conv(x,du,∇u)
 
+# @santiagobadia : When the driver will work, I will do what we have said,
+# putting this in FieldValues module
+# (*)(u::VectorValue,::typeof(gradient)) = (∇du) -> ugrad(u,∇du)
+# function ugrad(u::VectorValue,∇du::VectorValue)
+# VectorValue(   (u.array)' *  ∇du.array   )
+# end
+
 # Terms in the volume
 a(v,u) = inner(∇(v[1]),∇(u[1])) - inner(div(v[1]),u[2]) + inner(v[2],div(u[1]))
 c(v,u) = inner(v,conv(u,∇(u)))
@@ -55,20 +62,10 @@ nls = JuliaNLSolver(
   linesearch=BackTracking())
 
 solver = NonLinearFESolver(nls)
-# @santiagobadia: We should be able to create a zero FEFunction easily
-x0 = zeros(Float64,num_free_dofs(fespace1))
-x1 = zeros(Float64,num_free_dofs(fespace2))
-# How should we deal with multi-field FE spaces?
-# Create the functions for every field and then the vector with them?
-# I guess so
-uh1 = FEFunction(U1,x0)
-uh2 = FEFunction(U2,x1)
-uh = [uh1,uh2]
-# @santiagobadia : Here there is an error that deserves some investigation
-solve!(uh,solver,op)
+uh, ph = solve(solver,op)
 # Now we compute the resulting FE problem
 
 # and write the results
-writevtk(trian,"../tmp/results",cellfields=["uh"=>uh[1],"ph"=>uh[2]])
+writevtk(trian,"../tmp/results",cellfields=["uh"=>uh,"ph"=>ph])
 ##
 end # module

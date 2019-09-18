@@ -38,11 +38,11 @@ V = [V1, V2]
 
 
 
-ν = 0.1
+ν = 1.0
 # @santiagobadia : It produces an error that should be fixed
 # u1(x) = ν*VectorValue(1.0,0.0)
 # By the way if we put (10,0.0) it does not work either
-u1(x) = VectorValue(10.0, 0.0)
+u1(x) = VectorValue(1.0, 0.0)
 u2(x) = 1.0-x[1]
 U1 = TrialFESpace(fespace1,u1)
 U2 = TrialFESpace(fespace2)
@@ -55,23 +55,26 @@ quad = CellQuadrature(trian,order=2)
 # @santiagobadia : If I eliminate u in the interface it does not work.
 # It has full sense to define a law that only depens on the space corordinates
 
-kinv_1 = TensorValue(ν,0.0,0.0,1.0)
+kinv_1 = TensorValue(1.0,0.0,0.0,1.0)
 kinv_2 = TensorValue(100.0,90.0,90.0,100.0)
 
-# @santiagobadia : How can I define a non-constant physical property that does not
-# depend on the field solution of the PDE?
-# function Kinv(x)
+# @law function σ(x,u)
 #   if ((abs(x[1]-0.5) <= 0.25) && (abs(x[2]-0.5) <= 0.25))
-#     return kinv_1
+#     return kinv_1*u
 #   else
-#     return kinv_2
+#     return kinv_2*u
 #   end
 # end
-# Since it does not work...
-Kinv = kinv_1
+# @law σ(x,u) = kinv_1*u
 
+# @santiagobadia : If I use this law I get an error
+@law σ(x,u) = kinv_1*u
+# a(v,u) =
+#   inner(v[1],σ(u[1])) - inner(div(v[1]),u[2]) + inner(v[2],div(u[1]))
+
+# So, I am using now
 a(v,u) =
-  inner(v[1],Kinv*u[1]) - inner(div(v[1]),u[2]) + inner(v[2],div(u[1]))
+   inner(v[1],kinv_1*(u[1])) - inner(div(v[1]),u[2]) + inner(v[2],div(u[1]))
 # b(v) = inner(v[1],b1) + inner(v[2],b2)
 # t_Ω = AffineFETerm(a,b,trian,quad)
 t_Ω = LinearFETerm(a,trian,quad)
@@ -110,7 +113,7 @@ e1 = u1 - uh[1]
 
 e2 = u2 - uh[2]
 
-uh[2].free_dofs
+uh[1].free_dofs
 
 # Define norms to measure the error
 l2(u) = inner(u,u)

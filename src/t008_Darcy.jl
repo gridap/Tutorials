@@ -55,26 +55,26 @@ quad = CellQuadrature(trian,order=2)
 # @santiagobadia : If I eliminate u in the interface it does not work.
 # It has full sense to define a law that only depens on the space corordinates
 
-kinv_1 = TensorValue(1.0,0.0,0.0,1.0)
-kinv_2 = TensorValue(100.0,90.0,90.0,100.0)
+const kinv_1 = TensorValue(1.0,0.0,0.0,1.0)
+const kinv_2 = TensorValue(100.0,90.0,90.0,100.0)
 
-# @law function σ(x,u)
-#   if ((abs(x[1]-0.5) <= 0.25) && (abs(x[2]-0.5) <= 0.25))
-#     return kinv_1*u
-#   else
-#     return kinv_2*u
-#   end
-# end
-# @law σ(x,u) = kinv_1*u
+#@law function σ(x,u)
+#  if ((abs(x[1]-0.5) <= 0.25) && (abs(x[2]-0.5) <= 0.25))
+#    return kinv_1*u
+#  else
+#    return kinv_2*u
+#  end
+#end
+@law σ(x,u) = kinv_1*u
 
 # @santiagobadia : If I use this law I get an error
-@law σ(x,u) = kinv_1*u
+#@law σ(x,u) = kinv_1*u
 # a(v,u) =
 #   inner(v[1],σ(u[1])) - inner(div(v[1]),u[2]) + inner(v[2],div(u[1]))
 
 # So, I am using now
 a(v,u) =
-   inner(v[1],kinv_1*(u[1])) - inner(div(v[1]),u[2]) + inner(v[2],div(u[1]))
+   inner(v[1],σ(u[1])) - inner(div(v[1]),u[2]) + inner(v[2],div(u[1]))
 # b(v) = inner(v[1],b1) + inner(v[2],b2)
 # t_Ω = AffineFETerm(a,b,trian,quad)
 t_Ω = LinearFETerm(a,trian,quad)
@@ -130,6 +130,6 @@ e2l2 = sqrt(sum( integrate(l2(e2),trian,quad) ))
 
 @test e2l2 < 1.e-8
 
-writevtk(trian,"../tmp/darcyresults",cellfields=["uh"=>uh[1],"ph"=>uh[2]])
+writevtk(trian,"darcyresults",cellfields=["uh"=>uh[1],"ph"=>uh[2]])
 ##
 end # module

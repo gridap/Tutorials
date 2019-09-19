@@ -34,13 +34,15 @@ trian = Triangulation(model)
 quad = CellQuadrature(trian,order=(order-1)*2)
 
 # Reynolds number
-Re = 1.0
+const Re = 1.0
 # santiagobadia: This is the way that I see I can implement the convection term with the
 # current machinery
 @law conv(x,u,∇u) = Re*adjoint(∇u)*u
+@law conv2(x,∇u,u) = conv(x,u,∇u)
 @law dconv(x,du,∇du,u,∇u) = conv(x,u,∇du)+conv(x,du,∇u)
 
 # @santiagobadia : When the driver will work, I will do what we have said,
+# @fverdugo: I guess that creating this closure at each integration point will be very expensive
 # putting this in FieldValues module
 # (*)(u::VectorValue,::typeof(gradient)) = (∇du) -> ugrad(u,∇du)
 # function ugrad(u::VectorValue,∇du::VectorValue)
@@ -50,16 +52,20 @@ Re = 1.0
 # Terms in the volume
 a(v,u) = inner(∇(v[1]),∇(u[1])) - inner(div(v[1]),u[2]) + inner(v[2],div(u[1]))
 c(v,u) = inner(v,conv(u,∇(u)))
-dc(v,du,u) = inner(v,dconv(du,∇(du),u,∇(u)))
-res(v,u) = a(v,u) + c(v,u)
-jac(v,du,u) = a(v,du) + dc(v,du,u)
+#dc(v,du,u) = inner(v,dconv(du,∇(du),u,∇(u)))
+dc(v,du,u) = inner(v, conv(du,∇(u))) + inner(v, conv2(∇(du),u))  #inner(v, conv(u,∇(du))) # + inner(v, conv(du,∇(u)))
+res(u,v) = a(v,u) + c(v[1],u[1])
+jac(u,v,du) = a(v,du) + dc(v[1],du[1],u[1])
 t_Ω = NonLinearFETerm(res,jac,trian,quad)
-op = NonLinearFEOperator(V,U,t_Ω)
+assem = SparseMatrixAssembler(V,U)
+op = NonLinearFEOperator(V,U,assem,t_Ω)
 
 nls = JuliaNLSolver(
   show_trace=true,
   method=:newton,
   linesearch=BackTracking())
+
+@show typeof(TrialFESpace(op))
 
 solver = NonLinearFESolver(nls)
 uh, ph = solve(solver,op)
@@ -85,6 +91,6 @@ end
 # Now we compute the resulting FE problem
 
 # and write the results
-writevtk(trian,"../tmp/results",cellfields=["uh"=>uh,"ph"=>ph])
+writevtk(trian,"ins-results",cellfields=["uh"=>uh,"ph"=>ph])
 ##
 end # module

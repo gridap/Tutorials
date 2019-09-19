@@ -34,15 +34,13 @@ trian = Triangulation(model)
 quad = CellQuadrature(trian,order=(order-1)*2)
 
 # Reynolds number
-const Re = 1.0
+Re = 1.0
 # santiagobadia: This is the way that I see I can implement the convection term with the
 # current machinery
 @law conv(x,u,∇u) = Re*adjoint(∇u)*u
-@law conv2(x,∇u,u) = conv(x,u,∇u)
 @law dconv(x,du,∇du,u,∇u) = conv(x,u,∇du)+conv(x,du,∇u)
 
 # @santiagobadia : When the driver will work, I will do what we have said,
-# @fverdugo: I guess that creating this closure at each integration point will be very expensive
 # putting this in FieldValues module
 # (*)(u::VectorValue,::typeof(gradient)) = (∇du) -> ugrad(u,∇du)
 # function ugrad(u::VectorValue,∇du::VectorValue)
@@ -52,45 +50,49 @@ const Re = 1.0
 # Terms in the volume
 a(v,u) = inner(∇(v[1]),∇(u[1])) - inner(div(v[1]),u[2]) + inner(v[2],div(u[1]))
 c(v,u) = inner(v,conv(u,∇(u)))
-#dc(v,du,u) = inner(v,dconv(du,∇(du),u,∇(u)))
-dc(v,du,u) = inner(v, conv(du,∇(u))) + inner(v, conv2(∇(du),u))  #inner(v, conv(u,∇(du))) # + inner(v, conv(du,∇(u)))
-res(u,v) = a(v,u) + c(v[1],u[1])
-jac(u,v,du) = a(v,du) + dc(v[1],du[1],u[1])
+dc(v,du,u) = inner(v,dconv(du,∇(du),u,∇(u)))
+res(v,u) = a(v,u) + c(v,u)
+jac(v,du,u) = a(v,du) + dc(v,du,u)
 t_Ω = NonLinearFETerm(res,jac,trian,quad)
-assem = SparseMatrixAssembler(V,U)
-op = NonLinearFEOperator(V,U,assem,t_Ω)
+op = NonLinearFEOperator(V,U,t_Ω)
 
 nls = JuliaNLSolver(
   show_trace=true,
   method=:newton,
   linesearch=BackTracking())
 
-@show typeof(TrialFESpace(op))
-
 solver = NonLinearFESolver(nls)
 uh, ph = solve(solver,op)
 
-Nt = 10
-Tf = 1.0
-δt = 1.0/Nt
-v0 = zero(fespace1)
-p0 = zero(fespace2)
-u0 = [v0,p0]
-for i in 1:10
-  b = inner(v,u0)
-  res_t(v,u) = δt*res(v,u) + inner(v,u) - inner(v,u0)
-  jac_t(v,du,u) = δt*jac(v,du,u) + inner(v,du)
-  t_Ω = NonLinearFETerm(res,jac,trian,quad)
-  op = NonLinearFEOperator(V,U,t_Ω)
-  uh, ph = solve(solver,op)
-  u0 = uh
-end
+# function At(δt,v,u,x0)
+#   u0, p0 = x0
+#   a(v,u) = inner(∇(v[1]),∇(u[1])) - inner(div(v[1]),u[2]) + inner(v[2],div(u[1]))
+#   c(v,u) = inner(v,conv(u,∇(u)))
+#   dc(v,du,u) = inner(v,dconv(du,∇(du),u,∇(u)))
+#   res(v,u) = a(v,u) + c(v,u)
+#   rest(v,u) = δt*res(v,u) + inner(v,u) - inner(v,u0)
+#   jac(v,du,u) = a(v,du) + dc(v,du,u)
+#   jact(v,du,u) = δt*jac(v,du,u) + inner(v,u0)
+#   return rest, jact
+# end
+#
+# Nt = 10
+# Tf = 1.0
+# δt = 1.0/Nt
+# u0 = zero([U1,U2])
+# for i in 1:10
+#   rest, jact = At(δt,v,u,u0)
+#   t_Ω = NonLinearFETerm(rest,jact,trian,quad)
+#   op = NonLinearFEOperator(V,U,t_Ω)
+#   uh, ph = solve(solver,op)
+#   u0 = uh
+# end
 
 
 
 # Now we compute the resulting FE problem
 
 # and write the results
-writevtk(trian,"ins-results",cellfields=["uh"=>uh,"ph"=>ph])
+writevtk(trian,"../tmp/results",cellfields=["uh"=>uh,"ph"=>ph])
 ##
 end # module

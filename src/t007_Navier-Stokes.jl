@@ -63,6 +63,25 @@ nls = JuliaNLSolver(
 
 solver = NonLinearFESolver(nls)
 uh, ph = solve(solver,op)
+
+Nt = 10
+Tf = 1.0
+δt = 1.0/Nt
+v0 = zero(fespace1)
+p0 = zero(fespace2)
+u0 = [v0,p0]
+for i in 1:10
+  b = inner(v,u0)
+  res_t(v,u) = δt*res(v,u) + inner(v,u) - inner(v,u0)
+  jac_t(v,du,u) = δt*jac(v,du,u) + inner(v,du)
+  t_Ω = NonLinearFETerm(res,jac,trian,quad)
+  op = NonLinearFEOperator(V,U,t_Ω)
+  uh, ph = solve(solver,op)
+  u0 = uh
+end
+
+
+
 # Now we compute the resulting FE problem
 
 # and write the results

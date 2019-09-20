@@ -1,3 +1,4 @@
+module TransientHeatEq
 
 using Gridap
 
@@ -37,13 +38,13 @@ function h(t)
   end
 end
 
-function bt(t,u0)
+function bt(dt,t,u0)
   b_Ω(v) = (1/dt)*inner(v,u0)
   ht = h(t)
   b_Γ(v) = inner(v, (x)->ht)
   t_Ω = FESource(b_Ω,trian,quad)
   t_Γ = FESource(b_Γ,btrian,bquad)
-  NonLinearFEOperator(V0,Ug,t_Ω,t_Γ) # Un-intuitive
+  NonLinearFEOperator(V0,U0,t_Ω,t_Γ) # Un-intuitive
 end
 
 function run(Tf,Nt)
@@ -73,11 +74,11 @@ function run(Tf,Nt)
 
     # Assemble rhs
     u0 = FEFunction(U0,x0)
-    fop = bt(t,u0)
+    fop = bt(dt,t,u0)
     residual!(f,fop,u0) # Un-intuitive
 
     # Forward substitution
-    solve!(x1,ns,K,f)
+    solve!(x1,ns,f)
 
     # Write time step
     u1 = FEFunction(U0,x1)
@@ -99,4 +100,4 @@ Nt = 60
 # Do the work!
 run(Tf,Nt)
 
-
+end # module

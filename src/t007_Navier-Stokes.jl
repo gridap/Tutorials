@@ -29,11 +29,7 @@ fespace1 = FESpace(
   order=order,
   diritags=diritags)
 
-#reffe = PDiscRefFE(Float64,D,order-1)
-#_fespace2 = DiscFESpace(reffe,model)
-#fespace2 = ConstrainedFESpace(_fespace2,fixeddofs)
-
-_fespace2 = FESpace(
+fespace2 = FESpace(
   reffe=:PLagrangian,
   conformity=:L2,
   valuetype=Float64,
@@ -41,16 +37,13 @@ _fespace2 = FESpace(
   order=order-1,
   constraint = :zeromean)
 
-fixeddofs = [1,]
-#fespace2 = ConstrainedFESpace(_fespace2,fixeddofs)
-fespace2 = _fespace2
+uD0(x) = VectorValue(0.0,0.0)
+uD1(x) = VectorValue(1.0,0.0)
 
 V = TestFESpace(fespace1)
 Q = TestFESpace(fespace2)
 Y = [V, Q]
 
-uD0(x) = VectorValue(0.0,0.0)
-uD1(x) = VectorValue(1.0,0.0)
 U = TrialFESpace(fespace1,[uD0,uD1])
 P = TrialFESpace(fespace2)
 X = [U, P]
@@ -62,7 +55,6 @@ const Re = 10.0
 @law conv(x,u,∇u) = Re*(∇u')*u
 @law dconv(x,du,∇du,u,∇u) = conv(x,u,∇du)+conv(x,du,∇u)
 
-# Terms in the volume
 function a(y,x)
   u, p = x
   v, q = y
@@ -88,23 +80,6 @@ end
 t_Ω = NonLinearFETerm(res,jac,trian,quad)
 op = NonLinearFEOperator(Y,X,t_Ω)
 
-#using Gridap.FEOperators: NonLinearOpFromFEOp
-#algop = NonLinearOpFromFEOp(op)
-#
-#X = MultiFESpace(X)
-#u = rand(num_free_dofs(X))
-#du = rand(num_free_dofs(X))
-#d = 0.000001
-#
-#e = residual(algop,u+d*du) - ( residual(algop,u) + d*jacobian(algop,u)*du )
-#
-#@show maximum(abs.(e))
-#
-#kk
-
-
-
-
 nls = JuliaNLSolver(
   show_trace=true,
   method=:newton,
@@ -112,6 +87,8 @@ nls = JuliaNLSolver(
 
 solver = NonLinearFESolver(nls)
 uh, ph = solve(solver,op)
+
+writevtk(trian,"ins-results",cellfields=["uh"=>uh,"ph"=>ph])
 
 # function At(δt,v,u,x0)
 #   u0, p0 = x0
@@ -139,9 +116,4 @@ uh, ph = solve(solver,op)
 
 
 
-# Now we compute the resulting FE problem
-
-# and write the results
-writevtk(trian,"ins-results",cellfields=["uh"=>uh,"ph"=>ph])
-##
 end # module

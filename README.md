@@ -2,7 +2,7 @@
 
 *Start solving PDEs in Julia*
 
-[![Build Status](https://travis-ci.com/gridap/Gridap.jl.svg?branch=master)](https://travis-ci.com/gridap/Tutorials)
+[![Build Status](https://travis-ci.com/gridap/Tutorials.svg?branch=master)](https://travis-ci.com/gridap/Tutorials)
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://gridap.github.io/Tutorials/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://gridap.github.io/Tutorials/dev)
 

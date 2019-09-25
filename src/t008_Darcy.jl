@@ -74,8 +74,8 @@ e2 = p - ph
 l2(u) = inner(u,u)
 hdiv(u) = inner(div(u),div(u)) + l2(u)
 
-writevtk(trian,"/home/santiago/github-repos/Gridap/tmp/darcyresults",
-         cellfields=["uh"=>uh,"ph"=>ph])
+# writevtk(trian,"/home/santiago/github-repos/Gridap/tmp/darcyresults",
+         # cellfields=["uh"=>uh,"ph"=>ph])
 
 ##
 end # module

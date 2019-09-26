@@ -141,7 +141,7 @@ jac(u,v,du) = inner(  ∇(v) , dflux(∇(du),∇(u)) )
 #
 # With these functions, we build the `NonLinearFETerm` as follows:
 
-quad = CellQuadrature(trian,order=2)
+quad = CellQuadrature(trian,degree=2)
 t_Ω = NonLinearFETerm(res,jac,trian,quad)
 
 # Note that we pass in the first and second arguments the functions that represent the integrands of the residual and Jacobian respectively. The other two arguments, are the triangulation and quadrature used to perform the integrals numerically on the corresponding domain (in this case the volume $\Omega$).
@@ -157,17 +157,17 @@ op = NonLinearFEOperator(V,Ug,t_Ω)
 #
 # We have already built the non-linear FE problem. Now, the remaining step is to solve it. In Gridap, non-linear (and also linear) FE problems can be solved with instances of the type `NonLinearFESolver`. The type `NonLinearFESolver` is a concrete implementation of the abstract type `FESolver` particularly designed for non-linear problems (in contrast to the concrete type `LinearFESolver` which is for the linear case). 
 #
-# A `NonLinearFESolver` is constructed from an algebraic non-linear solver (e.g., a Newton-Raphson method, a trust-region solver, etc.). In Gridap non-linear algebraic solvers are represented by types inheriting from the abstract type `NonLinearSolver`. In this tutorial, we consider a concrete implementation of `NonLinearSolver` called `JuliaNLSolver`, which uses the `nlsove` function of the official Julia package [NLsolve](https://github.com/JuliaNLSolvers/NLsolve.jl) to solve the underlying non-linear algebraic problem.
+# A `NonLinearFESolver` is constructed from an algebraic non-linear solver (e.g., a Newton-Raphson method, a trust-region solver, etc.). In Gridap non-linear algebraic solvers are represented by types inheriting from the abstract type `NonLinearSolver`. In this tutorial, we consider a concrete implementation of `NonLinearSolver` called `NLSolver`, which uses the `nlsove` function of the official Julia package [NLsolve](https://github.com/JuliaNLSolvers/NLsolve.jl) to solve the underlying non-linear algebraic problem.
 #
-# We construct an instance of `JuliaNLSolver` as follows:
+# We construct an instance of `NLSolver` as follows:
 
 using LineSearches: BackTracking
 
 ls = BackslashSolver()
-nls = JuliaNLSolver(
+nls = NLSolver(
   ls; show_trace=true, method=:newton, linesearch=BackTracking())
 
-# The `JuliaNLSolver` constructor takes a single positional argument and several keyword arguments. In the positional argument, we pass the linear solver we want to use at each non-linear iteration (which will be used only if the chosen non-linear solution method requires to solve linear systems of algebraic equations at each iterations). In this case, we use a `BackslashSolver` which is a wrapper of the Julia built-in "backslash" operator. On the other hand, the valid key word arguments of the `JuliaNLSolver` constructor are the same as the ones of function `nlsolve` of the [NLsolve](https://github.com/JuliaNLSolvers/NLsolve.jl) package (see the documentation of this package for more information). In this example, we are selecting a Newton-Raphson method with a back-traking line-search.
+# The `NLSolver` constructor takes a single positional argument and several keyword arguments. In the positional argument, we pass the linear solver we want to use at each non-linear iteration (which will be used only if the chosen non-linear solution method requires to solve linear systems of algebraic equations at each iterations). In this case, we use a `BackslashSolver` which is a wrapper of the Julia built-in "backslash" operator. On the other hand, the valid key word arguments of the `NLSolver` constructor are the same as the ones of function `nlsolve` of the [NLsolve](https://github.com/JuliaNLSolvers/NLsolve.jl) package (see the documentation of this package for more information). In this example, we are selecting a Newton-Raphson method with a back-traking line-search.
 
 # Now, we are in place to build the `NonLinearFESolver` object:
 

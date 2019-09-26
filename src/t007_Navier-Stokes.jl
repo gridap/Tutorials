@@ -49,7 +49,7 @@ P = TrialFESpace(fespace2)
 X = [U, P]
 
 trian = Triangulation(model)
-quad = CellQuadrature(trian,order=(order-1)*2)
+quad = CellQuadrature(trian,degree=(order-1)*2)
 
 const Re = 10.0
 @law conv(x,u,∇u) = Re*(∇u')*u
@@ -80,7 +80,7 @@ end
 t_Ω = NonLinearFETerm(res,jac,trian,quad)
 op = NonLinearFEOperator(Y,X,t_Ω)
 
-nls = JuliaNLSolver(
+nls = NLSolver(
   show_trace=true,
   method=:newton,
   linesearch=BackTracking())

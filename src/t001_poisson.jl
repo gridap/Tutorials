@@ -93,7 +93,7 @@ Ug = TrialFESpace(V,g);
 # Once we have build the interpolation spaces, the next step is to set up the machinery to perform the integrals in the weak form numerically. Here, we need to compute integrals on the interior of the domain $\Omega$ and on the Neumann boundary $\Gamma_{\rm N}$. In both cases, we need two main ingredients. We need to define an integration mesh (i.e. a set of cells that form a partition of the integration domain), plus a Gauss-like quadrature in each of the cells. In Gridap, integration meshes are represented by types inheriting from the abstract type `Triangulation`. For integrating on the domain $\Omega$, we build the following integration mesh and quadrature:
 
 trian = Triangulation(model)
-quad = CellQuadrature(trian,order=2);
+quad = CellQuadrature(trian,degree=2);
 
 # Note that in this simple case, we are using the cells of the model as integration cells, but in more complex formulations (e.g., embedded finite element computations) the integration cells can be different from the cells on the background FE mesh. Note also, that we are constructing a quadrature of order 2 in the cells of the integration mesh. This is enough for integrating all terms of the weak form exactly for an interpolation of order 1.
 
@@ -102,7 +102,7 @@ quad = CellQuadrature(trian,order=2);
 
 neumanntags = ["circle", "triangle", "square"]
 btrian = BoundaryTriangulation(model,neumanntags)
-bquad = CellQuadrature(btrian,order=2);
+bquad = CellQuadrature(btrian,degree=2);
 
 #  Note that we have also created a quadrature of order 2 on top of the integration mesh for the Neumann boundary.
 #
@@ -182,12 +182,12 @@ Ug = TrialFESpace(V,g)
 
 #Setup numerical integration (volume)
 trian = Triangulation(model)
-quad = CellQuadrature(trian,order=2)
+quad = CellQuadrature(trian,degree=2)
 
 #Setup numerical integration (boundary)
 neumanntags = ["circle", "triangle", "square"]
 btrian = BoundaryTriangulation(model,neumanntags)
-bquad = CellQuadrature(btrian,order=2)
+bquad = CellQuadrature(btrian,degree=2)
 
 #Setup FE terms (volume)
 f(x) = 1.0

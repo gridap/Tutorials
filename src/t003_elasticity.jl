@@ -130,7 +130,7 @@ methods(σ)
 # The remaining steps for solving the FE problem are essentially the same as in previous tutorials. We build the integration mesh and quadrature for integrating in the volume
 
 trian = Triangulation(model)
-quad = CellQuadrature(trian,order=2);
+quad = CellQuadrature(trian,degree=2);
 
 # We define the FE problem
 

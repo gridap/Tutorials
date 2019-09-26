@@ -7,11 +7,11 @@ labels = FaceLabels(model)
 add_tag_from_tags!(labels,"diri0",["sides", "sides_c"])
 
 trian = Triangulation(model)
-quad = CellQuadrature(trian,order=2)
+quad = CellQuadrature(trian,degree=2)
 
 neumanntags = ["circle", "triangle", "square"]
 btrian = BoundaryTriangulation(model,neumanntags)
-bquad = CellQuadrature(btrian,order=2)
+bquad = CellQuadrature(btrian,degree=2)
 
 V = FESpace(
   reffe=:Lagrangian,

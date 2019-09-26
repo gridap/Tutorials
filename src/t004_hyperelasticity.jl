@@ -72,13 +72,13 @@ V = TestFESpace(fespace)
 
 # Setup integration
 trian = Triangulation(model)
-quad = CellQuadrature(trian,order=2)
+quad = CellQuadrature(trian,degree=2)
 
 # Setup weak form terms
 t_Ω = NonLinearFETerm(res,jac,trian,quad)
 
 # Setup non-linear solver
-nls = JuliaNLSolver(
+nls = NLSolver(
   show_trace=true,
   method=:newton,
   linesearch=BackTracking())

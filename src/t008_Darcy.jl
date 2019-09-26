@@ -30,7 +30,7 @@ V_g = TrialFESpace(V,u)
 X = [V_g, Q]
 
 trian = Triangulation(model)
-quad = CellQuadrature(trian,order=2)
+quad = CellQuadrature(trian,degree=2)
 
 const ν = 100.0
 const kinv_1 = TensorValue(1.0,0.0,0.0,1.0)
@@ -54,7 +54,7 @@ t_Ω = LinearFETerm(a,trian,quad)
 
 neumanntags = [7,8]
 btrian = BoundaryTriangulation(model,neumanntags)
-bquad = CellQuadrature(btrian,order=order*2)
+bquad = CellQuadrature(btrian,degree=order*2)
 nb = NormalVector(btrian)
 
 function b_Γ(y)

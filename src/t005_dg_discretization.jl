@@ -103,13 +103,13 @@ V = TestFESpace(fespace)
 U = TrialFESpace(fespace)
 
 trian = Triangulation(model)
-quad = CellQuadrature(trian,order=2*order)
+quad = CellQuadrature(trian,degree=2*order)
 
 btrian = BoundaryTriangulation(model)
-bquad = CellQuadrature(btrian,order=2*order)
+bquad = CellQuadrature(btrian,degree=2*order)
 
 strian = SkeletonTriangulation(model)
-squad = CellQuadrature(strian,order=2*order)
+squad = CellQuadrature(strian,degree=2*order)
 
 # ![](../assets/t006_poisson_dg/skeleton_trian.png)
 
@@ -187,9 +187,9 @@ function run(n,order)
   strian = SkeletonTriangulation(model)
 
   #Setup quadratures
-  quad = CellQuadrature(trian,order=2*order)
-  squad = CellQuadrature(strian,order=2*order)
-  bquad = CellQuadrature(btrian,order=2*order)
+  quad = CellQuadrature(trian,degree=2*order)
+  squad = CellQuadrature(strian,degree=2*order)
+  bquad = CellQuadrature(btrian,degree=2*order)
 
   #Setup normal vectors
   nb = NormalVector(btrian)

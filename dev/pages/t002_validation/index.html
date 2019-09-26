@@ -18,7 +18,7 @@ V0 = TestFESpace(V)
 U = TrialFESpace(V,u)
 
 trian = Triangulation(model)
-quad = CellQuadrature(trian,order=2)
+quad = CellQuadrature(trian,degree=2)
 
 a(v,u) = inner(∇(v), ∇(u))
 b(v) = inner(v,f)
@@ -46,7 +46,7 @@ b(v) = inner(v,f)</code></pre><p>In order to perform the convergence test, we wr
   U = TrialFESpace(V,u)
 
   trian = Triangulation(model)
-  quad = CellQuadrature(trian,order=order+2)
+  quad = CellQuadrature(trian,degree=order+2)
 
   t_Ω = AffineFETerm(a,b,trian,quad)
   op = LinearFEOperator(V0,U,t_Ω)

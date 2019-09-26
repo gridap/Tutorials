@@ -32,7 +32,7 @@ diritags = [&quot;diri_0&quot;, &quot;diri_1&quot;]
 T = VectorValue{2,Float64}
 fespace = CLagrangianFESpace(T,model,labels,order,diritags)
 V = TestFESpace(fespace)</code></pre><p>Setup integration</p><pre><code class="language-julia">trian = Triangulation(model)
-quad = CellQuadrature(trian,order=2)</code></pre><p>Setup weak form terms</p><pre><code class="language-julia">t_Ω = NonLinearFETerm(res,jac,trian,quad)</code></pre><p>Setup non-linear solver</p><pre><code class="language-julia">nls = JuliaNLSolver(
+quad = CellQuadrature(trian,degree=2)</code></pre><p>Setup weak form terms</p><pre><code class="language-julia">t_Ω = NonLinearFETerm(res,jac,trian,quad)</code></pre><p>Setup non-linear solver</p><pre><code class="language-julia">nls = NLSolver(
   show_trace=true,
   method=:newton,
   linesearch=BackTracking())

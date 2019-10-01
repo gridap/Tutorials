@@ -3,8 +3,7 @@
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t002_validation.ipynb)
 #md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t002_validation.ipynb)
 #
-# ## Learning outcomes
-#
+# In this tutorial, we will learn
 # - How to implement the method of manufactured solutions
 # - How to perform a convergence test
 # - How to define the discretization error
@@ -91,8 +90,9 @@ writevtk(model,"model");
 # We compute a FE approximation of the Poisson problem above by following the steps detailed in the previous tutorial:
 
 order = 1
-diritag = "boundary"
-V = CLagrangianFESpace(Float64,model,order,diritag)
+V = FESpace(
+  reffe=:Lagrangian, order=order, valuetype=Float64,
+  conformity=:H1, model=model, diritags="boundary")
 
 V0 = TestFESpace(V)
 U = TrialFESpace(V,u)
@@ -174,8 +174,9 @@ function run(n,order)
   limits = (0.0, 1.0, 0.0, 1.0)
   model = CartesianDiscreteModel(domain=limits, partition=(n,n))
 
-  diritag = "boundary"
-  V = CLagrangianFESpace(Float64,model,order,diritag)
+  V = FESpace(
+    reffe=:Lagrangian, order=order, valuetype=Float64,
+    conformity=:H1, model=model, diritags="boundary")
 
   V0 = TestFESpace(V)
   U = TrialFESpace(V,u)

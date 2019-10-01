@@ -12,7 +12,8 @@ files = [
   "t0041_p_laplacian", 
   "t004_hyperelasticity",
   "t005_dg_discretization",
-  "t007_darcy"]
+  "t007_darcy",
+  "t008_inc_navier_stokes"]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)
 for file in files

@@ -1,0 +1,174 @@
+# # Tutorial 8: Incompressible Navier-Stokes equations
+#
+#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t008_inc_navier_stokes.ipynb)
+#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t008_inc_navier_stokes.ipynb)
+# 
+# In this tutorial, we will learn
+#  - How to solve nonlinear multi-field PDEs in Gridap
+#  - How to build FE spaces whose functions have zero mean value
+# 
+# ## Problem statement
+# 
+# The goal of this last tutorial is to solve a nonlinear multi-field PDE. As a model problem, we consider a well known benchmark in computational fluid dynamics: the lid-driven cavity for the incompressible Navier-Stokes equations. Formally, the PDE we want to solve is: find the velocity vector $u$ and the pressure $p$ such that
+#
+# ```math
+# \left\lbrace
+# \begin{aligned}
+# -\Delta u + \mathit{Re}\ (u\cdot \nabla)\ u + \nabla p = 0 &\text{ in }\Omega,\\
+# \nabla\cdot u = 0 &\text{ in } \Omega,\\
+# u = g &\text{ on } \partial\Omega,
+# \end{aligned}
+# \right.
+# ```
+#
+# where the computational domain is the unit square $\Omega \doteq (0,1)^d$, $d=2$, $\mathit{Re}$ is the Reynolds number (here, we take $\mathit{Re}=10$), and $(w \cdot \nabla)\ u = (\nabla u)^t w$  is the well known convection operator. In this example, the driving force is the Dirichlet boundary velocity $g$, which is a non-zero horizontal velocity with a value of $g = (1,0)^t$ on the top side of the cavity, namely the boundary $(0,1)\times\{1\}$, and $g=0$ elsewhere on $\partial\Omega$. Since we impose Dirichlet boundary conditions on the entire boundary $\partial\Omega$, the mean value of the pressure is constrained to zero in order have a well posed problem,
+#
+# ```math
+# \int_\Omega q \ {\rm d}\Omega = 0.
+# ```
+# 
+# ## Numerical Scheme
+#
+# In order to approximate this problem we chose a formulation based on inf-sub stable $Q_k/P_{k-1}$ elements with continuous velocities and discontinuous pressures (see, e.g., [1] for specific details). The interpolation spaces are defined as follows.  The velocity interpolation space is
+#
+# ```math
+# V \doteq \{ v \in [C^0(\Omega)]^d:\ v|_T\in [Q_k(T)]^d \text{ for all } T\in\mathcal{T} \},
+# ```
+# where $T$ denotes an arbitrary cell of the FE mesh $\mathcal{T}$, and $Q_k(T)$ is the local polynomial space in cell $T$ defined as the multi-variate polynomials in $T$ of order less or equal to $k$ in each spatial coordinate. Note that, this is the usual continuous vector-valued Lagrangian FE space of order $k$ defined on a mesh of quadrilaterals or hexahedra.  On the other hand, the space for the pressure~is
+#
+# ```math
+# \begin{aligned}
+# Q_0 &\doteq \{ q \in Q: \  \int_\Omega q \ {\rm d}\Omega = 0\}, \text{ with}\\
+# Q &\doteq \{ q \in L^2(\Omega):\ q|_T\in P_{k-1}(T) \text{ for all } T\in\mathcal{T}\},
+# \end{aligned}
+# ```
+# where $P_{k-1}(T)$ is the polynomial space of multi-variate polynomials in $T$ of degree less or equal to $k-1$. Note that functions in $Q_0$ are strongly constrained to have zero mean value. This is achieved in the code by removing one degree of freedom from the (unconstrained) interpolation space $Q$ and  adding a constant to the computed pressure so that the resulting function has zero mean value.
+# 
+# The weak form associated to these interpolation spaces reads: find $(u,p)\in U_g \times Q_0$ such that $[r(u,p)](v,q)=0$ for all $(v,q)\in V_0 \times Q_0$
+# where $U_g$ and $V_0$ are the set of functions in $V$ fulfilling the Dirichlet boundary condition $g$ and $0$  on $\partial\Omega$ respectively. The weak residual $r$ evaluated at a given pair $(u,p)$ is the linear form defined as
+#
+# ```math
+# [r(u,p)](v,q) \doteq a((v,q),(u,p))+ [c(u)](v),
+# ```
+# with 
+# ```math
+# \begin{aligned}
+# a((v,q),(u,p)) &\doteq \int_{\Omega} \nabla v \cdot \nabla u \ {\rm d}\Omega - \int_{\Omega} (\nabla\cdot v) \ p \ {\rm d}\Omega + \int_{\Omega} q \ (\nabla \cdot u) \ {\rm d}\Omega,\\
+# [c(u)](v) &\doteq \int_{\Omega} v 	\cdot \left( (u\cdot\nabla)\ u \right)\ {\rm d}\Omega.\\
+# \end{aligned}
+# ```
+# Note that the bilinear form $a$ is associated with the linear part of the PDE, whereas $c$ is the contribution to the residual resulting from the convective term.
+# 
+# In order to solve this nonlinear weak equation with a Newton-Raphson method, one needs to compute the Jacobian associated with the residual $r$. In this case, the Jacobian $j$ evaluated at a pair $(u,p)$ is the bilinear form defined as
+#
+# ```math
+# [j(u,p)]((v,q),(\delta u, \delta p)) \doteq a((v,q),(\delta u,\delta p))  + [{\rm d}c(u)](v,\delta u),
+# ```
+# where ${\rm d}c$ results from the linearization of the convective term, namely
+# ```math
+# [{\rm d}c(u)](v,\delta u) \doteq \int_{\Omega} v \cdot \left( (u\cdot\nabla)\ \delta u \right) \ {\rm d}\Omega + \int_{\Omega} v \cdot \left( (\delta u\cdot\nabla)\ u \right)  \ {\rm d}\Omega. 
+# ```
+# The implementation of this numerical scheme is done in Gridap by combining the concepts previously seen for single-field nonlinear PDEs  and linear multi-field problems.
+# 
+# ## Discrete model
+# 
+# We start with the discretization of the computational domain. We consider a $100\times100$ Cartesian mesh of the unit square.
+
+using Gridap
+n = 100
+model = CartesianDiscreteModel(domain=(0.0,1.0,0.0,1.0), partition=(n,n))
+
+# For convenience, we create two new boundary tags,  namely `"diri1"` and `"diri0"`, one for the top side of the square (where the velocity is non-zero), and another for the rest of the boundary (where the velocity is zero).
+
+labels = FaceLabels(model)
+add_tag_from_tags!(labels,"diri1",[6,])
+add_tag_from_tags!(labels,"diri0",[1,2,3,4,5,7,8])
+
+# ## FE spaces
+#
+# For the velocities, we need to create a conventional vector-valued continuous Lagrangian FE space. In this example, we select a second order interpolation.
+
+D = 2
+order = 2
+fespace1 = FESpace(
+  reffe=:Lagrangian, conformity=:H1, valuetype=VectorValue{D,Float64},
+  model=model, labels=labels, order=order, diritags=["diri0","diri1"])
+
+# The interpolation space for the pressure is build as follows
+
+fespace2 = FESpace(
+  reffe=:PLagrangian, conformity=:L2, valuetype=Float64,
+  model=model, order=order-1, constraint=:zeromean)
+
+# With the options `reffe=:PLagrangian`, `valuetype=Float64`, and `order=order-1`, we select the local polynomial space $P_{k-1}(T)$ on the cells $T\in\mathcal{T}$. With the symbol `:PLagrangian` we specifically chose a local Lagrangian interpolation of type "P". Using `:Lagrangian`, would lead to a local Lagrangian of type "Q" since this is the default for quadrilateral or hexahedral elements. On the other hand, `constraint=:zeromean` leads to a FE space, whose functions are constrained to have mean value equal to zero, which is just what we need for the pressure space. With these objects, we build the test and trial multi-field FE spaces
+
+uD0(x) = VectorValue(0.0,0.0)
+uD1(x) = VectorValue(1.0,0.0)
+
+V = TestFESpace(fespace1)
+Q = TestFESpace(fespace2)
+Y = [V, Q]
+
+U = TrialFESpace(fespace1,[uD0,uD1])
+P = TrialFESpace(fespace2)
+X = [U, P]
+
+# ## Nonlinear weak form
+#
+# The different terms of the nonlinear weak form for this example are defined following an approach similar to the one discussed for the $p$-Laplacian equation, but this time using the notation for multi-field problems.
+
+const Re = 10.0
+@law conv(x,u,∇u) = Re*(∇u')*u
+@law dconv(x,du,∇du,u,∇u) = conv(x,u,∇du)+conv(x,du,∇u)
+
+function a(y,x)
+  u, p = x
+  v, q = y
+  inner(∇(v),∇(u)) - inner(div(v),p) + inner(q,div(u))
+end
+
+c(v,u) = inner(v,conv(u,∇(u)))
+dc(v,du,u) = inner(v,dconv(du,∇(du),u,∇(u)))
+
+function res(x,y)
+  u, p = x
+  v, q = y
+  a(y,x) + c(v,u)
+end
+
+function jac(x,y,dx)
+  u, p = x
+  v, q = y
+  du, dp = dx
+  a(y,dx)+ dc(v,du,u)
+end
+
+# With the functions `res`, and `jac` representing the weak residual and the Jacobian, we build the nonlinear FE problem:
+
+trian = Triangulation(model)
+quad = CellQuadrature(trian,degree=(order-1)*2)
+t_Ω = NonLinearFETerm(res,jac,trian,quad)
+op = NonLinearFEOperator(Y,X,t_Ω)
+
+# ## Nonlinear solver phase
+# 
+# To finally solve the problem, we consider the same nonlinear solver as previously considered for the  $p$-Laplacian equation.
+
+using LineSearches: BackTracking
+nls = NLSolver(
+  show_trace=true, method=:newton, linesearch=BackTracking())
+solver = NonLinearFESolver(nls)
+
+# In this example, we solve the problem without providing an initial guess (a default one equal to zero will be generated internally)
+
+uh, ph = solve(solver,op)
+
+# Finally, we write the results for visualization (see next figure).
+
+writevtk(trian,"ins-results",cellfields=["uh"=>uh,"ph"=>ph])
+
+# ![](../assets/t008_inc_navier_stokes/ins_solution.png)
+# 
+#  ## References
+# 
+#  [1] H. C. Elman, D. J. Silvester, and A. J. Wathen. *Finite elements and fast iterative solvers: with applications in incompressible fluid dynamics*. Oxford University Press, 2005.

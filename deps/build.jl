@@ -10,7 +10,8 @@ files = [
   "t002_validation",
   "t003_elasticity", 
   "t0041_p_laplacian", 
-  "t004_hyperelasticity"]
+  "t004_hyperelasticity",
+  "t005_dg_discretization"]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)
 for file in files

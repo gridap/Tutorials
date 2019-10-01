@@ -8,12 +8,15 @@ sed '/^.*\\caption.*$/d' | \
 sed '/^.*\\begin{minted}.*$/d' | \
 sed '/^.*\\end{minted}.*$/d' | \
 sed 's/\\shb{\([^}]*\)}/`\1`/g' | \
+sed 's/\\emph{\([^}]*\)}/*\1*/g' | \
 sed 's/\\subsection{\([^}]*\)}/## \1/g' | \
 sed 's/\\includegraphics\[width=0.6\\textwidth\]{\([^}]*\)}/![](\1)/g' | \
 sed 's/\\gridap{}/Gridap/g' | \
 sed 's/\\gridap/Gridap/g' | \
 sed 's/\\julia{}/Julia/g' | \
 sed 's/\\julia/Julia/g' | \
+sed 's/\\paraview{}/Paraview/g' | \
+sed 's/\\paraview/Paraview/g' | \
 sed 's/\\fig{\([^}]*\)}/next figure/g' | \
 sed 's/\\ac{fe}/FE/g' | \
 sed 's/\\ac{pde}/PDE/g' | \

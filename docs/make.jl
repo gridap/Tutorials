@@ -27,7 +27,8 @@ files = [
   "t003_elasticity", 
   "t0041_p_laplacian",
   "t004_hyperelasticity",
-  "t005_dg_discretization"]
+  "t005_dg_discretization",
+  "t007_darcy"]
 
 for file in files
   file_jl = file*".jl"
@@ -42,7 +43,8 @@ pages = [
   "3 Linear elasticity" => "pages/t003_elasticity.md",
   "4 p-Laplacian" => "pages/t0041_p_laplacian.md",
   "5 Hyper-elasticity" => "pages/t004_hyperelasticity.md",
-  "6 Poisson equation (with DG)" => "pages/t005_dg_discretization.md"]
+  "6 Poisson equation (with DG)" => "pages/t005_dg_discretization.md",
+  "7 Darcy equation (with RT)" => "pages/t007_darcy.md"]
 
 makedocs(
     sitename = "Gridap tutorials",

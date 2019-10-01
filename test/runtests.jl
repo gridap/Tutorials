@@ -26,3 +26,19 @@ module t004_hyperelasticity
 using Test
 @testset "t004_hyperelasticity" begin include("../src/t004_hyperelasticity.jl") end
 end # module
+
+module t005_dg_discretization
+using Test
+@testset "t005_dg_discretization" begin include("../src/t005_dg_discretization.jl") end
+end # module
+
+module t007_darcy
+using Test
+@testset "t007_darcy" begin include("../src/t007_darcy.jl") end
+end # module
+
+module t008_inc_navier_stokes
+using Test
+@testset "t008_inc_navier_stokes" begin include("../src/t008_inc_navier_stokes.jl") end
+end # module
+

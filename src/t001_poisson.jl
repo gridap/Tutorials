@@ -46,7 +46,7 @@
 # 
 #  ## Setup
 # 
-#  The step number 0 in order to solve the problem is to load the Gridap library in the code. If you have configured your Julia environment properly (see \sect{sec:installing_gridap}), it is simply done with the line:
+#  The step number 0 in order to solve the problem is to load the Gridap library in the code. If you have configured your Julia environment properly, it is simply done with the line:
 
 using Gridap
 

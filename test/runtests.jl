@@ -37,8 +37,8 @@ using Test
 @testset "t007_darcy" begin include("../src/t007_darcy.jl") end
 end # module
 
-#module t008_inc_navier_stokes
-#using Test
-#@testset "t008_inc_navier_stokes" begin include("../src/t008_inc_navier_stokes.jl") end
-#end # module
+module t008_inc_navier_stokes
+using Test
+@testset "t008_inc_navier_stokes" begin include("../src/t008_inc_navier_stokes.jl") end
+end # module
 

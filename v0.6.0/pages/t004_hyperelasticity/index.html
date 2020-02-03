@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>5 Hyper-elasticity · Gridap tutorials</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link href="../../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>Gridap tutorials</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../../">Introduction</a></li><li><a class="toctext" href="../t001_poisson/">1 Poisson equation</a></li><li><a class="toctext" href="../t002_validation/">2 Code validation</a></li><li><a class="toctext" href="../t003_elasticity/">3 Linear elasticity</a></li><li><a class="toctext" href="../t0041_p_laplacian/">4 p-Laplacian</a></li><li class="current"><a class="toctext" href>5 Hyper-elasticity</a><ul class="internal"><li><a class="toctext" href="#Problem-statement-1">Problem statement</a></li><li><a class="toctext" href="#Extension-to-3D-1">Extension to 3D</a></li></ul></li><li><a class="toctext" href="../t005_dg_discretization/">6 Poisson equation (with DG)</a></li><li><a class="toctext" href="../t007_darcy/">7 Darcy equation (with RT)</a></li><li><a class="toctext" href="../t008_inc_navier_stokes/">8 Incompressible Navier-Stokes</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>5 Hyper-elasticity</a></li></ul><a class="edit-page" href="https://github.com/gridap/Tutorials/blob/master/src/t004_hyperelasticity.jl"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>5 Hyper-elasticity</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Tutorial-5:-Hyperelasticity-1" href="#Tutorial-5:-Hyperelasticity-1">Tutorial 5: Hyperelasticity</a></h1><p><a href="https://mybinder.org/v2/gh/gridap/Tutorials/gh-pages?filepath=v0.6.0/notebooks/t004_hyperelasticity.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt/></a> <a href="https://nbviewer.jupyter.org/github/gridap/Tutorials/blob/gh-pages/v0.6.0/notebooks/t004_hyperelasticity.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt/></a></p><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>This tutorial is under construction, but the code below is already functional.</p></div></div><h2><a class="nav-anchor" id="Problem-statement-1" href="#Problem-statement-1">Problem statement</a></h2><pre><code class="language-julia">using Gridap
+using LinearAlgebra: inv, det
+using LineSearches: BackTracking</code></pre><p>Material parameters</p><pre><code class="language-julia">const λ = 100.0
+const μ = 1.0</code></pre><p>Deformation Gradient</p><pre><code class="language-julia">F(∇u) = one(∇u) + ∇u&#39;
+
+J(F) = sqrt(det(C(F)))
+
+#Green strain
+
+#E(F) = 0.5*( F&#39;*F - one(F) )
+
+@law dE(x,∇du,∇u) = 0.5*( ∇du*F(∇u) + (∇du*F(∇u))&#39; )</code></pre><p>Right Cauchy-green deformation tensor</p><pre><code class="language-julia">C(F) = (F&#39;)*F</code></pre><p>Constitutive law (Neo hookean)</p><pre><code class="language-julia">@law function S(x,∇u)
+  Cinv = inv(C(F(∇u)))
+  μ*(one(∇u)-Cinv) + λ*log(J(F(∇u)))*Cinv
+end
+
+@law function dS(x,∇du,∇u)
+  Cinv = inv(C(F(∇u)))
+  _dE = dE(x,∇du,∇u)
+  λ*inner(Cinv,_dE)*Cinv + 2*(μ-λ*log(J(F(∇u))))*Cinv*_dE*(Cinv&#39;)
+end</code></pre><p>Cauchy stress tensor</p><pre><code class="language-julia">@law σ(x,∇u) = (1.0/J(F(∇u)))*F(∇u)*S(x,∇u)*(F(∇u))&#39;</code></pre><p>Weak form</p><pre><code class="language-julia">res(u,v) = inner( dE(∇(v),∇(u)) , S(∇(u)) )
+
+jac_mat(u,v,du) = inner( dE(∇(v),∇(u)), dS(∇(du),∇(u)) )
+
+jac_geo(u,v,du) = inner( ∇(v), S(∇(u))*∇(du) )
+
+jac(u,v,du) = jac_mat(u,v,du) + jac_geo(u,v,du)</code></pre><p>Model</p><pre><code class="language-julia">model = CartesianDiscreteModel(domain=(0.0,1.0,0.0,1.0), partition=(20,20))</code></pre><p>Define new boundaries</p><pre><code class="language-julia">labels = FaceLabels(model)
+add_tag_from_tags!(labels,&quot;diri_0&quot;,[1,3,7])
+add_tag_from_tags!(labels,&quot;diri_1&quot;,[2,4,8])</code></pre><p>Construct the FEspace</p><pre><code class="language-julia">order = 1
+diritags = [&quot;diri_0&quot;, &quot;diri_1&quot;]
+T = VectorValue{2,Float64}
+fespace = CLagrangianFESpace(T,model,labels,order,diritags)
+V = TestFESpace(fespace)</code></pre><p>Setup integration</p><pre><code class="language-julia">trian = Triangulation(model)
+quad = CellQuadrature(trian,degree=2)</code></pre><p>Setup weak form terms</p><pre><code class="language-julia">t_Ω = NonLinearFETerm(res,jac,trian,quad)</code></pre><p>Setup non-linear solver</p><pre><code class="language-julia">nls = NLSolver(
+  show_trace=true,
+  method=:newton,
+  linesearch=BackTracking())
+
+solver = NonLinearFESolver(nls)
+
+
+function run(x0,disp_x,step,nsteps)
+
+  g0 = zero(T)
+  g1 = VectorValue(disp_x,0.0)
+  U = TrialFESpace(fespace,[g0,g1])
+
+  #FE problem
+  op = NonLinearFEOperator(V,U,t_Ω)
+
+  println(&quot;\n+++ Solving for disp_x $disp_x in step $step of $nsteps +++\n&quot;)
+
+  uh = FEFunction(U,x0)
+
+  solve!(uh,solver,op)
+
+  writevtk(trian,&quot;results_$(lpad(step,3,&#39;0&#39;))&quot;,cellfields=[&quot;uh&quot;=&gt;uh,&quot;sigma&quot;=&gt;σ(∇(uh))])
+
+  return free_dofs(uh)
+
+end
+
+function runs()
+
+ disp_max = 0.75
+ disp_inc = 0.02
+ nsteps = ceil(Int,abs(disp_max)/disp_inc)
+
+ x0 = zeros(Float64,num_free_dofs(fespace))
+
+ for step in 1:nsteps
+   disp_x = step * disp_max / nsteps
+   x0 = run(x0,disp_x,step,nsteps)
+ end
+
+end
+
+#Do the work!
+runs()</code></pre><p>Picture of the last load step <img src="../../assets/t004_hyperelasticity/neo_hook_2d.png" alt/></p><h2><a class="nav-anchor" id="Extension-to-3D-1" href="#Extension-to-3D-1">Extension to 3D</a></h2><p>Extending this tutorial to the 3D case is straightforward. It is leaved as an exercise.</p><p><img src="../../assets/t004_hyperelasticity/neo_hook_3d.png" alt/></p><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p><footer><hr/><a class="previous" href="../t0041_p_laplacian/"><span class="direction">Previous</span><span class="title">4 p-Laplacian</span></a><a class="next" href="../t005_dg_discretization/"><span class="direction">Next</span><span class="title">6 Poisson equation (with DG)</span></a></footer></article></body></html>

@@ -161,10 +161,10 @@ uuid = "4d00f742-c7ba-57c2-abde-4428a4b178cb"
 version = "0.7.4"
 
 [[Gridap]]
-deps = ["Combinatorics", "FastGaussQuadrature", "JSON", "LineSearches", "LinearAlgebra", "NLsolve", "QuadGK", "Reexport", "SparseArrays", "StaticArrays", "TensorPolynomialBases", "TensorValues", "Test", "UnstructuredGrids", "WriteVTK"]
-git-tree-sha1 = "9655c97fe92523740b5f387c6652657f0708141a"
+deps = ["Combinatorics", "FastGaussQuadrature", "JSON", "LineSearches", "LinearAlgebra", "NLsolve", "QuadGK", "Reexport", "SparseArrays", "SparseMatricesCSR", "StaticArrays", "TensorPolynomialBases", "TensorValues", "Test", "UnstructuredGrids", "WriteVTK"]
+git-tree-sha1 = "bfa4c372d790bbf61b7971ae016bcb956c3c542b"
 uuid = "56d4f2e9-7ea1-5844-9cf6-b9c51ca7ce8e"
-version = "0.5.2"
+version = "0.6.0"
 
 [[IJulia]]
 deps = ["Base64", "Conda", "Dates", "InteractiveUtils", "JSON", "Markdown", "MbedTLS", "Pkg", "Printf", "REPL", "Random", "SoftGlobalScope", "Test", "UUIDs", "ZMQ"]
@@ -374,6 +374,12 @@ version = "0.3.1"
 [[SparseArrays]]
 deps = ["LinearAlgebra", "Random"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[[SparseMatricesCSR]]
+deps = ["LinearAlgebra", "SparseArrays"]
+git-tree-sha1 = "3a831d7d22736e3be2461dddb0fd6d05d556b945"
+uuid = "a0a7dd2c-ebf4-11e9-1f05-cf50bc540ca1"
+version = "0.5.1"
 
 [[SpecialFunctions]]
 deps = ["BinDeps", "BinaryProvider", "Libdl"]

@@ -66,17 +66,13 @@ writevtk(model,"model")
 
 order = 1
 
-V = FESpace(
+V0 = TestFESpace(
   reffe=:Lagrangian, order=1, valuetype=VectorValue{3,Float64},
-  conformity=:H1, model=model, diritags=["surface_1","surface_2"],
-  dirimasks=[(true,false,false), (true,true,true)])
+  conformity=:H1, model=model, dirichlet_tags=["surface_1","surface_2"],
+  dirichlet_masks=[(true,false,false), (true,true,true)])
 
-# As in previous tutorial, we construct a continuous Lagrangian interpolation of order 1. The vector-valued interpolation is selected via the option `valuetype=VectorValue{3,Float64}`, where we use the type `VectorValue{3,Float64}`, which is the way Gridap represents vectors of three `Float64` components. We mark as Dirichlet the objects identified with the tags `"surface_1"` and `"surface_2"` using the `diritags` argument. Finally, we chose which components of the displacement are actually constrained on the Dirichlet boundary via the `dirimasks` argument. Note that we constrain only the first component on the boundary $\Gamma_{\rm B}$ (identified as `"surface_1"`), whereas we constrain all components on $\Gamma_{\rm G}$ (identified as `"surface_2"`).
+# As in previous tutorial, we construct a continuous Lagrangian interpolation of order 1. The vector-valued interpolation is selected via the option `valuetype=VectorValue{3,Float64}`, where we use the type `VectorValue{3,Float64}`, which is the way Gridap represents vectors of three `Float64` components. We mark as Dirichlet the objects identified with the tags `"surface_1"` and `"surface_2"` using the `dirichlet_tags` argument. Finally, we chose which components of the displacement are actually constrained on the Dirichlet boundary via the `dirichlet_masks` argument. Note that we constrain only the first component on the boundary $\Gamma_{\rm B}$ (identified as `"surface_1"`), whereas we constrain all components on $\Gamma_{\rm G}$ (identified as `"surface_2"`).
 # 
-# The test space is built as in previous tutorial.
-
-V0 = TestFESpace(V)
-
 # However, the construction of the trial space is slightly different in this case. The Dirichlet boundary conditions are described with two different functions, one for boundary $\Gamma_{\rm B}$ and another one for $\Gamma_{\rm G}$. These functions can be defined as
 
 g1(x) = VectorValue(0.005,0.0,0.0)
@@ -84,9 +80,9 @@ g2(x) = VectorValue(0.0,0.0,0.0)
 
 # From functions `g1` and `g2`, we define the trial space as follows:
 
-U = TrialFESpace(V,[g1,g2])
+U = TrialFESpace(V0,[g1,g2])
 
-# Note that the functions `g1` and `g2` are passed to the `TrialFESpace` constructor in the same order as the boundary identifiers are passed previously in the `diritags` argument of the `FESpace` constructor.
+# Note that the functions `g1` and `g2` are passed to the `TrialFESpace` constructor in the same order as the boundary identifiers are passed previously in the `dirichlet_tags` argument of the `FESpace` constructor.
 # 
 # ## Constitutive law
 # 
@@ -96,11 +92,12 @@ a(v,u) = inner( ε(v), σ(ε(u)) )
 
 # The symmetric gradient operator is represented by the function `ε` provided by Gridap (also available as `symmetric_gradient`). However, function `σ` representing the stress tensor is not predefined in the library and it has to be defined ad-hoc by the user. The way function `σ` and other types of constitutive laws are defined  in Gridap is by using the supplied macro `@law`:
 
+using LinearAlgebra: tr
 const E = 70.0e9
 const ν = 0.33
 const λ = (E*ν)/((1+ν)*(1-2*ν))
 const μ = E/(2*(1+ν))
-@law σ(x,ε) = λ*tr(ε)*one(ε) + 2*μ*ε
+@law σ(ε) = λ*tr(ε)*one(ε) + 2*μ*ε
 
 # The macro `@law` is placed before a function definition.  The arguments of the function annotated with the `@law` macro represent the values of different quantities at a generic integration point. The first argument always represents the coordinate of the integration point. The remaining arguments have arbitrary meaning. In this example, the second argument represents the strain tensor, from which the stress tensor is to be computed using the Lamé operator. Note that the implementation of function `σ` is very close to its mathematical definition. Under the hood, the `@law` macro adds an extra method to the annotated function. The newly generated method can be used as `σ(ε(u))` in the definition of a bilinear form (as done above), or as `σ(ε(uh))`, in order to compute the stress tensor associated with a `FEFunction` object  `uh`.
 # 
@@ -109,12 +106,13 @@ const μ = E/(2*(1+ν))
 # The remaining steps for solving the FE problem are essentially the same as in previous tutorial.  We build the triangulation and quadrature for integrating in the volume, we define the terms in the weak form, and we define the FE problem. Finally, we solve it.
 
 trian = Triangulation(model)
-quad = CellQuadrature(trian,degree=2)
+degree = 2
+quad = CellQuadrature(trian,degree)
 t_Ω = LinearFETerm(a,trian,quad)
-op = LinearFEOperator(V0,U,t_Ω)
+op = AffineFEOperator(V0,U,t_Ω)
 uh = solve(op)
 
-# Note that in the construction of the `LinearFEOperator` we have used a `LinearFETerm` instead of an `AffineFETerm` as it was done in previous tutorial. The `LinearFETerm` is a particular implementation of `FETerm`, which only leads to contributions to the system matrix (and not to the right hand side vector). This is what we need here since the body forces are zero. Note also that we do not have explicitly constructed a `LinearFESolver`. If a `LinearFESolver` is not passed to the `solve` function, a default solver is created and used internally.
+# Note that in the construction of the `AffineFEOperator` we have used a `LinearFETerm` instead of an `AffineFETerm` as it was done in previous tutorial. The `LinearFETerm` is a particular implementation of `FETerm`, which only leads to contributions to the system matrix (and not to the right hand side vector). This is what we need here since the body forces are zero. Note also that we do not have explicitly constructed a `LinearFESolver`. If a `LinearFESolver` is not passed to the `solve` function, a default solver is created and used internally.
 # 
 # Finally, we write the results to a file. Note that we also include the strain and stress tensors into the results file.
 
@@ -134,13 +132,14 @@ writevtk(trian,"results",cellfields=["uh"=>uh,"epsi"=>ε(uh),"sigma"=>σ(ε(uh))
 #
 # In order to build the constitutive law for the bi-material problem, we need a vector that contains information about the material each cell in the model is composed. This is achieved by these lines
 
-labels = FaceLabels(model)
+using Gridap.Geometry
+labels = get_face_labeling(model)
 dimension = 3
-tags = first_tag_on_face(labels,dimension)
+tags = get_face_tag(labels,dimension)
 
 # Previous lines generate a vector, namely `tags`, whose length is the number of cells in the model and for each cell contains an integer that identifies the material of the cell.  This is almost what we need. We also need to know which is the integer value associated with each material. E.g., the integer value associated with `"material_1"` (i.e. aluminum) is retrieved as
 
-const alu_tag = tag_from_name(labels,"material_1")
+const alu_tag = get_tag_from_name(labels,"material_1")
 
 # Now, we know that cells whose corresponding value in the `tags` vector is `alu_tag` are made of aluminum, otherwise they are made of steel (since there are only two materials in this example).
 #
@@ -162,7 +161,7 @@ const (λ_steel,μ_steel) = lame_parameters(E_steel,ν_steel)
 
 # Then, we define the function containing the constitutive law:
 
-@law function σ_bimat(x,ε,tag)
+@law function σ_bimat(ε,tag)
   if tag == alu_tag
     return λ_alu*tr(ε)*one(ε) + 2*μ_alu*ε
   else
@@ -181,12 +180,12 @@ a(v,u) = inner( ε(v), σ_bimat(ε(u),tags) )
 # At this point, we can build the FE problem again and solve it
 
 t_Ω = LinearFETerm(a,trian,quad)
-op = LinearFEOperator(V0,U,t_Ω)
+op = AffineFEOperator(V0,U,t_Ω)
 uh = solve(op)
 
 # Once the solution is computed, we can store the results in a file for visualization. Note that, we are including the stress tensor in the file (computed with the bi-material law).
 
-writevtk(trian,"results",cellfields=
+writevtk(trian,"results_bimat",cellfields=
   ["uh"=>uh,"epsi"=>ε(uh),"sigma"=>σ_bimat(ε(uh),tags)])
 
 

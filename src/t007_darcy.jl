@@ -59,7 +59,9 @@
 # We start the driver loading the Gridap package and constructing the geometrical model. We generate a $100\times100$ structured mesh for the domain $(0,1)^2$.
 
 using Gridap
-model = CartesianDiscreteModel(domain=(0.0,1.0,0.0,1.0), partition=(100,100))
+domain = (0,1,0,1)
+partition = (100,100)
+model = CartesianDiscreteModel(domain,partition)
 
 # ## Multi-field FE spaces
 # 
@@ -67,11 +69,11 @@ model = CartesianDiscreteModel(domain=(0.0,1.0,0.0,1.0), partition=(100,100))
 
 order = 2
 
-fespace1 = FESpace(
+V = FESpace(
   reffe=:RaviartThomas, order=order, valuetype=VectorValue{2,Float64},
-  conformity=:HDiv, model=model, diritags=[5,6])
+  conformity=:HDiv, model=model, dirichlet_tags=[5,6])
 
-fespace2 = FESpace(
+Q = FESpace(
   reffe=:QLagrangian, order=order-1, valuetype=Float64,
   conformity=:L2, model=model)
 
@@ -79,29 +81,29 @@ fespace2 = FESpace(
 # 
 # From these objects, we construct the test and trial spaces. Note that we impose homogeneous boundary conditions for the flux.
 
-uD(x) = VectorValue(0.0,0.0)
-V = TestFESpace(fespace1)
-U = TrialFESpace(fespace1,uD)
-Q = TestFESpace(fespace2)
-P = TrialFESpace(fespace2)
+uD = VectorValue(0.0,0.0)
+U = TrialFESpace(V,uD)
+P = TrialFESpace(Q)
 
 # When the singe-field spaces have been designed, the multi-field test and trial spaces are expressed as arrays of single-field ones in a natural way.
 
-Y = [V, Q]
-X = [U, P]
+Y = MultiFieldFESpace([V, Q])
+X = MultiFieldFESpace([U, P])
 
 # ## Numerical integration
 # 
 # In this example we need to integrate in the interior of $\Omega$ and on the Neumann boundary $\Gamma_{\rm N}$. For the volume integrals, we extract the triangulation from the geometrical model and define the corresponding cell-wise quadrature of degree of exactness at least 2 as follows.
 
 trian = Triangulation(model)
-quad = CellQuadrature(trian,degree=2)
+degree = 2
+quad = CellQuadrature(trian,degree)
 
 # In order to integrate the Neumann boundary condition, we only need to build an integration mesh for the right side of the domain (which is the only part of $\Gamma_{\rm N}$, where the Neumann function $h$ is different from zero). Within the model, the right side of $\Omega$ is identified with the boundary tag 8. Using this identifier, we extract the corresponding surface triangulation and create a quadrature with the desired degree of exactness.
 
 neumanntags = [8,]
 btrian = BoundaryTriangulation(model,neumanntags)
-bquad = CellQuadrature(btrian,degree=order*2)
+degree = 2*order
+bquad = CellQuadrature(btrian,degree)
 
 # ## Weak form
 # 
@@ -119,21 +121,23 @@ end
 
 # With this definition, we can express the integrand of the bilinear form as follows. 
 
+px = get_physical_coordinate(trian)
+
 function a(y,x)
    v, q = y
    u, p = x
-   inner(v,σ(u)) - inner(div(v),p) + inner(q,div(u))
+   inner(v,σ(px,u)) - (∇*v)*p + q*(∇*u)
 end
 
 # The arguments `y` and `x` of previous function represent a test and a trial function in the multi-field test and trial spaces `Y` and `X` respectively. In the first lines in the function definition, we unpack the single-field test and trial functions from the multi-field ones. E.g., `v` represents a test function for the flux and `q` for the pressure. These quantities can also be written as `y[1]` and `y[2]` respectively. From the single-field functions, we write the different terms of the bilinear form as we have done in previous tutorials.
 # 
 # In a similar way, we can define the forcing term related to the Neumann boundary condition.
 
-nb = NormalVector(btrian)
-h(x) = -1.0
+nb = get_normal_vector(btrian)
+h = -1.0
 function b_ΓN(y)
   v, q = y
-  inner(v*nb, h)
+  (v*nb)*h
 end
 
 # ## Multi-field FE problem
@@ -142,7 +146,7 @@ end
 
 t_Ω = LinearFETerm(a,trian,quad)
 t_ΓN = FESource(b_ΓN,btrian,bquad)
-op = LinearFEOperator(Y,X,t_Ω,t_ΓN)
+op = AffineFEOperator(Y,X,t_Ω,t_ΓN)
 xh = solve(op)
 uh, ph = xh
 

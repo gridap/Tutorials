@@ -59,9 +59,9 @@ writevtk(model,"model")
 # 
 # ![](../assets/t0041_p_laplacian/sides_c.png)
 # 
-# Gridap provides a convenient way to create new object identifiers (referred to as "tags") from existing ones. First, we need to extract from the model, the object that holds the information about the boundary identifiers (referred to as `FaceLabels`):
+# Gridap provides a convenient way to create new object identifiers (referred to as "tags") from existing ones. First, we need to extract from the model, the object that holds the information about the boundary identifiers (referred to as `FaceLabeling`):
 
-labels = FaceLabels(model)
+labels = get_face_labeling(model)
 
 # Then, we can add new identifiers (aka "tags") to it. In the next line, we create a new tag called `"diri0"` as the union of the objects identified as `"sides"` and `"sides_c"`, which is precisely what we need to represent the closure of the Dirichlet boundary $\Gamma_0$.
 
@@ -76,61 +76,61 @@ add_tag_from_tags!(labels,"dirig",
 # 
 # Now, we can build the FE space by using the newly defined boundary tags.
 
-V = FESpace(
+V0 = TestFESpace(
   reffe=:Lagrangian, order=1, valuetype=Float64,
   conformity=:H1, model=model, labels=labels,
-  diritags=["diri0", "dirig"])
+  dirichlet_tags=["diri0", "dirig"])
 
 # The construction of this space is essentially the same as in the first tutorial (we build a continuous scalar-valued Lagrangian interpolation of first order). However, we also pass here the `labels` object (that contains the newly created boundary tags). From this FE space, we define the test and trial FE spaces
 
-g = 1.0
-V0 = TestFESpace(V)
-Ug = TrialFESpace(V,[0.0,g])
+g = 1
+Ug = TrialFESpace(V0,[0,g])
 
 # ## Nonlinear FE problem
 # 
-# At this point, we are ready to build the nonlinear FE problem. To this end, we need to define the weak residual and also its corresponding Jacobian. This is done following a similar procedure to the one considered in previous tutorials to define the bilinear and linear forms associated with linear FE problems. In this case, instead of an `AffineFETerm` (which is for linear problems), we use a `NonLinearFETerm`. An instance of `NonLinearFETerm` is constructed by providing the integrands of the weak residual and its Jacobian (in a similar way an `AffineFETerm` is constructed from the integrands of the bilinear and linear forms). 
+# At this point, we are ready to build the nonlinear FE problem. To this end, we need to define the weak residual and also its corresponding Jacobian. This is done following a similar procedure to the one considered in previous tutorials to define the bilinear and linear forms associated with linear FE problems. In this case, instead of an `AffineFETerm` (which is for linear problems), we use a `FETerm` which accounts for the non-linear case. An instance of `FETerm` is constructed by providing the integrands of the weak residual and its Jacobian (in a similar way an `AffineFETerm` is constructed from the integrands of the bilinear and linear forms). 
 # 
 # On the one hand, the integrand of the weak residual is build as follows
 
 using LinearAlgebra: norm
 const p = 3
-@law flux(x,∇u) = norm(∇u)^(p-2) * ∇u
-f(x) = 1.0
-res(u,v) = inner( ∇(v), flux(∇(u)) ) - inner(v,f)
+@law flux(∇u) = norm(∇u)^(p-2) * ∇u
+f(x) = 1
+res(u,v) = ∇(v)*flux(∇(u)) - v*f
 
 # Function `res` is the one representing the integrand of the weak residual $[r(u)](v)$. The first argument of function `res` stands for the function $u\in U_g$, where the residual is evaluated, and the second argument stands for a generic test function $v\in V_0$. Note that we have used the macro `@law` to construct the "constitutive  law" that relates the nonlinear flux with the gradient of the solution.
 # 
 # On the other hand,  we implement a function `jac` representing the integrand of the Jacobian
 
-@law dflux(x,∇du,∇u) =
+@law dflux(∇du,∇u) =
   (p-2)*norm(∇u)^(p-4)*inner(∇u,∇du)*∇u + norm(∇u)^(p-2) * ∇du
-jac(u,v,du) = inner(  ∇(v) , dflux(∇(du),∇(u)) )
+jac(u,v,du) = ∇(v)*dflux(∇(du),∇(u))
 
 # The first argument of function `jac` stands for function $u\in U_g$, where the Jacobian is evaluated. The second argument is a test function $v\in V_0$, and the third argument represents an arbitrary direction $\delta u \in V_0$. Note that we have also used the macro `@law` to define the linearization of the nonlinear flux. 
 # 
-# With these functions, we build the `NonLinearFETerm` as follows:
+# With these functions, we build the `FETerm` as follows:
 
 trian = Triangulation(model)
-quad = CellQuadrature(trian,degree=2)
-t_Ω = NonLinearFETerm(res,jac,trian,quad)
+degree=2
+quad = CellQuadrature(trian,degree)
+t_Ω = FETerm(res,jac,trian,quad)
 
-# We build the `NonLinearFETerm` by passing in the first and second arguments the functions that represent the integrands of the residual and Jacobian respectively. The other two arguments, are the triangulation and quadrature used to perform the integrals numerically. From this `NonLinearFETerm` object, we finally construct the nonlinear FE problem
+# We build the `FETerm` by passing in the first and second arguments the functions that represent the integrands of the residual and Jacobian respectively. The other two arguments, are the triangulation and quadrature used to perform the integrals numerically. From this `FETerm` object, we finally construct the nonlinear FE problem
 
-op = NonLinearFEOperator(V,Ug,t_Ω)
+op = FEOperator(V0,Ug,t_Ω)
 
-# Here, we have constructed an instance of `NonLinearFEOperator`, which is the type that represents a general nonlinear FE problem in Gridap. The constructor takes the test and trial spaces, and the `FETerms` objects describing the corresponding weak form (in this case only a single term).
+# Here, we have constructed an instance of `FEOperator`, which is the type that represents a general nonlinear FE problem in Gridap. The constructor takes the test and trial spaces, and the `FETerms` objects describing the corresponding weak form (in this case only a single term).
 # 
 # ## Nonlinear solver phase
 # 
-# We have already built the nonlinear FE problem. Now, the remaining step is to solve it. In Gridap, nonlinear (and also linear) FE problems can be solved with instances of the type `NonLinearFESolver`. The type `NonLinearFESolver` is a concrete implementation of the abstract type `FESolver` particularly designed for nonlinear problems (in contrast to the concrete type `LinearFESolver` which is for the linear case).
+# We have already built the nonlinear FE problem. Now, the remaining step is to solve it. In Gridap, nonlinear (and also linear) FE problems can be solved with instances of the type `FESolver`.
 # 
-# We construct an instance of `NonLinearFESolver` as follows:
+# We construct an instance of `FESolver` as follows:
 
 using LineSearches: BackTracking
 nls = NLSolver(
   show_trace=true, method=:newton, linesearch=BackTracking())
-solver = NonLinearFESolver(nls)
+solver = FESolver(nls)
 
 # Note that the `NLSolver` function used above internally calls the `nlsolve` function of the [NLsolve](https://github.com/JuliaNLSolvers/NLsolve.jl) package with the provided key-word arguments. Thus, one can use any of the nonlinear methods available via the function `nlsolve` to solve the nonlinear FE problem. Here, we have selected a Newton-Raphson method with a back-tracking line-search from the [LineSearches](https://github.com/JuliaNLSolvers/LineSearches.jl) package. 
 # 

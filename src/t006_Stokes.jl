@@ -1,72 +1,49 @@
 # Driver that computes the lid-driven cavity benchmark at low Reynolds numbers
 # when using a mixed FE Q(k)/Pdisc(k-1).
 
-##
-using Test
+# Load Gridap library
 using Gridap
-import Gridap: ∇
 
-##
-# Construct the discrete model for the domain Ω = [0,1]^2 and a structured mesh
-# of 10 × 10 square elements
-D = 2
+# Discrete model
 n = 100
-model = CartesianDiscreteModel(domain=(0.0,1.0,0.0,1.0), partition=(n,n))
-# Construct the FEspace.
-# The space is a vector Lagrangian space in 2D.
-# We allow each one of the fields to have different boundary conditions
-order = 2
-const T = VectorValue{2,Float64}
-# num_comps = 2
-# 1,2,3,4 are the tags for the vertices of the square domain Ω, 5 is the bottom
-# side, 6 the top side, 7 the left side, and 8 the right side.
-diritags = [1,2,3,4,5,6,7,8]
-# We want to enforce both u_x and u_y components for all entities in the
-# Dirichlet boundary. The value to be enforced will be defined later.
-# For the velocity, we use a C0 (continuous) FE space of Qk (tensor product of
-# Pk uni-variate polynomials in each direction) with the previous Dirichlet
-# boundary.
-fespace1 = CLagrangianFESpace(T,model,order,diritags)
-# For the pressure, we consider a Pk space at each cell, discontinuous among cells.
-# Since the pressure space can only be defined up to a constant, we enforce
-# an arbitrary dof to be zero.
-# @santiagobadia : I would create a method to fix dof 1, nicer
-# @santiagobadia : I would create a method for all FESpaces
-reffe = PDiscRefFE(Float64,D,order-1)
-_fespace2 = DiscFESpace(reffe,model)
-fixeddofs = [1,]
-fespace2 = ConstrainedFESpace(_fespace2,fixeddofs)
+domain = (0,1,0,1)
+partition = (n,n)
+model = CartesianDiscreteModel(domain, partition)
 
-# Define test and trial
-V1 = TestFESpace(fespace1)
-V2 = TestFESpace(fespace2)
-V = [V1, V2]
+# Define Dirichlet boundaries
+labels = get_face_labeling(model)
+add_tag_from_tags!(labels,"diri1",[6,])
+add_tag_from_tags!(labels,"diri0",[1,2,3,4,5,7,8])
 
-# Now, we define the value of the velocity to be enforced on the Dirichlet
-# boundary
-uD_1(x) = VectorValue(0.0,0.0)
-uD_2(x) = VectorValue(1.0,0.0)
-uD = [ (i == 6) ? uD_2 : uD_1 for i = 1:8 ]
-U1 = TrialFESpace(fespace1,uD)
-U2 = TrialFESpace(fespace2)
-U = [U1, U2]
+# Define test FESpaces (Q2/P1(disc) pair)
+V = TestFESpace(
+  reffe=:QLagrangian, conformity=:H1, valuetype=VectorValue{2,Float64},
+  model=model, labels=labels, order=2, dirichlet_tags=["diri0","diri1"])
+Q = TestFESpace(
+  reffe=:PLagrangian, conformity=:L2, valuetype=Float64,
+  model=model, order=1, constraint=:zeromean)
+Y = MultiFieldFESpace([V,Q])
 
-# Define integration mesh and quadrature for volume
-trian = Triangulation(model)
-quad = CellQuadrature(trian,degree=(order-1)*2)
+# Define trial FESpaces from Dirichlet values
+u0 = VectorValue(0,0)
+u1 = VectorValue(1,0)
+U = TrialFESpace(V,[u0,u1])
+P = TrialFESpace(Q)
+X = MultiFieldFESpace([U,P])
 
-# divfun(x,∇u) = tr((∇u))
-# div(u) = CellBasis(trian,divfun,∇(u))
+# Define integration mesh and quadrature
+trian = get_triangulation(model); degree = 2
+quad = CellQuadrature(trian,degree)
 
-
-# Terms in the volume
-a(v,u) = inner(∇(v[1]),∇(u[1])) - inner(div(v[1]),u[2]) + inner(v[2],div(u[1]))
+# Define and solve the FE problem
+function a(y,x)
+  v,q = y
+  u,p = x
+  inner(∇(v),∇(u)) - (∇*v)*p + q*(∇*u)
+end
 t_Ω = LinearFETerm(a,trian,quad)
-op = LinearFEOperator(V,U,t_Ω)
+op = AffineFEOperator(Y,X,t_Ω)
+uh, ph = solve(op)
 
-# Now we compute the resulting FE problem
-uh = solve(op)
-
-# and write the results
-writevtk(trian,"../tmp/stokesresults",cellfields=["uh"=>uh[1],"ph"=>uh[2]])
-##
+# Export results to vtk
+writevtk(trian,"results",order=2,cellfields=["uh"=>uh,"ph"=>ph])

@@ -27,7 +27,7 @@ J(F) = sqrt(det(C(F)))
 
 #E(F) = 0.5*( F'*F - one(F) )
 
-@law dE(x,∇du,∇u) = 0.5*( ∇du*F(∇u) + (∇du*F(∇u))' )
+@law dE(∇du,∇u) = 0.5*( ∇du*F(∇u) + (∇du*F(∇u))' )
 
 # Right Cauchy-green deformation tensor
 
@@ -35,20 +35,20 @@ C(F) = (F')*F
 
 # Constitutive law (Neo hookean)
 
-@law function S(x,∇u)
+@law function S(∇u)
   Cinv = inv(C(F(∇u)))
   μ*(one(∇u)-Cinv) + λ*log(J(F(∇u)))*Cinv
 end
 
-@law function dS(x,∇du,∇u)
+@law function dS(∇du,∇u)
   Cinv = inv(C(F(∇u)))
-  _dE = dE(x,∇du,∇u)
+  _dE = dE(∇du,∇u)
   λ*inner(Cinv,_dE)*Cinv + 2*(μ-λ*log(J(F(∇u))))*Cinv*_dE*(Cinv')
 end
 
 # Cauchy stress tensor
 
-@law σ(x,∇u) = (1.0/J(F(∇u)))*F(∇u)*S(x,∇u)*(F(∇u))'
+@law σ(∇u) = (1.0/J(F(∇u)))*F(∇u)*S(∇u)*(F(∇u))'
 
 # Weak form
 
@@ -61,26 +61,28 @@ jac_geo(u,v,du) = inner( ∇(v), S(∇(u))*∇(du) )
 jac(u,v,du) = jac_mat(u,v,du) + jac_geo(u,v,du)
 
 # Model
-model = CartesianDiscreteModel(domain=(0.0,1.0,0.0,1.0), partition=(20,20))
+domain = (0,1,0,1)
+partition = (20,20)
+model = CartesianDiscreteModel(domain,partition)
 
 # Define new boundaries
-labels = FaceLabels(model)
+labels = get_face_labeling(model)
 add_tag_from_tags!(labels,"diri_0",[1,3,7])
 add_tag_from_tags!(labels,"diri_1",[2,4,8])
 
 # Construct the FEspace
-order = 1
-diritags = ["diri_0", "diri_1"]
-T = VectorValue{2,Float64}
-fespace = CLagrangianFESpace(T,model,labels,order,diritags)
-V = TestFESpace(fespace)
+V = TestFESpace(
+  model=model,valuetype=VectorValue{2,Float64},
+  reffe=:Lagrangian,conformity=:H1,order=1,
+  dirichlet_tags = ["diri_0", "diri_1"])
 
 # Setup integration
 trian = Triangulation(model)
-quad = CellQuadrature(trian,degree=2)
+degree = 2
+quad = CellQuadrature(trian,degree)
 
 # Setup weak form terms
-t_Ω = NonLinearFETerm(res,jac,trian,quad)
+t_Ω = FETerm(res,jac,trian,quad)
 
 # Setup non-linear solver
 nls = NLSolver(
@@ -88,27 +90,26 @@ nls = NLSolver(
   method=:newton,
   linesearch=BackTracking())
 
-solver = NonLinearFESolver(nls)
-
+solver = FESolver(nls)
 
 function run(x0,disp_x,step,nsteps)
 
-  g0 = zero(T)
+  g0 = VectorValue(0.0,0.0)
   g1 = VectorValue(disp_x,0.0)
-  U = TrialFESpace(fespace,[g0,g1])
+  U = TrialFESpace(V,[g0,g1])
 
   #FE problem
-  op = NonLinearFEOperator(V,U,t_Ω)
+  op = FEOperator(V,U,t_Ω)
   
   println("\n+++ Solving for disp_x $disp_x in step $step of $nsteps +++\n")
   
   uh = FEFunction(U,x0)
 
-  solve!(uh,solver,op)
+  uh, = solve!(uh,solver,op)
   
   writevtk(trian,"results_$(lpad(step,3,'0'))",cellfields=["uh"=>uh,"sigma"=>σ(∇(uh))])
 
-  return free_dofs(uh)
+  return get_free_values(uh)
 
 end
 
@@ -118,7 +119,7 @@ function runs()
  disp_inc = 0.02
  nsteps = ceil(Int,abs(disp_max)/disp_inc)
  
- x0 = zeros(Float64,num_free_dofs(fespace))
+ x0 = zeros(Float64,num_free_dofs(V))
 
  for step in 1:nsteps
    disp_x = step * disp_max / nsteps

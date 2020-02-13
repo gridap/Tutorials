@@ -126,7 +126,7 @@ px = get_physical_coordinate(trian)
 function a(y,x)
    v, q = y
    u, p = x
-   inner(v,σ(px,u)) - (∇*v)*p + q*(∇*u)
+   v*σ(px,u) - (∇*v)*p + q*(∇*u)
 end
 
 # The arguments `y` and `x` of previous function represent a test and a trial function in the multi-field test and trial spaces `Y` and `X` respectively. In the first lines in the function definition, we unpack the single-field test and trial functions from the multi-field ones. E.g., `v` represents a test function for the flux and `q` for the pressure. These quantities can also be written as `y[1]` and `y[2]` respectively. From the single-field functions, we write the different terms of the bilinear form as we have done in previous tutorials.

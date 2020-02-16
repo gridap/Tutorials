@@ -76,11 +76,13 @@
 
 using Gridap
 n = 100
-model = CartesianDiscreteModel(domain=(0.0,1.0,0.0,1.0), partition=(n,n))
+domain = (0,1,0,1)
+partition = (n,n)
+model = CartesianDiscreteModel(domain,partition)
 
 # For convenience, we create two new boundary tags,  namely `"diri1"` and `"diri0"`, one for the top side of the square (where the velocity is non-zero), and another for the rest of the boundary (where the velocity is zero).
 
-labels = FaceLabels(model)
+labels = get_face_labeling(model)
 add_tag_from_tags!(labels,"diri1",[6,])
 add_tag_from_tags!(labels,"diri0",[1,2,3,4,5,7,8])
 
@@ -90,45 +92,42 @@ add_tag_from_tags!(labels,"diri0",[1,2,3,4,5,7,8])
 
 D = 2
 order = 2
-fespace1 = FESpace(
+V = TestFESpace(
   reffe=:Lagrangian, conformity=:H1, valuetype=VectorValue{D,Float64},
-  model=model, labels=labels, order=order, diritags=["diri0","diri1"])
+  model=model, labels=labels, order=order, dirichlet_tags=["diri0","diri1"])
 
 # The interpolation space for the pressure is build as follows
 
-fespace2 = FESpace(
+Q = FESpace(
   reffe=:PLagrangian, conformity=:L2, valuetype=Float64,
   model=model, order=order-1, constraint=:zeromean)
 
 # With the options `reffe=:PLagrangian`, `valuetype=Float64`, and `order=order-1`, we select the local polynomial space $P_{k-1}(T)$ on the cells $T\in\mathcal{T}$. With the symbol `:PLagrangian` we specifically chose a local Lagrangian interpolation of type "P". Using `:Lagrangian`, would lead to a local Lagrangian of type "Q" since this is the default for quadrilateral or hexahedral elements. On the other hand, `constraint=:zeromean` leads to a FE space, whose functions are constrained to have mean value equal to zero, which is just what we need for the pressure space. With these objects, we build the test and trial multi-field FE spaces
 
-uD0(x) = VectorValue(0.0,0.0)
-uD1(x) = VectorValue(1.0,0.0)
+uD0 = VectorValue(0,0)
+uD1 = VectorValue(1,0)
+U = TrialFESpace(V,[uD0,uD1])
+P = TrialFESpace(Q)
 
-V = TestFESpace(fespace1)
-Q = TestFESpace(fespace2)
-Y = [V, Q]
-
-U = TrialFESpace(fespace1,[uD0,uD1])
-P = TrialFESpace(fespace2)
-X = [U, P]
+Y = MultiFieldFESpace([V, Q])
+X = MultiFieldFESpace([U, P])
 
 # ## Nonlinear weak form
 #
 # The different terms of the nonlinear weak form for this example are defined following an approach similar to the one discussed for the $p$-Laplacian equation, but this time using the notation for multi-field problems.
 
 const Re = 10.0
-@law conv(x,u,∇u) = Re*(∇u')*u
-@law dconv(x,du,∇du,u,∇u) = conv(x,u,∇du)+conv(x,du,∇u)
+@law conv(u,∇u) = Re*(∇u')*u
+@law dconv(du,∇du,u,∇u) = conv(u,∇du)+conv(du,∇u)
 
 function a(y,x)
   u, p = x
   v, q = y
-  inner(∇(v),∇(u)) - inner(div(v),p) + inner(q,div(u))
+  inner(∇(v),∇(u)) - (∇*v)*p + q*(∇*u)
 end
 
-c(v,u) = inner(v,conv(u,∇(u)))
-dc(v,du,u) = inner(v,dconv(du,∇(du),u,∇(u)))
+c(v,u) = v*conv(u,∇(u))
+dc(v,du,u) = v*dconv(du,∇(du),u,∇(u))
 
 function res(x,y)
   u, p = x
@@ -146,9 +145,10 @@ end
 # With the functions `res`, and `jac` representing the weak residual and the Jacobian, we build the nonlinear FE problem:
 
 trian = Triangulation(model)
-quad = CellQuadrature(trian,degree=(order-1)*2)
-t_Ω = NonLinearFETerm(res,jac,trian,quad)
-op = NonLinearFEOperator(Y,X,t_Ω)
+degree = (order-1)*2
+quad = CellQuadrature(trian,degree)
+t_Ω = FETerm(res,jac,trian,quad)
+op = FEOperator(Y,X,t_Ω)
 
 # ## Nonlinear solver phase
 # 
@@ -157,7 +157,7 @@ op = NonLinearFEOperator(Y,X,t_Ω)
 using LineSearches: BackTracking
 nls = NLSolver(
   show_trace=true, method=:newton, linesearch=BackTracking())
-solver = NonLinearFESolver(nls)
+solver = FESolver(nls)
 
 # In this example, we solve the problem without providing an initial guess (a default one equal to zero will be generated internally)
 

@@ -34,14 +34,12 @@
 using Gridap
 
 u(x) = x[1] + x[2]
-f(x) = 0.0
+f(x) = 0
 
-# Note that it is important that function `f` returns a `Float64` value. This is needed since we are going to use `Float64` numbers to represent the solution.
-#
 # We also need to define the gradient of $u$ since we will compute the $H^1$ error norm later. In that case, the gradient is simply defined as
 #
 
-∇u(x) = VectorValue(1.0,1.0)
+∇u(x) = VectorValue(1,1)
 
 # Note that we have used the constructor `VectorValue` to build the vector that represents the gradient. However, we still need a final trick. We need to tell the Gridap library that the gradient of the function `u` is available in the function `∇u` (at this moment `u` and `∇u` are two standard Julia functions without any connection between them). This is done by adding an extra method to the function `gradient` (aka `∇`) defined in Gridap:
 
@@ -56,20 +54,22 @@ import Gridap: ∇
 #
 # In order to discretize the geometry of the unit square, we use the Cartesian mesh generator available in Gridap:
 
-limits = (0.0, 1.0, 0.0, 1.0)
-model = CartesianDiscreteModel(domain=limits, partition=(4,4));
+domain = (0,1,0,1)
+partition = (4,4)
+model = CartesianDiscreteModel(domain,partition)
 
 # The type `CartesianDiscreteModel` is a concrete type that inherits from `DiscreteModel`, which is specifically designed for building Cartesian meshes. The `CartesianDiscreteModel` constructor takes a tuple containing limits of the box we want to discretize  plus a tuple with the number of cells to be generated in each direction (here 4 by 4 cells). Note that the `CaresianDiscreteModel` is implemented for arbitrary dimensions. For instance, the following lines build a `CartesianDiscreteModel`  for the unit cube $(0,1)^3$ with 4 cells per direction
 
-limits3d = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
-model3d = CartesianDiscreteModel(domain=limits3d, partition=(4,4,4));
+domain3d = (0,1,0,1,0,1)
+partition3d = (4,4,4)
+model3d = CartesianDiscreteModel(domain3d,partition3d)
 
 # You could also generate a mesh for the unit tesseract $(0,1)^4$ (i.e., the unit cube in 4D). Look how the 2D and 3D models are build and just follow the sequence.
 #
 
 # Let us return to the 2D `CartesianDiscreteModel` that we have already constructed. You can inspect it by writing it into vtk format. Note that you can also print a 3D model, but not a 4D one. In the future, it would be cool to generate a movie from a 4D model, but this functionality is not yet implemented.
 
-writevtk(model,"model");
+writevtk(model,"model")
 
 
 # If you open the generated files, you will see that the boundary vertices and facets are identified with the name "boundary". This is just what we need to impose the Dirichlet boundary conditions in this example.
@@ -90,23 +90,23 @@ writevtk(model,"model");
 # We compute a FE approximation of the Poisson problem above by following the steps detailed in the previous tutorial:
 
 order = 1
-V = FESpace(
+V0 = TestFESpace(
   reffe=:Lagrangian, order=order, valuetype=Float64,
-  conformity=:H1, model=model, diritags="boundary")
+  conformity=:H1, model=model, dirichlet_tags="boundary")
 
-V0 = TestFESpace(V)
-U = TrialFESpace(V,u)
+U = TrialFESpace(V0,u)
 
 trian = Triangulation(model)
-quad = CellQuadrature(trian,degree=2)
+degree = 2
+quad = CellQuadrature(trian,degree)
 
-a(v,u) = inner(∇(v), ∇(u))
-b(v) = inner(v,f)
+a(v,u) = ∇(v)*∇(u)
+b(v) = v*f
 
 t_Ω = AffineFETerm(a,b,trian,quad)
-op = LinearFEOperator(V0,U,t_Ω)
+op = AffineFEOperator(V0,U,t_Ω)
 
-uh = solve(op);
+uh = solve(op)
 
 # Note that we are imposing Dirichlet boundary conditions on the objects tagged as "boundary" and that we are using the manufactured solution `u` to construct the trial FE space. Not also that we are not explicitly constructing an `Assembler` object nor a `FESolver`. We are relying on default values.
 #
@@ -115,11 +115,11 @@ uh = solve(op);
 #
 # Our goal is to check that the discratization error associated with the computed approximation `uh` is close to machine precision. To this end, the first step is to compute the discretization error, which is done as you would expect:
 
-e = u - uh;
+e = u - uh
 
 # Once the error is defined, you can, e.g., visualize it.
 
-writevtk(trian,"error",cellfields=["e" => e]);
+writevtk(trian,"error",cellfields=["e" => e])
 
 # This generates a file called `error.vtu`. Open it with Paraview to check that the error is of the order of the machine precision.
 #
@@ -134,7 +134,7 @@ writevtk(trian,"error",cellfields=["e" => e]);
 #
 # In order to compute these norms, we are going to use the `integrate` function. To this end, we need to define the integrands that we want to integrate, namely
 
-l2(w) = inner(w,w)
+l2(w) = w*w
 h1(w) = a(w,w) + l2(w)
 
 # Note that in order to define the integrand of the $H^1$ norm, we have reused function `a`, previously used to define the bilinear form of the problem.  Once we have defined the integrands, we are ready to compute the integrals. For the $L^2$ norm
@@ -165,27 +165,28 @@ f(x) = (k^2)*sin(k*x[1])*x[2]
 # Since we have redefined the valiables `u`, `∇u`, and `f`, we need to execute these lines again
 
 ∇(::typeof(u)) = ∇u
-b(v) = inner(v,f)
+b(v) = v*f
 
 # In order to perform the convergence test, we write in a function all the code needed to perform a single computation and measure its error. The input of this function is the number of cells in each direction and the interpolation order. The output is the computed $L^2$ and $H^1$ error norms.
 
 function run(n,order)
 
-  limits = (0.0, 1.0, 0.0, 1.0)
-  model = CartesianDiscreteModel(domain=limits, partition=(n,n))
+  domain = (0,1,0,1)
+  partition = (n,n)
+  model = CartesianDiscreteModel(domain,partition)
 
-  V = FESpace(
+  V0 = TestFESpace(
     reffe=:Lagrangian, order=order, valuetype=Float64,
-    conformity=:H1, model=model, diritags="boundary")
+    conformity=:H1, model=model, dirichlet_tags="boundary")
 
-  V0 = TestFESpace(V)
-  U = TrialFESpace(V,u)
+  U = TrialFESpace(V0,u)
 
   trian = Triangulation(model)
-  quad = CellQuadrature(trian,degree=order+2)
+  degree=order+2
+  quad = CellQuadrature(trian,degree)
 
   t_Ω = AffineFETerm(a,b,trian,quad)
-  op = LinearFEOperator(V0,U,t_Ω)
+  op = AffineFEOperator(V0,U,t_Ω)
 
   uh = solve(op)
 

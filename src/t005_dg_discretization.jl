@@ -100,9 +100,10 @@ import Gridap: ∇
 #  In order to discretize the geometry of the unit cube, we use the Cartesian mesh generator available in Gridap.
 
 L = 1.0
-limits = (0.0, L, 0.0, L, 0.0, L)
+domain = (0.0, L, 0.0, L, 0.0, L)
 n = 4
-model = CartesianDiscreteModel(domain=limits, partition=(n,n,n))
+partition = (n,n,n)
+model = CartesianDiscreteModel(domain,partition)
 
 # The type `CartesianDiscreteModel` is a concrete type that inherits from `DiscreteModel`, which is specifically designed for building Cartesian meshes. The `CartesianDiscreteModel` constructor takes a tuple containing limits of the box we want to discretize  plus a tuple with the number of cells to be generated in each direction (here $4\times4\times4$ cells). You can write the model in vtk format to visualize it (see next figure). 
 
@@ -112,8 +113,9 @@ model = CartesianDiscreteModel(domain=limits, partition=(n,n,n))
 # 
 #  Note that the `CaresianDiscreteModel` is implemented for arbitrary dimensions. For instance, the following lines build a `CartesianDiscreteModel`  for the unit square $(0,1)^2$ with 4 cells per direction
 
-limits = (0.0, L, 0.0, L)
-model2D = CartesianDiscreteModel(domain=limits, partition=(n,n))
+domain2D = (0.0, L, 0.0, L)
+partition2D = (n,n)
+model2D = CartesianDiscreteModel(domain2D,partition2D)
 
 # You could also generate a mesh for the unit tesseract $(0,1)^4$ (i.e., the unit cube in 4D). Look how the 2D and 3D models are build and just follow the sequence.
 # 
@@ -122,16 +124,15 @@ model2D = CartesianDiscreteModel(domain=limits, partition=(n,n))
 # On top of the discrete model, we create the discontinuous space $V$ as follows
 
 order = 3
-fespace = FESpace(
+V = TestFESpace(
   reffe=:Lagrangian, valuetype=Float64, order=order,
   conformity=:L2, model=model)
 
-# We have select a Lagrangian, scalar-valued interpolation of order $3$ within the cells of the discrete model. Since the cells are hexahedra, the resulting Lagrangian shape functions are tri-cubic polynomials. In contrast to previous tutorials, where we have constructed $H^1$-conforming (i.e., continuous) FE spaces, here we construct a $L^2$-conforming (i.e., discontinuous) FE space. That is, we do not impose any type of continuity of the shape function on the cell boundaries, which leads to the discontinuous FE space $V$ of the DG formulation. Note also that we do not pass any information about the Dirichlet boundary to the `FESpace` constructor since the Dirichlet boundary conditions are not imposed strongly in this example.
+# We have select a Lagrangian, scalar-valued interpolation of order $3$ within the cells of the discrete model. Since the cells are hexahedra, the resulting Lagrangian shape functions are tri-cubic polynomials. In contrast to previous tutorials, where we have constructed $H^1$-conforming (i.e., continuous) FE spaces, here we construct a $L^2$-conforming (i.e., discontinuous) FE space. That is, we do not impose any type of continuity of the shape function on the cell boundaries, which leads to the discontinuous FE space $V$ of the DG formulation. Note also that we do not pass any information about the Dirichlet boundary to the `TestFESpace` constructor since the Dirichlet boundary conditions are not imposed strongly in this example.
 # 
-# From the `fespace` object we have constructed in previous code snippet, we build the test and trial FE spaces as usual.
+# From the `V` object we have constructed in previous code snippet, we build the trial FE space as usual.
 
-V = TestFESpace(fespace)
-U = TrialFESpace(fespace)
+U = TrialFESpace(V)
 
 # Note that we do not pass any Dirichlet function to the `TrialFESpace` constructor since we do not impose Dirichlet boundary conditions strongly here.
 # 
@@ -156,46 +157,46 @@ writevtk(strian,"strian")
 # 
 # Once we have constructed the triangulations needed in this example, we define the corresponding quadrature rules.
 
-quad = CellQuadrature(trian,degree=2*order)
-bquad = CellQuadrature(btrian,degree=2*order)
-squad = CellQuadrature(strian,degree=2*order)
+degree = 2*order
+quad = CellQuadrature(trian,degree)
+bquad = CellQuadrature(btrian,degree)
+squad = CellQuadrature(strian,degree)
 
-# We still need a way to represent the unit outward normal vector to the boundary $\partial\Omega$, and the unit normal vector on the interior faces $\mathcal{F}_\Gamma$. This is done with the `NormalVector` constructor.
+# We still need a way to represent the unit outward normal vector to the boundary $\partial\Omega$, and the unit normal vector on the interior faces $\mathcal{F}_\Gamma$. This is done with the `get_normal_vector` getter.
 
-nb = NormalVector(btrian)
-ns = NormalVector(strian)
+nb = get_normal_vector(btrian)
+ns = get_normal_vector(strian)
 
-# The `NormalVector` constructor takes either a boundary or a skeleton triangulation and returns an object representing the normal vector to the corresponding surface. For boundary triangulations, the returned normal vector is the unit outwards one, whereas for skeleton triangulations the orientation of the returned normal is arbitrary. In the current implementation (Gridap v0.5.0), the unit normal is outwards to the cell with smaller id among the two cells that share an interior facet in $\mathcal{F}_\Gamma$.
+# The `get_normal_vector` getter takes either a boundary or a skeleton triangulation and returns an object representing the normal vector to the corresponding surface. For boundary triangulations, the returned normal vector is the unit outwards one, whereas for skeleton triangulations the orientation of the returned normal is arbitrary. In the current implementation (Gridap v0.5.0), the unit normal is outwards to the cell with smaller id among the two cells that share an interior facet in $\mathcal{F}_\Gamma$.
 # 
 # ## Weak form
 #
 # With these ingredients we can define the different terms in the weak form. First, we start with the terms $a_\Omega(\cdot,\cdot)$ , and $b_\Omega(\cdot)$ associated with integrals in the volume $\Omega$. This is done as in the tutorial for the Poisson equation.
 
-a_Ω(v,u) = inner(∇(v), ∇(u))
-b_Ω(v) = inner(v,f)
+a_Ω(v,u) = ∇(v)*∇(u)
+b_Ω(v) = v*f
 t_Ω = AffineFETerm(a_Ω,b_Ω,trian,quad)
 
 # The terms $a_{\partial\Omega}(\cdot,\cdot)$ and $b_{\partial\Omega}(\cdot)$ associated with integrals on the boundary $\partial\Omega$ are defined using an analogous approach. First, we define two functions representing the integrands of the forms $a_{\partial\Omega}(\cdot,\cdot)$ and $b_{\partial\Omega}(\cdot)$. Then, we build an `AffineFETerm` from these functions and the boundary triangulation and its corresponding quadrature rule:
 
 h = L / n
 γ = order*(order+1)
-a_∂Ω(v,u) = (γ/h) * inner(v,u) - inner(v, ∇(u)*nb ) - inner(∇(v)*nb, u)
-b_∂Ω(v) = (γ/h) * inner(v,g) - inner(∇(v)*nb, g)
+a_∂Ω(v,u) = (γ/h)*v*u - v*(∇(u)*nb) - (∇(v)*nb)*u
+b_∂Ω(v) = (γ/h)*v*g - (∇(v)*nb)*g
 t_∂Ω = AffineFETerm(a_∂Ω,b_∂Ω,btrian,bquad)
 
 # Note that in the definition of the functions `a_∂Ω` and `b_∂Ω`, we have used the object `nb` representing the outward unit normal to the boundary $\partial\Omega$. The code definition of  `a_∂Ω` and `b_∂Ω` is indeed very close to the mathematical definition of the forms  $a_{\partial\Omega}(\cdot,\cdot)$ and $b_{\partial\Omega}(\cdot)$. 
 # 
 # Finally, we need to define the term $a_\Gamma(\cdot,\cdot)$ integrated on the interior facets $\mathcal{F}_\Gamma$. In this case, we use a `LinearFETerm` since the terms integrated on the interior facets only contribute to the system matrix and not to the right-hand-side vector.
 
-a_Γ(v,u) = (γ/h) * inner( jump(v*ns), jump(u*ns)) -
-  inner( jump(v*ns), mean(∇(u)) ) - inner( mean(∇(v)), jump(u*ns) )
+a_Γ(v,u) = (γ/h)*jump(v*ns)*jump(u*ns) - jump(v*ns)*mean(∇(u)) - mean(∇(v))*jump(u*ns)
 t_Γ = LinearFETerm(a_Γ,strian,squad)
 
 # Note that the arguments `v`, `u` of function  `a_Γ` represent a test and trial function *restricted* to the interior facets $\mathcal{F}_\Gamma$. As mentioned before in the presentation of the DG formulation, the restriction of a function $v\in V$ to the interior faces leads to two different values $v^+$ and $v^-$ . In order to compute jumps and averages of the quantities $v^+$ and $v^-$, we use the functions `jump` and `mean`, which represent the jump and mean value operators $\lbrack\!\lbrack \cdot \rbrack\!\rbrack$ and $\{\! \!\{\cdot\}\! \!\}$ respectively. Note also that we have used the object `ns` representing the unit normal vector on the interior facets. As a result, the notation used to define function `a_Γ` is very close to the mathematical definition of the terms in the bilinear form $a_\Gamma(\cdot,\cdot)$. 
 # 
 # Once the different terms of the weak form have been defined, we build and solve the FE problem.
 
-op = LinearFEOperator(V,U,t_Ω,t_∂Ω,t_Γ)
+op = AffineFEOperator(V,U,t_Ω,t_∂Ω,t_Γ)
 uh = solve(op)
 
 # ## Discretization error 
@@ -225,7 +226,7 @@ e = u - uh
 
 # We compute the error norms as follows. First, we implement the integrands of the norms we want to compute.
 
-l2(u) = inner(u,u)
+l2(u) = u*u
 h1(u) = a_Ω(u,u) + l2(u)
 
 # Then, we compute the corresponding integrals with the `integrate` function.
@@ -283,8 +284,8 @@ tol = 1.e-10
 #src   bquad = CellQuadrature(btrian,degree=2*order)
 #src 
 #src   #Setup normal vectors
-#src   nb = NormalVector(btrian)
-#src   ns = NormalVector(strian)
+#src   nb = get_normal_vector(btrian)
+#src   ns = get_normal_vector(strian)
 #src 
 #src   #Setup weak form (volume)
 #src   a_Ω(v,u) = inner(∇(v), ∇(u))

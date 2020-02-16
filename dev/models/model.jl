@@ -1,13 +1,12 @@
 
 using Gridap
+using Gridap.Io
 using GridapGmsh
-using JSON
 
 model = GmshDiscreteModel("model.msh")
 
 writevtk(model,"model")
 
 fn = "model.json"
-open(fn,"w") do f
-  JSON.print(f,model)
-end
+to_json_file(model,fn)
+

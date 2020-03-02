@@ -13,7 +13,8 @@ files = [
   "t004_hyperelasticity"=>"t005_hyperelasticity",
   "t005_dg_discretization"=> "t006_poisson_with_dg",
   "t007_darcy"=>"t007_darcy_with_rt",
-  "t008_inc_navier_stokes"=>"t008_inc_navier_stokes"]
+  "t008_inc_navier_stokes"=>"t008_inc_navier_stokes",
+  "fsi_tutorial"=>"fsi_tutorial"]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)
 for (file,name) in files

@@ -42,3 +42,8 @@ using Test
 @testset "t008_inc_navier_stokes" begin include("../src/t008_inc_navier_stokes.jl") end
 end # module
 
+module fsi_tutorial
+using Test
+@testset "fsi_tutorial" begin include("../src/fsi_tutorial.jl") end
+end # module
+

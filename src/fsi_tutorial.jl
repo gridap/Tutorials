@@ -22,6 +22,7 @@ using Gridap.Arrays
 using Gridap.FESpaces
 import Gridap: ∇, ε
 using LinearAlgebra: tr
+using Gridap.Geometry
 
 # Analytical functions
 

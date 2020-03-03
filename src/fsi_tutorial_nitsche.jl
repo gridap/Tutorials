@@ -189,10 +189,10 @@ end
 function nitsche_Γ(x,y)
   us, uf, p = x
   vs, vf, q = y
-  (γ/h)*vf*uf - vf*(n_Γ*∇(uf)) - (n_Γ*∇(vf))*uf + (p*n_Γ)*vf + (q*n_Γ)*uf
-     - (γ/h)*vf*us + (n_Γ*∇(vf))*us - (q*n_Γ)*us
-     + (γ/h)*vs*us + vs*(n_Γ*∇(us)) + (n_Γ*∇(vs))*us
-     - (γ/h)*vf*uf - (n_Γ*∇(vf))*uf + (q*n_Γ)*uf
+  (γ/h)*vf*uf - vf*(n_Γ*ε(uf)) - (n_Γ*ε(vf))*uf + (p*n_Γ)*vf + (q*n_Γ)*uf
+     - (γ/h)*vf*us + (n_Γ*ε(vf))*us - (q*n_Γ)*us
+     + (γ/h)*vs*us + vs*(n_Γ*ε(us)) + (n_Γ*ε(vs))*us
+     - (γ/h)*vf*uf - (n_Γ*ε(vf))*uf + (q*n_Γ)*uf
 end
 
 function A_∂Ω(x,y)

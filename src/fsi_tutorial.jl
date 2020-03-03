@@ -51,6 +51,7 @@ using Gridap.Arrays
 using Gridap.FESpaces
 import Gridap: ∇, ε
 using LinearAlgebra: tr
+using Gridap.Geometry
 
 # Analytical functions
 
@@ -234,4 +235,4 @@ tol = 1.0e-9
 @test eu_h1 < tol
 @test ep_l2 < tol
 
-# end # module
+end # module

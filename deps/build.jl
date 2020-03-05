@@ -4,15 +4,15 @@ repo_src = joinpath(@__DIR__,"..","src")
 notebooks_dir = joinpath(@__DIR__,"..","notebooks")
 
 files = [
-  "Poisson equation"=>"t001_poisson.jl",
-  "Code validation"=>"t002_validation.jl",
-  "Linear elasticity"=>"t003_elasticity.jl", 
-  "p-Laplacian"=>"t0041_p_laplacian.jl", 
-  "Hyper-elasticity"=>"t004_hyperelasticity.jl",
-  "DG discretization"=>"t005_dg_discretization.jl",
-  "Poisson equation (with DG)"=> "t006_Stokes.jl",
-  "Darcy equation (with RT)"=>"t007_darcy.jl",
-  "Incompressible Navier-Stokes"=>"t008_inc_navier_stokes.jl"]
+  "Poisson equation"=>"poisson.jl",
+  "Code validation"=>"validation.jl",
+  "Linear elasticity"=>"elasticity.jl", 
+  "p-Laplacian"=>"p_laplacian.jl", 
+  "Hyper-elasticity"=>"hyperelasticity.jl",
+  "DG discretization"=>"dg_discretization.jl",
+  "Poisson equation (with DG)"=> "stokes.jl",
+  "Darcy equation (with RT)"=>"darcy.jl",
+  "Incompressible Navier-Stokes"=>"inc_navier_stokes.jl"]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)
 for (title,filename) in files

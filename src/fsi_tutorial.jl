@@ -11,8 +11,10 @@
 #
 #
 # ## Problem statement
-#  Let $\Gamma_{\rm FS}$ be the interface between a fluid domain $\Omega_{\rm F}$ and a solid domain $\Omega_{\rm S}$. We denote by $\Gamma_{\rm F,D}$ and $\Gamma_{\rm F,N}$ the Dirichlet and Neumann conditions on the fluid boundary.
-# The Fluid-Structure Interaction (FSI) problem reads: find $ u_{\rm F} $, $ p_{\rm F} $ and $ u_{\rm S} such that
+#  Let $\Gamma_{\rm FS}$ be the interface between a fluid domain $\Omega_{\rm F}$ and a solid domain $\Omega_{\rm S}$. We denote by $\Gamma_{\rm F,D}$ and $\Gamma_{\rm F,N}$ the fluid boundaries with Dirichlet and Neumann conditions, respectively.
+# The Fluid-Structure Interaction (FSI) problem reads:
+#
+# find $ u_{\rm F} $, $ p_{\rm F} $ and $ u_{\rm S} $ such that
 # ```math
 # \left\lbrace
 # \begin{aligned}
@@ -27,21 +29,23 @@
 # ```math
 # \left\lbrace
 # \begin{aligned}
-# # u_{\rm F} = g &\text{ on } \Gamma_{\rm F,D},\\
+# u_{\rm F} = g &\text{ on } \Gamma_{\rm F,D},\\
 # \boldsymbol{\sigma}_{\rm F}\cdot n_{\rm F} = 0 &\text{ on } \Gamma_{\rm F,N},\\
 # \end{aligned}
 # \right.
-#```
+# ```
 #
 # and the kinematic and dynamic conditions at the fluid-solid interface
 # ```math
-#  u_{\rm F} = u_{\rm S} &\text{ on } \Gamma_{\rm FS},\\
+# \left\lbrace
+# \begin{aligned}
+# u_{\rm F} = u_{\rm S} &\text{ on } \Gamma_{\rm FS},\\
 # \boldsymbol{\sigma}_{\rm F}\cdot n_{\rm F} + \boldsymbol{\sigma}_{\rm S}\cdot n_{\rm S} = 0 &\text{ on } \Gamma_{\rm FS}.\\
 # \end{aligned}
 # \right.
-#```
+# ```
 #
-# Where $\boldsymbol{\sigma}_{\rm F}=2\mu_{\rm F}\boldsymbol{\varepsilon}(u_{\rm F}) - p_{\rm F}\mathbf{I}$ and $\boldsymbol{\sigma}_{\rm F}=2\mu_{\rm S}\boldsymbol{\varepsilon}(u_{\rm S}) +\lambda_{\rm S}tr(\boldsymbol{\varepsilon}(u_{\rm S}))\mathbf{I}$.
+# Where $\boldsymbol{\sigma}_{\rm F}(u_{\rm F},p_{\rm F})=2\mu_{\rm F}\boldsymbol{\varepsilon}(u_{\rm F}) - p_{\rm F}\mathbf{I}$ and $\boldsymbol{\sigma}_{\rm S}(u_{\rm S})=2\mu_{\rm S}\boldsymbol{\varepsilon}(u_{\rm S}) +\lambda_{\rm S}tr(\boldsymbol{\varepsilon}(u_{\rm S}))\mathbf{I}$.
 
 module FSITest
 

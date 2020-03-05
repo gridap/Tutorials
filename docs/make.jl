@@ -1,5 +1,6 @@
 using Documenter
 using Literate
+using Tutorials
 
 models_src = joinpath(@__DIR__,"..","models")
 models_dst = joinpath(@__DIR__,"src","models")
@@ -21,32 +22,18 @@ Sys.rm(notebooks_dir;recursive=true,force=true)
 
 repo_src = joinpath(@__DIR__,"..","src")
 
-files = [
-  "t001_poisson",
-  "t002_validation",
-  "t003_elasticity", 
-  "t0041_p_laplacian",
-  "t004_hyperelasticity",
-  "t005_dg_discretization",
-  "t007_darcy",
-  "t008_inc_navier_stokes"]
-
-for file in files
-  file_jl = file*".jl"
-  Literate.markdown(joinpath(repo_src,file_jl), pages_dir; codefence="```julia" => "```")
-  Literate.notebook(joinpath(repo_src,file_jl), notebooks_dir; documenter=false, execute=false)
+for (title,filename) in Tutorials.files
+  Literate.markdown(joinpath(repo_src,filename), pages_dir; codefence="```julia" => "```")
+  Literate.notebook(joinpath(repo_src,filename), notebooks_dir; documenter=false, execute=false)
 end
 
-pages = [
-  "Introduction"=> "index.md",
-  "1 Poisson equation" => "pages/t001_poisson.md",
-  "2 Code validation" => "pages/t002_validation.md",
-  "3 Linear elasticity" => "pages/t003_elasticity.md",
-  "4 p-Laplacian" => "pages/t0041_p_laplacian.md",
-  "5 Hyper-elasticity" => "pages/t004_hyperelasticity.md",
-  "6 Poisson equation (with DG)" => "pages/t005_dg_discretization.md",
-  "7 Darcy equation (with RT)" => "pages/t007_darcy.md",
-  "8 Incompressible Navier-Stokes" => "pages/t008_inc_navier_stokes.md" ]
+pages = ["Introduction"=> "index.md"]
+
+for (i,(title,filename)) in enumerate(Tutorials.files)
+    ordered_title = string(i, title)
+    path_to_markdown_file = joinpath("pages",string(splitext(filename)[1],".md"))
+    push!(pages, (ordered_title=>path_to_markdown_file))
+end
 
 makedocs(
     sitename = "Gridap tutorials",

@@ -30,7 +30,7 @@ end
 pages = ["Introduction"=> "index.md"]
 
 for (i,(title,filename)) in enumerate(Tutorials.files)
-    ordered_title = string(i, title)
+    ordered_title = string(i, " ", title)
     path_to_markdown_file = joinpath("pages",string(splitext(filename)[1],".md"))
     push!(pages, (ordered_title=>path_to_markdown_file))
 end

@@ -1,4 +1,5 @@
 using Literate
+using Printf
 
 repo_src = joinpath(@__DIR__,"..","src")
 notebooks_dir = joinpath(@__DIR__,"..","notebooks")
@@ -15,8 +16,10 @@ files = [
   "Incompressible Navier-Stokes"=>"inc_navier_stokes.jl"]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)
-for (title,filename) in files
-  Literate.notebook(joinpath(repo_src,filename), notebooks_dir; name=splitext(filename)[1], documenter=false, execute=false)
+for (i,(title,filename)) in enumerate(files)
+  notebook_prefix = string("t",@sprintf "%03d_" i)
+  notebook_filename = string(notebook_prefix,splitext(filename)[1])
+  Literate.notebook(joinpath(repo_src,filename), notebooks_dir; name=notebook_filename, documenter=false, execute=false)
 end
 
 deps_jl = "deps.jl"

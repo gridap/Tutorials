@@ -1,5 +1,6 @@
 using Documenter
 using Literate
+using Printf
 using Tutorials
 
 models_src = joinpath(@__DIR__,"..","models")
@@ -22,17 +23,22 @@ Sys.rm(notebooks_dir;recursive=true,force=true)
 
 repo_src = joinpath(@__DIR__,"..","src")
 
-for (title,filename) in Tutorials.files
-  Literate.markdown(joinpath(repo_src,filename), pages_dir; codefence="```julia" => "```")
-  Literate.notebook(joinpath(repo_src,filename), notebooks_dir; documenter=false, execute=false)
-end
-
+# Add index.md file as introduction to navigation menu
 pages = ["Introduction"=> "index.md"]
 
 for (i,(title,filename)) in enumerate(Tutorials.files)
-    ordered_title = string(i, " ", title)
-    path_to_markdown_file = joinpath("pages",string(splitext(filename)[1],".md"))
-    push!(pages, (ordered_title=>path_to_markdown_file))
+  # Generate notebooks
+  notebook_prefix = string("t",@sprintf "%03d_" i)
+  notebook_filename = string(notebook_prefix,splitext(filename)[1])
+  Literate.notebook(joinpath(repo_src,filename), notebooks_dir; name=notebook_filename, documenter=false, execute=false)
+
+  # Generate markdown
+  Literate.markdown(joinpath(repo_src,filename), pages_dir; codefence="```julia" => "```")
+
+  # Generate navigation menu entries
+  ordered_title = string(i, " ", title)
+  path_to_markdown_file = joinpath("pages",string(splitext(filename)[1],".md"))
+  push!(pages, (ordered_title=>path_to_markdown_file))
 end
 
 makedocs(

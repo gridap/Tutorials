@@ -46,6 +46,18 @@
 # ```
 #
 # Where $\boldsymbol{\sigma}_{\rm F}(u_{\rm F},p_{\rm F})=2\mu_{\rm F}\boldsymbol{\varepsilon}(u_{\rm F}) - p_{\rm F}\mathbf{I}$ and $\boldsymbol{\sigma}_{\rm S}(u_{\rm S})=2\mu_{\rm S}\boldsymbol{\varepsilon}(u_{\rm S}) +\lambda_{\rm S}tr(\boldsymbol{\varepsilon}(u_{\rm S}))\mathbf{I}$.
+#
+# In this tutorial we consider a square computational domain $\Omega \doteq (-1,1)^2$, with the associated FE triangulation $\mathcal{T}$. The solid domain is composed by the union of cells whose centroid is inside a circle of radius R=0.4 and center $\mathbf{x}_o=(0,0)$, that is
+# ```math
+# \Omega_{\rm S}\doteq \bigcup_{T\in\mathcal{T}_{\rm S}}T, \quad \mbox{with }\quad\mathcal{T}_{\rm S}\doteq\{T\in\mathcal{T}\vert\|\mathbf{x}_T-\mathbf{x}_o\|<R\}.
+# ```
+#
+# Then, the fluid domain will be defined by the remaining part, i.e. $\Omega_{\rm F}=\Omega\backslash\Omega_{\rm S}$, with $\Omega_{\rm F}\cap\Omega_{\rm S}=\Gamma_{\rm FS}$.
+# $\mathit{Re}$ is the Reynolds number (here, we take $\mathit{Re}=10$), and $(w \cdot \nabla)\ u = (\nabla u)^t w$  is the well known convection operator. In this example, the driving force is the Dirichlet boundary velocity $g$, which is a non-zero horizontal velocity with a value of $g = (1,0)^t$ on the top side of the cavity, namely the boundary $(0,1)\times\{1\}$, and $g=0$ elsewhere on $\partial\Omega$. Since we impose Dirichlet boundary conditions on the entire boundary $\partial\Omega$, the mean value of the pressure is constrained to zero in order have a well posed problem,
+#
+# ```math
+# \int_\Omega q \ {\rm d}\Omega = 0.
+# ```
 
 module FSITest
 
@@ -221,9 +233,9 @@ eu = u - uh
 ep = p - ph
 ep_fluid = p - ph_fluid
 
-#writevtk(trian_fluid,"trian_fluid",cellfields=["ph"=>ph_fluid, "ep"=>ep_fluid])
+writevtk(trian_fluid,"trian_fluid",cellfields=["ph"=>ph_fluid, "ep"=>ep_fluid])
 #
-#writevtk(trian,"trian", cellfields=["uh" => uh, "ph"=> ph, "eu"=>eu, "ep"=>ep])
+writevtk(trian,"trian", cellfields=["uh" => uh, "ph"=> ph, "eu"=>eu, "ep"=>ep])
 
 # Errors
 

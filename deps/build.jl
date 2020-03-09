@@ -10,16 +10,22 @@ files = [
   "Linear elasticity"=>"elasticity.jl", 
   "p-Laplacian"=>"p_laplacian.jl", 
   "Hyper-elasticity"=>"hyperelasticity.jl",
-  "DG discretization"=>"dg_discretization.jl",
-  "Poisson equation (with DG)"=> "stokes.jl",
+  "Poisson equation (with DG)"=> "dg_discretization.jl",
   "Darcy equation (with RT)"=>"darcy.jl",
   "Incompressible Navier-Stokes"=>"inc_navier_stokes.jl"]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)
 for (i,(title,filename)) in enumerate(files)
   notebook_prefix = string("t",@sprintf "%03d_" i)
-  notebook_filename = string(notebook_prefix,splitext(filename)[1])
-  Literate.notebook(joinpath(repo_src,filename), notebooks_dir; name=notebook_filename, documenter=false, execute=false)
+  notebook = string(notebook_prefix,splitext(filename)[1])
+  notebook_title = string("Tutorial ", i, ": ", title)
+  function preprocess_notebook(content)
+    content = replace(content, "TUTORIAL_TITLE" => notebook_title)
+    content = replace(content, "BINDER_BADGE" => "")
+    content = replace(content, "NBVIWER_BADGE" => "")
+    return content
+  end
+  Literate.notebook(joinpath(repo_src,filename), notebooks_dir; name=notebook, preprocess=preprocess_notebook, documenter=false, execute=false)
 end
 
 deps_jl = "deps.jl"

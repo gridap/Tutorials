@@ -1,7 +1,7 @@
-# # Tutorial 5: Hyperelasticity
+# # TUTORIAL_TITLE
 #
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t004_hyperelasticity.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t004_hyperelasticity.ipynb)
+# BINDER_BADGE
+# NBVIWER_BADGE
 #
 #md # !!! note
 #

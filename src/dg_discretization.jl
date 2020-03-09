@@ -1,7 +1,7 @@
-# # Tutorial 6: Poisson equation (with DG)
+# # TUTORIAL_TITLE
 #
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t005_dg_discretization.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t005_dg_discretization.ipynb)
+# BINDER_BADGE
+# NBVIWER_BADGE
 
 # In this tutorial, we will learn
 #  - How to solve a simple PDE with a DG method

@@ -1,7 +1,7 @@
-# # Tutorial 3: Linear elasticity
+# # TUTORIAL_TITLE
 #
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t003_elasticity.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t003_elasticity.ipynb)
+# BINDER_BADGE
+# NBVIWER_BADGE
 # 
 # In this tutorial, we will learn
 # 

@@ -1,8 +1,3 @@
-# # TUTORIAL_TITLE
-#
-# BINDER_BADGE
-# NBVIWER_BADGE
-#
 #md # !!! note
 #
 #     This tutorial is under construction, but the code below is already functional.

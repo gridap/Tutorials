@@ -1,8 +1,3 @@
-# # TUTORIAL_TITLE
-#
-# BINDER_BADGE
-# NBVIWER_BADGE
-# 
 # In this tutorial, we will learn
 #    - How to solve a simple nonlinear PDE in Gridap
 #    - How to define the weak residual and its Jacobian

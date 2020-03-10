@@ -1,8 +1,3 @@
-# # TUTORIAL_TITLE
-#
-# BINDER_BADGE
-# NBVIWER_BADGE
-# 
 # In this tutorial, we will learn
 # 
 #  - How to approximate vector-valued problems

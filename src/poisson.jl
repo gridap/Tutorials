@@ -1,9 +1,3 @@
-
-# # TUTORIAL_TITLE
-#
-# BINDER_BADGE
-# NBVIWER_BADGE
-#
 # In this tutorial, we will learn
 # 
 #    -  How to solve a simple PDE in Julia with Gridap

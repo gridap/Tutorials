@@ -19,21 +19,6 @@ Please, follow their rules and conventions to alternate comments and source code
 1. Add a new Julia script to `src` directory.
 2. Add a new `(Title,filename)` pair to `files` array in [deps/build.jl](https://github.com/gridap/Tutorials/blob/master/deps/build.jl) file.
 
-## Variables
-
-Some variables can be used within the tutorial source to ease the numbering and the addition of some badges.
-
-- `TUTORIAL_TITLE`: Tutorial title with its corresponding order number.
-- `BINDER_BADGE`: Link to an interactive Jupyter notebook at (binder)[https://mybinder.org/].
-- `NBVIWER_BADGE`: Link to a Jupiter notebook at (nbviwer)[https://nbviewer.jupyter.org/].
-
-We strongly recommend the following header for a new Tutorial:
-
-```markdown
-# # TUTORIAL_TITLE
-#
-# BINDER_BADGE
-# NBVIWER_BADGE
-```
+Tutorial headers will be auto generated using the specified `Title`.
 
 

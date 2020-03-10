@@ -1,8 +1,3 @@
-# # TUTORIAL_TITLE
-#
-# BINDER_BADGE
-# NBVIWER_BADGE
-# 
 # In this tutorial, we will learn
 #  - How to solve nonlinear multi-field PDEs in Gridap
 #  - How to build FE spaces whose functions have zero mean value

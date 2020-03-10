@@ -1,8 +1,3 @@
-# # TUTORIAL_TITLE
-#
-# BINDER_BADGE
-# NBVIWER_BADGE
-
 # In this tutorial, we will learn
 #  - How to solve a simple PDE with a DG method
 #  - How to compute jumps and averages of quantities on the mesh skeleton

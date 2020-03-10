@@ -1,8 +1,3 @@
-# # TUTORIAL_TITLE
-#
-# BINDER_BADGE
-# NBVIWER_BADGE
-#
 # In this tutorial, we will learn
 # - How to implement the method of manufactured solutions
 # - How to perform a convergence test

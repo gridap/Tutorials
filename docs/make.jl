@@ -32,29 +32,23 @@ nbviwer_logo = "https://img.shields.io/badge/show-nbviewer-579ACA.svg"
 for (i,(title,filename)) in enumerate(Tutorials.files)
   # Generate strings
   tutorial_prefix = string("t",@sprintf "%03d_" i)
-  tutorial_title = string("Tutorial ", i, ": ", title)
+  tutorial_title = string("# # Tutorial ", i, ": ", title)
   tutorial_file = string(tutorial_prefix,splitext(filename)[1])
   notebook_filename = string(tutorial_file, ".ipynb")
   binder_url = joinpath("@__BINDER_ROOT_URL__","notebooks", notebook_filename)
   nbviwer_url = joinpath("@__NBVIEWER_ROOT_URL__","notebooks", notebook_filename)
-  binder_badge = string("[![](",binder_logo,")](",binder_url,")")
-  nbviwer_badge = string("[![](",nbviwer_logo,")](",nbviwer_url,")")
+  binder_badge = string("# [![](",binder_logo,")](",binder_url,")")
+  nbviwer_badge = string("# [![](",nbviwer_logo,")](",nbviwer_url,")")
 
   # Generate notebooks
   function preprocess_notebook(content)
-    content = replace(content, "TUTORIAL_TITLE" => tutorial_title)
-    content = replace(content, "BINDER_BADGE" => "")
-    content = replace(content, "NBVIWER_BADGE" => "")
-    return content
+    return string(tutorial_title, "\n\n", content)
   end
   Literate.notebook(joinpath(repo_src,filename), notebooks_dir; name=tutorial_file, preprocess=preprocess_notebook, documenter=false, execute=false)
 
   # Generate markdown
   function preprocess_docs(content)
-    content = replace(content, "TUTORIAL_TITLE" => tutorial_title)
-    content = replace(content, "BINDER_BADGE" => binder_badge)
-    content = replace(content, "NBVIWER_BADGE" => nbviwer_badge)
-    return content
+    return string(tutorial_title, "\n", binder_badge, "\n", nbviwer_badge, "\n\n", content)
   end
   Literate.markdown(joinpath(repo_src,filename), pages_dir; name=tutorial_file, preprocess=preprocess_docs, codefence="```julia" => "```")
 

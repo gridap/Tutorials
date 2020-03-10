@@ -1,8 +1,3 @@
-# # TUTORIAL_TITLE
-#
-# BINDER_BADGE
-# NBVIWER_BADGE
-#
 # In this tutorial, we will learn
 #  - How to implement multi-field PDEs
 #  - How to build div-conforming FE spaces

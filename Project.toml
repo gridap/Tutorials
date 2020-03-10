@@ -1,6 +1,6 @@
 name = "Tutorials"
 uuid = "ab87341f-2653-5384-8dc6-691ea82e91b3"
-authors = ["Santiago Badia <sbadia@cimne.upc.edu>", "Francesc Verdugo <fverdugo@cimne.upc.edu>"]
+authors = ["Santiago Badia <santiago.badia@monash.edu>", "Francesc Verdugo <fverdugo@cimne.upc.edu>"]
 version = "0.7.0"
 
 [deps]

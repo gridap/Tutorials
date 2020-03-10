@@ -167,7 +167,7 @@ uh, ph = solve(solver,op)
 
 writevtk(trian,"ins-results",cellfields=["uh"=>uh,"ph"=>ph])
 
-# ![](../assets/t008_inc_navier_stokes/ins_solution.png)
+# ![](../assets/inc_navier_stokes/ins_solution.png)
 # 
 #  ## References
 # 

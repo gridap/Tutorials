@@ -132,11 +132,11 @@ end
 runs()
 
 # Picture of the last load step
-# ![](../assets/t004_hyperelasticity/neo_hook_2d.png)
+# ![](../assets/hyperelasticity/neo_hook_2d.png)
 #
 # ##  Extension to 3D
 # 
 # Extending this tutorial to the 3D case is straightforward. It is leaved as an exercise.
 #
-# ![](../assets/t004_hyperelasticity/neo_hook_3d.png)
+# ![](../assets/hyperelasticity/neo_hook_3d.png)
 

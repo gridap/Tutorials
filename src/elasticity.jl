@@ -14,7 +14,7 @@
 # 
 # In this tutorial, we detail how to solve a linear elasticity problem defined on the 3D domain depicted in next figure.
 # 
-# ![](../assets/t003_elasticity/solid.png)
+# ![](../assets/elasticity/solid.png)
 # 
 # We impose the following boundary conditions. All components of the displacement vector  are constrained to zero on the surface $\Gamma_{\rm G}$, which is marked in green in the figure. On the other hand, the first component of the displacement vector is prescribed to the value $\delta\doteq 5$mm on the surface $\Gamma_{\rm B}$, which is marked in blue. No body or surface forces are included in this example. Formally, the PDE to solve is
 #
@@ -58,7 +58,7 @@ writevtk(model,"model")
 
 # and open the resulting files with Paraview. The boundaries $\Gamma_{\rm B}$ and $\Gamma_{\rm G}$ are identified  with the names `"surface_1"` and `"surface_2"` respectively.  For instance, if you visualize the faces of the model and color them by the field `"surface_2"` (see next figure), you will see that only the faces on $\Gamma_{\rm G}$ have a value different from zero.
 # 
-# ![](../assets/t003_elasticity/solid-surf2.png)
+# ![](../assets/elasticity/solid-surf2.png)
 # 
 # ## Vector-valued FE space
 # 
@@ -120,7 +120,7 @@ writevtk(trian,"results",cellfields=["uh"=>uh,"epsi"=>ε(uh),"sigma"=>σ(ε(uh))
 
 # It can be clearly observed (see next figure) that the surface  $\Gamma_{\rm B}$ is pulled in $x_1$-direction and that the solid deforms accordingly.
 # 
-# ![](../assets/t003_elasticity/disp_ux_40.png)
+# ![](../assets/elasticity/disp_ux_40.png)
 
 # ## Multi-material problems
 #

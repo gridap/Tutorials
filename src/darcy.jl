@@ -154,7 +154,7 @@ uh, ph = xh
 
 writevtk(trian,"darcyresults",cellfields=["uh"=>uh,"ph"=>ph])
  
-# ![](../assets/t007_darcy/darcy_results.png)
+# ![](../assets/darcy/darcy_results.png)
 #
 # ## References
 #

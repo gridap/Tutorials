@@ -109,7 +109,7 @@ model = CartesianDiscreteModel(domain,partition)
 
  writevtk(model,"model")
 
-# ![](../assets/t006_poisson_dg/model.png)
+# ![](../assets/dg_discretization/model.png)
 # 
 #  Note that the `CaresianDiscreteModel` is implemented for arbitrary dimensions. For instance, the following lines build a `CartesianDiscreteModel`  for the unit square $(0,1)^2$ with 4 cells per direction
 
@@ -153,7 +153,7 @@ strian = SkeletonTriangulation(model)
 
 writevtk(strian,"strian")
 
-# ![](../assets/t006_poisson_dg/skeleton_trian.png)
+# ![](../assets/dg_discretization/skeleton_trian.png)
 # 
 # Once we have constructed the triangulations needed in this example, we define the corresponding quadrature rules.
 
@@ -210,7 +210,7 @@ uh_Γ = restrict(uh,strian)
 writevtk(strian,"jumps",cellfields=["jump_u"=>jump(uh_Γ)])
 
 # Note that the jump of the numerical solution is very small, close to the machine precision (as expected in this example with manufactured solution).
-# ![](../assets/t006_poisson_dg/jump_u.png)
+# ![](../assets/dg_discretization/jump_u.png)
 # 
 #  A more rigorous way of quantifying the error is to measure it with a norm. Here, we use the $L^2$ and $H^1$ norms, namely
 #  ```math
@@ -362,5 +362,5 @@ tol = 1.e-10
 #src 
 #src slope(hs,eh1s)
 #src 
-#src #md # ![](../assets/t006_poisson_dg/conv.png)
+#src #md # ![](../assets/dg_discretization/conv.png)
 

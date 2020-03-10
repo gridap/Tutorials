@@ -76,11 +76,11 @@ writevtk(model,"model")
 #
 # These are the vertices in the model
 #
-# ![](../assets/t002_validation/model_0.png)
+# ![](../assets/validation/model_0.png)
 #
 # and these the facets
 #
-# ![](../assets/t002_validation/model_1.png)
+# ![](../assets/validation/model_1.png)
 #
 # As you can see in the pictures, the objects on the boundary are correctly tagged with the name "boundary".
 
@@ -123,7 +123,7 @@ writevtk(trian,"error",cellfields=["e" => e])
 
 # This generates a file called `error.vtu`. Open it with Paraview to check that the error is of the order of the machine precision.
 #
-# ![](../assets/t002_validation/error.png)
+# ![](../assets/validation/error.png)
 #
 # A more rigorous way of quantifying the error is to measure it with a norm. Here, we use the $L^2$ and $H^1$ norms, which are defined as
 #
@@ -239,7 +239,7 @@ plot(hs,[el2s eh1s],
 #src savefig("conv.png")
 
 #md # If you run the code in a notebook, you will see a figure like this one:
-#md # ![](../assets/t002_validation/conv.png)
+#md # ![](../assets/validation/conv.png)
 #
 #
 # The generated curves make sense. It is observed that the convergence of the $H^1$ error is slower that $L^2$ one. However, in order to be more conclusive, we need to compute the slope of these lines. It can be done with this little function that internally uses a linear regression.

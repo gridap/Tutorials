@@ -1,8 +1,3 @@
-# # Tutorial 7: Darcy equation (with RT)
-#
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t007_darcy.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t007_darcy.ipynb)
-#
 # In this tutorial, we will learn
 #  - How to implement multi-field PDEs
 #  - How to build div-conforming FE spaces
@@ -154,7 +149,7 @@ uh, ph = xh
 
 writevtk(trian,"darcyresults",cellfields=["uh"=>uh,"ph"=>ph])
  
-# ![](../assets/t007_darcy/darcy_results.png)
+# ![](../assets/darcy/darcy_results.png)
 #
 # ## References
 #

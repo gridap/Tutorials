@@ -1,9 +1,3 @@
-
-# # Tutorial 1: Poisson equation
-#
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t001_poisson.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t001_poisson.ipynb)
-#
 # In this tutorial, we will learn
 # 
 #    -  How to solve a simple PDE in Julia with Gridap
@@ -19,7 +13,7 @@
 # In this first tutorial, we provide an overview of a complete simulation pipeline in Gridap: from the construction of the FE mesh to the visualization of the computed results. To this end, we consider a simple model problem: the Poisson equation.
 #  We want to solve the Poisson equation on the 3D domain depicted in next figure with Dirichlet and Neumann boundary conditions. Dirichlet boundary conditions are applied on $\Gamma_{\rm D}$, being the outer sides of the prism (marked in red). Non-homogeneous Neumann conditions are applied to the internal boundaries $\Gamma_{\rm G}$, $\Gamma_{\rm Y}$, and $\Gamma_{\rm B}$ (marked in green, yellow and blue respectively). And homogeneous Neumann boundary conditions are applied in $\Gamma_{\rm W}$, the remaining portion of the boundary (marked in white).
 # 
-# ![](../assets/t001_poisson/model-r1-2.png)
+# ![](../assets/poisson/model-r1-2.png)
 # 
 #  Formally, the problem to solve is: find the scalar field $u$ such that
 # 
@@ -66,11 +60,11 @@ writevtk(model,"model")
 # 
 # For instance, if you want to see which faces of the model are on the boundary $\Gamma_{\rm B}$ (i.e., the walls of the circular perforation), open the file `model_2.vtu` and chose coloring by the element field "circle". You should see that only the faces on the circular hole have a value different from zero (see next figure).
 # 
-# ![](../assets/t001_poisson/fig_faces_on_circle.png)
+# ![](../assets/poisson/fig_faces_on_circle.png)
 # 
 # It is also possible to see which vertices are on the Dirichlet boundary $\Gamma_{\rm D}$. To do so, open the file `model_0.vtu` and chose coloring by the field "sides" (see next figure).
 # 
-# ![](../assets/t001_poisson/fig_vertices_on_sides.png)
+# ![](../assets/poisson/fig_vertices_on_sides.png)
 # 
 # That is, the boundary $\Gamma_{\rm B}$ (i.e., the walls of the circular hole) is called "circle" and the Dirichlet boundary $\Gamma_{\rm D}$ is called "sides" in the model. In addition, the walls of the triangular hole $\Gamma_{\rm G}$ and the walls of the square hole $\Gamma_{\rm Y}$ are identified in the model with the names "triangle" and "square" respectively. You can easily check this by opening the corresponding file in Paraview.
 # 
@@ -153,7 +147,7 @@ writevtk(trian,"results",cellfields=["uh"=>uh])
 
 #  which will generate a file named `results.vtu` having a nodal field named `"uh"` containing the solution of our problem (see next figure). 
 #
-# ![](../assets/t001_poisson/fig_uh.png)
+# ![](../assets/poisson/fig_uh.png)
 #
 # ## References
 #

@@ -1,8 +1,3 @@
-# # Tutorial 8: Incompressible Navier-Stokes equations
-#
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t008_inc_navier_stokes.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t008_inc_navier_stokes.ipynb)
-# 
 # In this tutorial, we will learn
 #  - How to solve nonlinear multi-field PDEs in Gridap
 #  - How to build FE spaces whose functions have zero mean value
@@ -167,7 +162,7 @@ uh, ph = solve(solver,op)
 
 writevtk(trian,"ins-results",cellfields=["uh"=>uh,"ph"=>ph])
 
-# ![](../assets/t008_inc_navier_stokes/ins_solution.png)
+# ![](../assets/inc_navier_stokes/ins_solution.png)
 # 
 #  ## References
 # 

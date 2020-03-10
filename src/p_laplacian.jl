@@ -1,8 +1,3 @@
-# # Tutorial 4: p-Laplacian
-#
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t0041_p_laplacian.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t0041_p_laplacian.ipynb)
-# 
 # In this tutorial, we will learn
 #    - How to solve a simple nonlinear PDE in Gridap
 #    - How to define the weak residual and its Jacobian
@@ -26,7 +21,7 @@
 # with $p>2$.
 # The computational domain $\Omega$ is the one depicted in next figure, which is the same as in the first tutorial. However, we slightly change the boundary conditions here. We impose homogeneous Dirichlet and homogeneous Neumann boundary conditions on $\Gamma_0$ and $\Gamma_{\rm N}$  respectively, and in-homogeneous Dirichlet conditions on $\Gamma_g$. The Dirichlet boundaries $\Gamma_0$ and $\Gamma_g$ are defined as the closure of the green and blue surfaces in next figure respectively, whereas the Neumann boundary is $\Gamma_{\rm N}\doteq\partial\Omega \setminus (\Gamma_0\cup\Gamma_g)$. In this example, we consider the values $p=3$, $f=1$, and $g=2$.
 # 
-# ![](../assets/t0041_p_laplacian/model.png)
+# ![](../assets/p_laplacian/model.png)
 # 
 # ## Numerical scheme
 # 
@@ -57,7 +52,7 @@ writevtk(model,"model")
 
 # and by opening the file `"model_0"` in Paraview that the boundary identified as `"sides"` only includes the vertices in the interior of $\Gamma_0$, but here we want to impose Dirichlet boundary conditions in the closure of $\Gamma_0$, i.e., also on the vertices on the contour of $\Gamma_0$. Fortunately, the objects on the contour of $\Gamma_0$ are identified  with the tag `"sides_c"` (see next figure). Thus, the Dirichlet boundary $\Gamma_0$ can be build as the union of the objects identified as `"sides"` and `"sides_c"`.
 # 
-# ![](../assets/t0041_p_laplacian/sides_c.png)
+# ![](../assets/p_laplacian/sides_c.png)
 # 
 # Gridap provides a convenient way to create new object identifiers (referred to as "tags") from existing ones. First, we need to extract from the model, the object that holds the information about the boundary identifiers (referred to as `FaceLabeling`):
 
@@ -146,5 +141,5 @@ uh, = solve!(uh0,solver,op)
 
 writevtk(trian,"results",cellfields=["uh"=>uh])
 
-# ![](../assets/t0041_p_laplacian/sol-plap.png)
+# ![](../assets/p_laplacian/sol-plap.png)
 # 

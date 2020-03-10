@@ -1,8 +1,3 @@
-# # Tutorial 5: Hyperelasticity
-#
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t004_hyperelasticity.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t004_hyperelasticity.ipynb)
-#
 #md # !!! note
 #
 #     This tutorial is under construction, but the code below is already functional.
@@ -132,11 +127,11 @@ end
 runs()
 
 # Picture of the last load step
-# ![](../assets/t004_hyperelasticity/neo_hook_2d.png)
+# ![](../assets/hyperelasticity/neo_hook_2d.png)
 #
 # ##  Extension to 3D
 # 
 # Extending this tutorial to the 3D case is straightforward. It is leaved as an exercise.
 #
-# ![](../assets/t004_hyperelasticity/neo_hook_3d.png)
+# ![](../assets/hyperelasticity/neo_hook_3d.png)
 

@@ -25,7 +25,7 @@ for (i,(title,filename)) in enumerate(files)
   Literate.notebook(joinpath(repo_src,filename), notebooks_dir; name=notebook, preprocess=preprocess_notebook, documenter=false, execute=false)
 end
 
-deps_jl = "deps.jl"
+deps_jl = joinpath(@__DIR__, "deps.jl")
 
 if isfile(deps_jl)
   rm(deps_jl)

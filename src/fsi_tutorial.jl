@@ -53,11 +53,11 @@
 # ```
 #
 # Then, the fluid domain will be defined by the remaining part, i.e. $\Omega_{\rm F}=\Omega\backslash\Omega_{\rm S}$, with $\Omega_{\rm F}\cap\Omega_{\rm S}=\Gamma_{\rm FS}$.
-# $\mathit{Re}$ is the Reynolds number (here, we take $\mathit{Re}=10$), and $(w \cdot \nabla)\ u = (\nabla u)^t w$  is the well known convection operator. In this example, the driving force is the Dirichlet boundary velocity $g$, which is a non-zero horizontal velocity with a value of $g = (1,0)^t$ on the top side of the cavity, namely the boundary $(0,1)\times\{1\}$, and $g=0$ elsewhere on $\partial\Omega$. Since we impose Dirichlet boundary conditions on the entire boundary $\partial\Omega$, the mean value of the pressure is constrained to zero in order have a well posed problem,
 #
-# ```math
-# \int_\Omega q \ {\rm d}\Omega = 0.
-# ```
+# ## Numerical scheme
+#
+
+# ## Setup environment
 
 module FSITest
 
@@ -69,8 +69,10 @@ import Gridap: ∇, ε
 using LinearAlgebra: tr
 using Gridap.Geometry
 
-# Analytical functions
 
+# ## Definition of the manufactured solution
+
+# Velocity:
 # u(x) = VectorValue( x[1]^2 + 2*x[2]^2, -x[1]^2 )
 # ∇u(x) = TensorValue( 2*x[1], 4*x[2], -2*x[1], zero(x[1]) )
 # Δu(x) = VectorValue( 6, -2 )
@@ -79,67 +81,51 @@ u(x) = VectorValue( x[2], -x[1] )
 εu(x) = TensorValue( zero(x[1]), zero(x[2]), zero(x[1]), zero(x[2]) )
 divσu(x) = VectorValue( zero(x[1]), zero(x[2]) )
 
+# Pressure:
 p(x) = x[1] + 3*x[2]
 ∇p(x) = VectorValue(1,3)
 
+# Source terms:
 s(x) = -divσu(x)
 f(x) = -divσu(x) + ∇p(x)
 g(x) = tr(∇u(x))
 
+# Extend Gridap operators
 ∇(::typeof(u)) = ∇u
 ε(::typeof(u)) = εu
 ∇(::typeof(p)) = ∇p
 
-# Geometry + Integration
-
+# ## Discrete model
+# Square computational domain
 n = 20
 mesh = (n,n)
 domain = 2 .* (0,1,0,1) .- 1
 order = 1
 model = CartesianDiscreteModel(domain, mesh)
 
+# Triangulation of the full domain
+trian = Triangulation(model)
+
+# Boundary conditions on the full domain
 labels = get_face_labeling(model)
 add_tag_from_tags!(labels,"dirichlet",[1,2,5])
 add_tag_from_tags!(labels,"neumann",[6,7,8])
 
-trian = Triangulation(model)
-
+# Solid & fluid triangulation
 const R = 0.4
-
 function is_in(coords)
   n = length(coords)
   x = (1/n)*sum(coords)
   d = x[1]^2 + x[2]^2 - R^2
   d < 0
 end
-
 cell_to_coods = get_cell_coordinates(trian)
 cell_to_is_solid = collect1d(apply(is_in,cell_to_coods))
 cell_to_is_fluid = Vector{Bool}(.! cell_to_is_solid)
-
 trian_solid = RestrictedTriangulation(trian, cell_to_is_solid)
 trian_fluid = RestrictedTriangulation(trian, cell_to_is_fluid)
 
-order = 2
-
-degree = 2*order
-quad = CellQuadrature(trian,degree)
-quad_solid = CellQuadrature(trian_solid,degree)
-quad_fluid = CellQuadrature(trian_fluid,degree)
-
-btrian = BoundaryTriangulation(model,labels,"neumann")
-bdegree = 2*order
-bquad = CellQuadrature(btrian,bdegree)
-n = get_normal_vector(btrian)
-
-# This returns a SkeletonTriangulation whose normal vector
-# goes outwards to the fluid domain.
-trian_Γ = InterfaceTriangulation(model,cell_to_is_fluid)
-n_Γ = get_normal_vector(trian_Γ)
-quad_Γ = CellQuadrature(trian_Γ,bdegree)
-
-# FESpaces
-
+# ## FE Spaces
 V = TestFESpace(
   model=model,
   valuetype=VectorValue{2,Float64},
@@ -162,6 +148,24 @@ P = TrialFESpace(Q)
 
 Y = MultiFieldFESpace([V,Q])
 X = MultiFieldFESpace([U,P])
+
+# ## Numerical integration
+order = 2
+degree = 2*order
+quad = CellQuadrature(trian,degree)
+quad_solid = CellQuadrature(trian_solid,degree)
+quad_fluid = CellQuadrature(trian_fluid,degree)
+
+btrian = BoundaryTriangulation(model,labels,"neumann")
+bdegree = 2*order
+bquad = CellQuadrature(btrian,bdegree)
+n = get_normal_vector(btrian)
+
+# This returns a SkeletonTriangulation whose normal vector
+# goes outwards to the fluid domain.
+trian_Γ = InterfaceTriangulation(model,cell_to_is_fluid)
+n_Γ = get_normal_vector(trian_Γ)
+quad_Γ = CellQuadrature(trian_Γ,bdegree)
 
 # FE problem
 using LinearAlgebra: tr

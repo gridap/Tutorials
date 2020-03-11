@@ -93,7 +93,7 @@ V = TestFESpace(
 
 # The interpolation space for the pressure is build as follows
 
-Q = FESpace(
+Q = TestFESpace(
   reffe=:PLagrangian, conformity=:L2, valuetype=Float64,
   model=model, order=order-1, constraint=:zeromean)
 

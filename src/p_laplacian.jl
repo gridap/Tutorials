@@ -76,7 +76,7 @@ V0 = TestFESpace(
   conformity=:H1, model=model, labels=labels,
   dirichlet_tags=["diri0", "dirig"])
 
-# The construction of this space is essentially the same as in the first tutorial (we build a continuous scalar-valued Lagrangian interpolation of first order). However, we also pass here the `labels` object (that contains the newly created boundary tags). From this FE space, we define the test and trial FE spaces
+# The construction of this space is essentially the same as in the first tutorial (we build a continuous scalar-valued Lagrangian interpolation of first order). However, we also pass here the `labels` object (that contains the newly created boundary tags). From this FE space, we define the trial FE spaces
 
 g = 1
 Ug = TrialFESpace(V0,[0,g])

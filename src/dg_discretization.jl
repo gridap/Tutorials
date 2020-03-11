@@ -75,12 +75,12 @@
 
 using Gridap
 u(x) = 3*x[1] + x[2] + 2*x[3]
-f(x) = 0.0
+f(x) = 0
 g(x) = u(x)
 
 # We also need to define the gradient of $u$ since we will compute the $H^1$ error norm later. In that case, the gradient is simply defined as
 
-∇u(x) = VectorValue(3.0,1.0,2.0)
+∇u(x) = VectorValue(3,1,2)
 
 # In addition, we need to tell the Gridap library that the gradient of the function `u` is available in the function `∇u` (at this moment `u` and `∇u` are two standard Julia functions without any connection between them). This is done by adding an extra method to the function `gradient` (aka `∇`) defined in Gridap:
 

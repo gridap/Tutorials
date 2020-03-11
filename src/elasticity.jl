@@ -68,7 +68,7 @@ V0 = TestFESpace(
 
 # As in previous tutorial, we construct a continuous Lagrangian interpolation of order 1. The vector-valued interpolation is selected via the option `valuetype=VectorValue{3,Float64}`, where we use the type `VectorValue{3,Float64}`, which is the way Gridap represents vectors of three `Float64` components. We mark as Dirichlet the objects identified with the tags `"surface_1"` and `"surface_2"` using the `dirichlet_tags` argument. Finally, we chose which components of the displacement are actually constrained on the Dirichlet boundary via the `dirichlet_masks` argument. Note that we constrain only the first component on the boundary $\Gamma_{\rm B}$ (identified as `"surface_1"`), whereas we constrain all components on $\Gamma_{\rm G}$ (identified as `"surface_2"`).
 # 
-# However, the construction of the trial space is slightly different in this case. The Dirichlet boundary conditions are described with two different functions, one for boundary $\Gamma_{\rm B}$ and another one for $\Gamma_{\rm G}$. These functions can be defined as
+# The construction of the trial space is slightly different in this case. The Dirichlet boundary conditions are described with two different functions, one for boundary $\Gamma_{\rm B}$ and another one for $\Gamma_{\rm G}$. These functions can be defined as
 
 g1(x) = VectorValue(0.005,0.0,0.0)
 g2(x) = VectorValue(0.0,0.0,0.0)
@@ -77,7 +77,7 @@ g2(x) = VectorValue(0.0,0.0,0.0)
 
 U = TrialFESpace(V0,[g1,g2])
 
-# Note that the functions `g1` and `g2` are passed to the `TrialFESpace` constructor in the same order as the boundary identifiers are passed previously in the `dirichlet_tags` argument of the `FESpace` constructor.
+# Note that the functions `g1` and `g2` are passed to the `TrialFESpace` constructor in the same order as the boundary identifiers are passed previously in the `dirichlet_tags` argument of the `TestFESpace` constructor.
 # 
 # ## Constitutive law
 # 
@@ -94,7 +94,7 @@ const λ = (E*ν)/((1+ν)*(1-2*ν))
 const μ = E/(2*(1+ν))
 @law σ(ε) = λ*tr(ε)*one(ε) + 2*μ*ε
 
-# The macro `@law` is placed before a function definition.  The arguments of the function annotated with the `@law` macro represent the values of different quantities at a generic integration point. The first argument always represents the coordinate of the integration point. The remaining arguments have arbitrary meaning. In this example, the second argument represents the strain tensor, from which the stress tensor is to be computed using the Lamé operator. Note that the implementation of function `σ` is very close to its mathematical definition. Under the hood, the `@law` macro adds an extra method to the annotated function. The newly generated method can be used as `σ(ε(u))` in the definition of a bilinear form (as done above), or as `σ(ε(uh))`, in order to compute the stress tensor associated with a `FEFunction` object  `uh`.
+# The macro `@law` is placed before a function definition.  The arguments of the function annotated with the `@law` macro represent the values of different quantities at a generic integration point. In this example, the argument represents the strain tensor, from which the stress tensor is to be computed using the Lamé operator. Note that the implementation of function `σ` is very close to its mathematical definition. Under the hood, the `@law` macro adds an extra method to the annotated function. The newly generated method can be used as `σ(ε(u))` in the definition of a bilinear form (as done above), or as `σ(ε(uh))`, in order to compute the stress tensor associated with a `FEFunction` object  `uh`.
 # 
 # ## Solution of the FE problem
 # 

@@ -12,7 +12,9 @@ files = [
   "Hyper-elasticity"=>"hyperelasticity.jl",
   "Poisson equation (with DG)"=> "dg_discretization.jl",
   "Darcy equation (with RT)"=>"darcy.jl",
-  "Incompressible Navier-Stokes"=>"inc_navier_stokes.jl"]
+  "Incompressible Navier-Stokes"=>"inc_navier_stokes.jl",
+  "Stokes equation" => "stokes.jl",
+  "Isotropic damage model" => "isotropic_damage.jl"]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)
 for (i,(title,filename)) in enumerate(files)

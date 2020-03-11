@@ -40,31 +40,31 @@
 # ```
 # with $v^+$, and $v^-$ being the restrictions of $v\in V$ to the cells $T^+$, $T^-$ that share a generic interior facet in $\mathcal{F}_\Gamma$, and $n^+$, and $n^-$ are the facet outward unit normals from either the perspective of $T^+$ and $T^-$ respectively.
 # 
-# With this notation, the weak form associated with the interior penalty formulation of our problem reads: find $u\in V$ such that $a(v,u) = b(v)$ for all $v\in V$.  The bilinear and linear forms  $a(\cdot,\cdot)$ and $b(\cdot)$ have contributions associated with the bulk of $\Omega$,  the boundary facets $\mathcal{F}_{\partial\Omega}$, and the interior facets  $\mathcal{F}_\Gamma$, namely
+# With this notation, the weak form associated with the interior penalty formulation of our problem reads: find $u\in V$ such that $a(u,v) = b(v)$ for all $v\in V$.  The bilinear and linear forms  $a(\cdot,\cdot)$ and $b(\cdot)$ have contributions associated with the bulk of $\Omega$,  the boundary facets $\mathcal{F}_{\partial\Omega}$, and the interior facets  $\mathcal{F}_\Gamma$, namely
 #  ```math
 # \begin{aligned}
-# a(v,u) &= a_{\Omega}(v,u) + a_{\partial\Omega}(v,u) + a_{\Gamma}(v,u),\\
+# a(u,v) &= a_{\Omega}(u,v) + a_{\partial\Omega}(u,v) + a_{\Gamma}(u,v),\\
 # b(v) &= b_{\Omega}(v) + b_{\partial\Omega}(v).
 # \end{aligned}
 # ```
 # These contributions are defined as
 # ```math
 # \begin{aligned}
-# a_{\Omega}(v,u) &\doteq \sum_{T\in\mathcal{T}} \int_{T} \nabla v \cdot \nabla u \ {\rm d}T,\\
+# a_{\Omega}(u,v) &\doteq \sum_{T\in\mathcal{T}} \int_{T} \nabla v \cdot \nabla u \ {\rm d}T,\\
 # b_{\Omega}(v) &\doteq \int_{\Omega} v\ f \ {\rm d}\Omega,
 # \end{aligned}
 # ```
 # for the volume,
 # ```math
 # \begin{aligned}
-# a_{\partial\Omega}(v,u) &\doteq \sum_{F\in\mathcal{F}_{\partial\Omega}} \dfrac{\gamma}{|F|} \int_{F} v\ u \ {\rm d}F \\ & -  \sum_{F\in\mathcal{F}_{\partial\Omega}} \int_{F} v\ (\nabla u \cdot n)  \ {\rm d}F \\ & -  \sum_{F\in\mathcal{F}_{\partial\Omega}} \int_{F} (\nabla v \cdot n)\ u  \ {\rm d}F, \\
+# a_{\partial\Omega}(u,v) &\doteq \sum_{F\in\mathcal{F}_{\partial\Omega}} \dfrac{\gamma}{|F|} \int_{F} v\ u \ {\rm d}F \\ & -  \sum_{F\in\mathcal{F}_{\partial\Omega}} \int_{F} v\ (\nabla u \cdot n)  \ {\rm d}F \\ & -  \sum_{F\in\mathcal{F}_{\partial\Omega}} \int_{F} (\nabla v \cdot n)\ u  \ {\rm d}F, \\
 # b_{\partial\Omega} &\doteq \sum_{F\in\mathcal{F}_{\partial\Omega}} \dfrac{\gamma}{|F|} \int_{F} v\ g \ {\rm d}F \\ & -  \sum_{F\in\mathcal{F}_{\partial\Omega}} \int_{F} (\nabla v \cdot n)\ g  \ {\rm d}F,
 # \end{aligned}
 # ```
 # for the boundary facets and,
 # ```math
 # \begin{aligned}
-# a_{\Gamma}(v,u) &\doteq \sum_{F\in\mathcal{F}_{\Gamma}} \dfrac{\gamma}{|F|} \int_{F} \lbrack\!\lbrack v\ n \rbrack\!\rbrack\cdot \lbrack\!\lbrack u\ n \rbrack\!\rbrack \ {\rm d}F \\ &-  \sum_{F\in\mathcal{F}_{\Gamma}} \int_{F} \lbrack\!\lbrack v\ n \rbrack\!\rbrack\cdot \{\! \!\{\nabla u\}\! \!\} \ {\rm d}F \\ & -  \sum_{F\in\mathcal{F}_{\Gamma}} \int_{F} \{\! \!\{\nabla v\}\! \!\}\cdot \lbrack\!\lbrack u\ n \rbrack\!\rbrack \ {\rm d}F,
+# a_{\Gamma}(u,v) &\doteq \sum_{F\in\mathcal{F}_{\Gamma}} \dfrac{\gamma}{|F|} \int_{F} \lbrack\!\lbrack v\ n \rbrack\!\rbrack\cdot \lbrack\!\lbrack u\ n \rbrack\!\rbrack \ {\rm d}F \\ &-  \sum_{F\in\mathcal{F}_{\Gamma}} \int_{F} \lbrack\!\lbrack v\ n \rbrack\!\rbrack\cdot \{\! \!\{\nabla u\}\! \!\} \ {\rm d}F \\ & -  \sum_{F\in\mathcal{F}_{\Gamma}} \int_{F} \{\! \!\{\nabla v\}\! \!\}\cdot \lbrack\!\lbrack u\ n \rbrack\!\rbrack \ {\rm d}F,
 # \end{aligned}
 # ```
 #  for the interior facets. In previous expressions, $|F|$ denotes the diameter of the face $F$ (in our Cartesian grid, this is equivalent to the characteristic mesh size $h$), and $\gamma$ is a stabilization parameter that should be chosen large enough such that the bilinear form $a(\cdot,\cdot)$ is stable and continuous. Here, we take $\gamma = p\ (p+1)$ as done in the numerical experiments in reference [2].
@@ -168,7 +168,7 @@ ns = get_normal_vector(strian)
 #
 # With these ingredients we can define the different terms in the weak form. First, we start with the terms $a_\Omega(\cdot,\cdot)$ , and $b_\Omega(\cdot)$ associated with integrals in the volume $\Omega$. This is done as in the tutorial for the Poisson equation.
 
-a_Ω(v,u) = ∇(v)*∇(u)
+a_Ω(u,v) = ∇(v)*∇(u)
 b_Ω(v) = v*f
 t_Ω = AffineFETerm(a_Ω,b_Ω,trian,quad)
 
@@ -176,7 +176,7 @@ t_Ω = AffineFETerm(a_Ω,b_Ω,trian,quad)
 
 h = L / n
 γ = order*(order+1)
-a_∂Ω(v,u) = (γ/h)*v*u - v*(∇(u)*nb) - (∇(v)*nb)*u
+a_∂Ω(u,v) = (γ/h)*v*u - v*(∇(u)*nb) - (∇(v)*nb)*u
 b_∂Ω(v) = (γ/h)*v*g - (∇(v)*nb)*g
 t_∂Ω = AffineFETerm(a_∂Ω,b_∂Ω,btrian,bquad)
 
@@ -184,14 +184,14 @@ t_∂Ω = AffineFETerm(a_∂Ω,b_∂Ω,btrian,bquad)
 # 
 # Finally, we need to define the term $a_\Gamma(\cdot,\cdot)$ integrated on the interior facets $\mathcal{F}_\Gamma$. In this case, we use a `LinearFETerm` since the terms integrated on the interior facets only contribute to the system matrix and not to the right-hand-side vector.
 
-a_Γ(v,u) = (γ/h)*jump(v*ns)*jump(u*ns) - jump(v*ns)*mean(∇(u)) - mean(∇(v))*jump(u*ns)
+a_Γ(u,v) = (γ/h)*jump(v*ns)*jump(u*ns) - jump(v*ns)*mean(∇(u)) - mean(∇(v))*jump(u*ns)
 t_Γ = LinearFETerm(a_Γ,strian,squad)
 
 # Note that the arguments `v`, `u` of function  `a_Γ` represent a test and trial function *restricted* to the interior facets $\mathcal{F}_\Gamma$. As mentioned before in the presentation of the DG formulation, the restriction of a function $v\in V$ to the interior faces leads to two different values $v^+$ and $v^-$ . In order to compute jumps and averages of the quantities $v^+$ and $v^-$, we use the functions `jump` and `mean`, which represent the jump and mean value operators $\lbrack\!\lbrack \cdot \rbrack\!\rbrack$ and $\{\! \!\{\cdot\}\! \!\}$ respectively. Note also that we have used the object `ns` representing the unit normal vector on the interior facets. As a result, the notation used to define function `a_Γ` is very close to the mathematical definition of the terms in the bilinear form $a_\Gamma(\cdot,\cdot)$. 
 # 
 # Once the different terms of the weak form have been defined, we build and solve the FE problem.
 
-op = AffineFEOperator(V,U,t_Ω,t_∂Ω,t_Γ)
+op = AffineFEOperator(U,V,t_Ω,t_∂Ω,t_Γ)
 uh = solve(op)
 
 # ## Discretization error 
@@ -241,121 +241,5 @@ tol = 1.e-10
 # 
 # [2] B. Cockburn, G. Kanschat, and D. Schötzau. An equal-order DG method for the incompressible Navier-Stokes equations. *Journal of Scientific Computing*, 40(1-3):188–210, 2009. doi:[10.1007/s10915-008-9261-1](http://dx.doi.org/10.1007/s10915-008-9261-1).
 # 
-# 
 
-#src const k = 2*pi
-#src u(x) = sin(k*x[1]) * x[2]
-#src ∇u(x) = VectorValue(k*cos(k*x[1])*x[2], sin(k*x[1]))
-#src f(x) = (k^2)*sin(k*x[1])*x[2]
-#src ∇(::typeof(u)) = ∇u
-#src 
-#src function run(n,order)
-#src 
-#src   #Setup model
-#src   L = 1.0
-#src   h = L / n
-#src   limits = (0.0, L, 0.0, L)
-#src   partition = (n,n)
-#src   model = CartesianDiscreteModel(domain=limits, partition=partition)
-#src 
-#src   #Setup FE spaces
-#src   fespace = FESpace(
-#src     reffe=:Lagrangian,
-#src     conformity = :L2,
-#src     valuetype = Float64,
-#src     model = model,
-#src     order = order)
-#src   V = TestFESpace(fespace)
-#src   U = TrialFESpace(fespace)
-#src 
-#src   #Setup integration meshes
-#src   trian = Triangulation(model)
-#src   btrian = BoundaryTriangulation(model)
-#src   strian = SkeletonTriangulation(model)
-#src 
-#src   #Setup quadratures
-#src   quad = CellQuadrature(trian,degree=2*order)
-#src   squad = CellQuadrature(strian,degree=2*order)
-#src   bquad = CellQuadrature(btrian,degree=2*order)
-#src 
-#src   #Setup normal vectors
-#src   nb = get_normal_vector(btrian)
-#src   ns = get_normal_vector(strian)
-#src 
-#src   #Setup weak form (volume)
-#src   a_Ω(v,u) = inner(∇(v), ∇(u))
-#src   b_Ω(v) = inner(v,f)
-#src   
-#src   #Setup weak form (boundary)
-#src   γ = order*(order+1)
-#src   a_∂Ω(v,u) = (γ/h) * inner(v,u) - inner(v, ∇(u)*nb ) - inner(∇(v)*nb, u)
-#src   b_∂Ω(v) = (γ/h) * inner(v,g) - inner(∇(v)*nb, g)
-#src   
-#src   #Setup weak form (skeleton)
-#src   a_Γ(v,u) = (γ/h) * inner( jump(v*ns), jump(u*ns)) -
-#src     inner( jump(v*ns), mean(∇(u)) ) - inner( mean(∇(v)), jump(u*ns) ) 
-#src 
-#src   #Setup FE problem
-#src   t_Ω = AffineFETerm(a_Ω,b_Ω,trian,quad)
-#src   t_Γ = LinearFETerm(a_Γ,strian,squad)
-#src   t_∂Ω = AffineFETerm(a_∂Ω,b_∂Ω,btrian,bquad)
-#src   op = LinearFEOperator(V,U,t_Ω,t_∂Ω,t_Γ)
-#src 
-#src   #Solve
-#src   uh = solve(op)
-#src 
-#src   #Measure discretization error
-#src   e = u - uh
-#src   l2(u) = inner(u,u)
-#src   h1(u) = a_Ω(u,u) + l2(u)
-#src   el2 = sqrt(sum( integrate(l2(e),trian,quad) ))
-#src   eh1 = sqrt(sum( integrate(h1(e),trian,quad) ))
-#src 
-#src   (el2, eh1, h)
-#src   
-#src end
-#src 
-#src function conv_test(ns,order)
-#src 
-#src   el2s = Float64[]
-#src   eh1s = Float64[]
-#src   hs = Float64[]
-#src 
-#src   for n in ns
-#src     @show n
-#src     el2, eh1, h = run(n,order)
-#src     push!(el2s,el2)
-#src     push!(eh1s,eh1)
-#src     push!(hs,h)
-#src   end
-#src 
-#src   (el2s, eh1s, hs)
-#src 
-#src end
-#src 
-#src 
-#src el2s, eh1s, hs = conv_test([8,16,32,64],3)
-#src 
-#src using Plots
-#src 
-#src plot(hs,[el2s eh1s],
-#src     xaxis=:log, yaxis=:log,
-#src     label=["L2" "H1"],
-#src     shape=:auto,
-#src     xlabel="h",ylabel="error norm")
-#src 
-#src #src savefig("conv.png")
-#src 
-#src function slope(hs,errors)
-#src   x = log10.(hs)
-#src   y = log10.(errors)
-#src   linreg = hcat(fill!(similar(x), 1), x) \ y
-#src   linreg[2]
-#src end
-#src 
-#src slope(hs,el2s)
-#src 
-#src slope(hs,eh1s)
-#src 
-#src #md # ![](../assets/dg_discretization/conv.png)
 

@@ -49,11 +49,11 @@ end
 
 res(u,v) = inner( dE(∇(v),∇(u)) , S(∇(u)) )
 
-jac_mat(u,v,du) = inner( dE(∇(v),∇(u)), dS(∇(du),∇(u)) )
+jac_mat(u,du,v) = inner( dE(∇(v),∇(u)), dS(∇(du),∇(u)) )
 
-jac_geo(u,v,du) = inner( ∇(v), S(∇(u))*∇(du) )
+jac_geo(u,du,v) = inner( ∇(v), S(∇(u))*∇(du) )
 
-jac(u,v,du) = jac_mat(u,v,du) + jac_geo(u,v,du)
+jac(u,du,v) = jac_mat(u,v,du) + jac_geo(u,v,du)
 
 # Model
 domain = (0,1,0,1)
@@ -94,7 +94,7 @@ function run(x0,disp_x,step,nsteps)
   U = TrialFESpace(V,[g0,g1])
 
   #FE problem
-  op = FEOperator(V,U,t_Ω)
+  op = FEOperator(U,V,t_Ω)
   
   println("\n+++ Solving for disp_x $disp_x in step $step of $nsteps +++\n")
   

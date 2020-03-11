@@ -95,11 +95,11 @@ trian = Triangulation(model)
 degree = 2
 quad = CellQuadrature(trian,degree)
 
-a(v,u) = ∇(v)*∇(u)
+a(u,v) = ∇(v)*∇(u)
 b(v) = v*f
 
 t_Ω = AffineFETerm(a,b,trian,quad)
-op = AffineFEOperator(V0,U,t_Ω)
+op = AffineFEOperator(U,V0,t_Ω)
 
 uh = solve(op)
 
@@ -177,11 +177,11 @@ function run(n,order)
   U = TrialFESpace(V0,u)
 
   trian = Triangulation(model)
-  degree=order+2
+  degree=2*order
   quad = CellQuadrature(trian,degree)
 
   t_Ω = AffineFETerm(a,b,trian,quad)
-  op = AffineFEOperator(V0,U,t_Ω)
+  op = AffineFEOperator(U,V0,t_Ω)
 
   uh = solve(op)
 

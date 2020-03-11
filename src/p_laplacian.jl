@@ -31,10 +31,10 @@
 # [r(u)](v) \doteq \int_\Omega \nabla v \cdot \left( |\nabla u|^{p-2}\ \nabla u \right) \ {\rm d}\Omega - \int_\Omega v\ f \ {\rm d}\Omega.
 # ```
 # 
-# In order to solve this nonlinear weak equation, we consider a Newton-Raphson method, which is associated with a linearization of the problem in an arbitrary direction $\delta u\in V_0$, namely $[r(u+\delta u)](v)\approx [r(u)](v) + [j(u)](v,\delta u)$. In previous formula,  $j(u)$ is the Jacobian evaluated at $u\in U_g$, which is the bilinear form
+# In order to solve this nonlinear weak equation, we consider a Newton-Raphson method, which is associated with a linearization of the problem in an arbitrary direction $\delta u\in V_0$, namely $[r(u+\delta u)](v)\approx [r(u)](v) + [j(u)](\delta u,v)$. In previous formula,  $j(u)$ is the Jacobian evaluated at $u\in U_g$, which is the bilinear form
 # 
 # ```math
-# [j(u)](v,\delta u) = \int_\Omega \nabla v \cdot \left( |\nabla u|^{p-2}\ \nabla \delta u \right) \ {\rm d}\Omega + (p-2) \int_\Omega \nabla v \cdot \left(  |\nabla u|^{p-4} (\nabla u \cdot \nabla \delta u) \nabla u  \right) \ {\rm d}\Omega.
+# [j(u)](\delta u,v) = \int_\Omega \nabla v \cdot \left( |\nabla u|^{p-2}\ \nabla \delta u \right) \ {\rm d}\Omega + (p-2) \int_\Omega \nabla v \cdot \left(  |\nabla u|^{p-4} (\nabla u \cdot \nabla \delta u) \nabla u  \right) \ {\rm d}\Omega.
 # ```
 # 
 # Note that the solution of this nonlinear PDE with a Newton-Raphson method, will require to discretize both the residual $r$ and the Jacobian $j$. In Gridap, this is done by following an approach similar to the one already shown in previous tutorials for discretizing the bilinear and linear forms associated with a linear FE problem. The specific details are discussed now.
@@ -99,7 +99,7 @@ res(u,v) = ∇(v)*flux(∇(u)) - v*f
 
 @law dflux(∇du,∇u) =
   (p-2)*norm(∇u)^(p-4)*inner(∇u,∇du)*∇u + norm(∇u)^(p-2) * ∇du
-jac(u,v,du) = ∇(v)*dflux(∇(du),∇(u))
+jac(u,du,v) = ∇(v)*dflux(∇(du),∇(u))
 
 # The first argument of function `jac` stands for function $u\in U_g$, where the Jacobian is evaluated. The second argument is a test function $v\in V_0$, and the third argument represents an arbitrary direction $\delta u \in V_0$. Note that we have also used the macro `@law` to define the linearization of the nonlinear flux. 
 # 
@@ -112,7 +112,7 @@ t_Ω = FETerm(res,jac,trian,quad)
 
 # We build the `FETerm` by passing in the first and second arguments the functions that represent the integrands of the residual and Jacobian respectively. The other two arguments, are the triangulation and quadrature used to perform the integrals numerically. From this `FETerm` object, we finally construct the nonlinear FE problem
 
-op = FEOperator(V0,Ug,t_Ω)
+op = FEOperator(Ug,V0,t_Ω)
 
 # Here, we have constructed an instance of `FEOperator`, which is the type that represents a general nonlinear FE problem in Gridap. The constructor takes the test and trial spaces, and the `FETerms` objects describing the corresponding weak form (in this case only a single term).
 # 

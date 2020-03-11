@@ -30,9 +30,9 @@
 # 
 #  ## Numerical scheme
 # 
-#  To solve this PDE, we use a conventional Galerkin finite element (FE) method with conforming Lagrangian FE spaces (see, e.g., [1] for specific details on this formulation). The weak form associated with this formulation is: find $u\in U_g$ such that $ a(v,u) = b(v) $ for all $v\in V_0$, where $U_g$ and $V_0$ are the subset of functions in $H^1(\Omega)$ that fulfill the Dirichlet boundary condition $g$ and $0$ respectively. The bilinear and linear forms for this problems are
+#  To solve this PDE, we use a conventional Galerkin finite element (FE) method with conforming Lagrangian FE spaces (see, e.g., [1] for specific details on this formulation). The weak form associated with this formulation is: find $u\in U_g$ such that $ a(u,v) = b(v) $ for all $v\in V_0$, where $U_g$ and $V_0$ are the subset of functions in $H^1(\Omega)$ that fulfill the Dirichlet boundary condition $g$ and $0$ respectively. The bilinear and linear forms for this problems are
 # ```math
-#   a(v,u) \doteq \int_{\Omega} \nabla v \cdot \nabla u \ {\rm d}\Omega, \quad b(v) \doteq \int_{\Omega} v\ f  \ {\rm  d}\Omega + \int_{\Gamma_{\rm N}} v\ h \ {\rm d}\Gamma_{\rm N}.
+#   a(u,v) \doteq \int_{\Omega} \nabla v \cdot \nabla u \ {\rm d}\Omega, \quad b(v) \doteq \int_{\Omega} v\ f  \ {\rm  d}\Omega + \int_{\Gamma_{\rm N}} v\ h \ {\rm d}\Gamma_{\rm N}.
 # ```
 # The problem is solved numerically by approximating the spaces $U_g$ and $V_0$ by their discrete counterparts associated with a FE mesh of the computational domain $\Omega$. As we have anticipated, we consider standard conforming Lagrangian FE spaces for this purpose.
 # 
@@ -110,7 +110,7 @@ bquad = CellQuadrature(btrian,degree)
 # With all the ingredients presented so far, we are ready to define the weak form. This is done by means of types inheriting from the abstract type `FETerm`. In this tutorial, we will use the sub-types `AffineFETerm` and `FESource`. An `AffineFETerm` is a term that contributes both to the system matrix and the right-hand-side vector, whereas a `FESource` only contributes to the right hand side vector. Here, we use an `AffineFETerm` to represent all the terms in the weak form that are integrated over the interior of the domain $\Omega$.
 
 f(x) = 1.0
-a(v,u) = ∇(v)*∇(u)
+a(u,v) = ∇(v)*∇(u)
 b_Ω(v) = v*f
 t_Ω = AffineFETerm(a,b_Ω,trian,quad)
 
@@ -126,7 +126,7 @@ t_Γ = FESource(b_Γ,btrian,bquad)
 #
 #  At this point, we can build the FE problem that, once solved, will provide the numerical solution we are looking for. A FE problem is represented in Gridap by types inheriting from the abstract type `FEOperator` (both for linear and nonlinear cases). Since we want to solve a linear problem, we use the concrete type `AffineFEOperator`, i.e., a problem represented by a matrix and a right hand side vector.
 
-op = AffineFEOperator(V0,Ug,t_Ω,t_Γ)
+op = AffineFEOperator(Ug,V0,t_Ω,t_Γ)
 
 # Note that the `AffineFEOperator` object representing our FE problem is built from the test and trial FE spaces `V0` and `Ug`, and the objects `t_Ω` and `t_Γ` representing the weak form.
 # 

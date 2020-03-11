@@ -31,7 +31,7 @@ function q(r)
 end
 
 # Update of the state variables
-function update(ε_in,r_in,d_in)
+@law function update(ε_in,r_in,d_in)
   τ_in = τ(ε_in)
   if τ_in <= r_in
     r_out = r_in
@@ -55,9 +55,9 @@ end
 
 end
 
-@law function dσ(dε_in,ε_in,r_in,d_in)
+@law function dσ(dε_in,ε_in,state)
 
-  damaged, r_out, d_out = update(ε_in,r_in,d_in)
+  damaged, r_out, d_out = state
 
   if ! damaged
     return (1-d_out)*σe(dε_in)
@@ -127,7 +127,10 @@ function main(;n,nsteps)
 
     b = factor*b_max
     res(u,v) = inner( ε(v), σ(ε(u),r,d) ) - v*b
-    jac(u,du,v) = inner( ε(v), dσ(ε(du),ε(u),r,d) )
+    function jac(u,du,v)
+      state = update(ε(u),r,d)
+      inner( ε(v), dσ(ε(du),ε(u),state) )
+    end
     t_Ω = FETerm(res,jac,trian,quad)
     op = FEOperator(U,V,t_Ω)
 
@@ -151,17 +154,18 @@ function main(;n,nsteps)
 
     writevtk(
       trian,"results_$(lpad(istep,3,'0'))",
-      cellfields=["uh"=>uh,"epsi"=>ε(uh),"damage"=>dh,"threshold"=>rh,"sigma_elast"=>σe(ε(uh))])
+      cellfields=["uh"=>uh,"epsi"=>ε(uh),"damage"=>dh,
+                  "threshold"=>rh,"sigma_elast"=>σe(ε(uh))])
 
   end
 
 end
 
 # Run!
-main(n=8,nsteps=30)
+main(n=6,nsteps=20)
 
 # ## Results
 
-# Animation of the load history
+# Animation of the load history using for `main(n=8,nsteps=30)`
 # ![](../assets/isotropic_damage/damage.gif)
 

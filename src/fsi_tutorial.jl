@@ -70,37 +70,35 @@ using LinearAlgebra: tr
 using Gridap.Geometry
 
 
-# ## Definition of the manufactured solution
+# ## Definition of the Boundary conditions
 
-# Velocity:
-# u(x) = VectorValue( x[1]^2 + 2*x[2]^2, -x[1]^2 )
-# ∇u(x) = TensorValue( 2*x[1], 4*x[2], -2*x[1], zero(x[1]) )
-# Δu(x) = VectorValue( 6, -2 )
-u(x) = VectorValue( x[2], -x[1] )
-∇u(x) = TensorValue( zero(x[1]), one(x[2]), -one(x[1]), zero(x[2]) )
-εu(x) = TensorValue( zero(x[1]), zero(x[2]), zero(x[1]), zero(x[2]) )
-divσu(x) = VectorValue( zero(x[1]), zero(x[2]) )
+# ### Dirichlet
+# ```math
+# \left\lbrace
+# \begin{aligned}
+# u_{\rm F,in}(x,y) = [(1+y)(1-y), 0]\quad\mbox{on }\Gamma_{\rm F,D_{in}}
+# u_{\rm F,0}(x,y) = [0, 0]\quad\mbox{on }\Gamma_{\rm F,D_{0}}
+# u_{\rm S,0}(x,y) = [0, 0]\quad\mbox{on }\Gamma_{\rm S,D_{0}}
+# ```
+uf_in(x) = VectorValue( (1+x[2])*(1-x[2]), 0.0 )
+uf_0(x) = VectorValue( 0.0, 0.0 )
+us_0(x) = VectorValue( 0.0, 0.0 )
 
-# Pressure:
-p(x) = x[1] + 3*x[2]
-∇p(x) = VectorValue(1,3)
+# ### neumann
+# ...
+h(x) = VectorValue( 0.0, 0.0 )
+p_jump(x) = 0.0
 
-# Source terms:
-s(x) = -divσu(x)
-f(x) = -divσu(x) + ∇p(x)
-g(x) = tr(∇u(x))
-
-# Extend Gridap operators
-∇(::typeof(u)) = ∇u
-ε(::typeof(u)) = εu
-∇(::typeof(p)) = ∇p
+# ## Body forces
+f(x) = VectorValue( 0.0, 0.0 )
+s(x) = VectorValue( 0.0, 0.0 )
+g(x) = 0.0
 
 # ## Discrete model
-# Square computational domain
-n = 20
-mesh = (n,n)
-domain = 2 .* (0,1,0,1) .- 1
-order = 1
+# Computational domain: channel of size 4x2
+mesh = (80,40)
+domain = (0.0,4.0,-1.0,1.0)
+order = 2
 model = CartesianDiscreteModel(domain, mesh)
 
 # Triangulation of the full domain
@@ -108,16 +106,22 @@ trian = Triangulation(model)
 
 # Boundary conditions on the full domain
 labels = get_face_labeling(model)
-add_tag_from_tags!(labels,"dirichlet",[1,2,5])
-add_tag_from_tags!(labels,"neumann",[6,7,8])
+add_tag_from_tags!(labels,"inlet",[7])
+add_tag_from_tags!(labels,"noSlip",[1,2,3,4,5,6])
+add_tag_from_tags!(labels,"outlet",[8])
 
 # Solid & fluid triangulation
-const R = 0.4
+const width = 0.2
+const height = 1.2
+const x0 = 2.0
 function is_in(coords)
   n = length(coords)
   x = (1/n)*sum(coords)
-  d = x[1]^2 + x[2]^2 - R^2
-  d < 0
+  box_min_x = x0 - width/2.0
+  box_min_y = -1.0
+  box_max_x = x0 + width/2.0
+  box_max_y = height - 1.0
+  (x[1] > box_min_x) && (x[2] > box_min_y) && (x[1] < box_max_x) && (x[2] < box_max_y)
 end
 cell_to_coods = get_cell_coordinates(trian)
 cell_to_is_solid = collect1d(apply(is_in,cell_to_coods))
@@ -132,7 +136,7 @@ V = TestFESpace(
   reffe=:QLagrangian,
   order=order,
   conformity =:H1,
-  dirichlet_tags="dirichlet")
+  dirichlet_tags=["inlet", "noSlip"])
 
 # @santiagobadia : Do we need triangulation and restricted_at ?
 Q = TestFESpace(
@@ -143,7 +147,7 @@ Q = TestFESpace(
   conformity=:L2,
   restricted_at=trian_fluid)
 
-U = TrialFESpace(V,u)
+U = TrialFESpace(V,[uf_in, uf_0])
 P = TrialFESpace(Q)
 
 Y = MultiFieldFESpace([V,Q])
@@ -156,7 +160,7 @@ quad = CellQuadrature(trian,degree)
 quad_solid = CellQuadrature(trian_solid,degree)
 quad_fluid = CellQuadrature(trian_fluid,degree)
 
-btrian = BoundaryTriangulation(model,labels,"neumann")
+btrian = BoundaryTriangulation(model,labels,"outlet")
 bdegree = 2*order
 bquad = CellQuadrature(btrian,bdegree)
 n = get_normal_vector(btrian)
@@ -212,13 +216,13 @@ end
 
 function l_Γn_fluid(y)
   v,q = y
-  v*(n*ε(u)) - (n*v)*p
+  v*h
 end
 
 # Pressure drop at the interface
 function l_Γ(y)
   v,q = y
-  - mean(n_Γ*v)*p
+  - mean(n_Γ*v)*p_jump
 end
 
 t_Ω_solid = AffineFETerm(a_solid,l_solid,trian_solid,quad_solid)
@@ -233,26 +237,26 @@ uh, ph = solve(op)
 
 ph_fluid = restrict(ph, trian_fluid)
 
-eu = u - uh
-ep = p - ph
-ep_fluid = p - ph_fluid
+#eu = u - uh
+#ep = p - ph
+#ep_fluid = p - ph_fluid
 
-writevtk(trian_fluid,"trian_fluid",cellfields=["ph"=>ph_fluid, "ep"=>ep_fluid])
+writevtk(trian_fluid,"trian_fluid",cellfields=["ph"=>ph_fluid])
 #
-writevtk(trian,"trian", cellfields=["uh" => uh, "ph"=> ph, "eu"=>eu, "ep"=>ep])
+writevtk(trian,"trian", cellfields=["uh" => uh, "ph"=> ph])
 
 # Errors
 
-l2(v) = v*v
-h1(v) = v*v + inner(∇(v),∇(v))
-
-eu_l2 = sqrt(sum(integrate(l2(eu),trian,quad)))
-eu_h1 = sqrt(sum(integrate(h1(eu),trian,quad)))
-ep_l2 = sqrt(sum(integrate(l2(ep_fluid),trian_fluid,quad_fluid)))
-
-tol = 1.0e-9
-@test eu_l2 < tol
-@test eu_h1 < tol
-@test ep_l2 < tol
+# l2(v) = v*v
+# h1(v) = v*v + inner(∇(v),∇(v))
+#
+# eu_l2 = sqrt(sum(integrate(l2(eu),trian,quad)))
+# eu_h1 = sqrt(sum(integrate(h1(eu),trian,quad)))
+# ep_l2 = sqrt(sum(integrate(l2(ep_fluid),trian_fluid,quad_fluid)))
+#
+# tol = 1.0e-9
+# @test eu_l2 < tol
+# @test eu_h1 < tol
+# @test ep_l2 < tol
 
 end # module

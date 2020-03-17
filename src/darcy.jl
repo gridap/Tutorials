@@ -33,11 +33,11 @@
 # \ \text	{otherwise.}
 # ```
 #
-# In order to state this problem in weak form, we introduce the following Sobolev spaces. $H(\mathrm{div};\Omega)$ is the space of vector fields in $\Omega$, whose components and divergence are in $L^2(\Omega)$. On the other hand, $H_g(\mathrm{div};\Omega)$ and $H_0(\mathrm{div};\Omega)$ are the subspaces of functions in $H(\mathrm{div};\Omega)$ such that their normal traces are equal to $g$ and $0$ respectively almost everywhere in $\Gamma_{\rm D}$. With these notations, the weak form reads: find $(u,p)\in H_g(\mathrm{div};\Omega)\times L^2(\Omega)$ such that $a((v,q),(u,q)) = b(v,q)$ for all $(v,q)\in H_0(\mathrm{div};\Omega)\times L^2(\Omega)$, where
+# In order to state this problem in weak form, we introduce the following Sobolev spaces. $H(\mathrm{div};\Omega)$ is the space of vector fields in $\Omega$, whose components and divergence are in $L^2(\Omega)$. On the other hand, $H_g(\mathrm{div};\Omega)$ and $H_0(\mathrm{div};\Omega)$ are the subspaces of functions in $H(\mathrm{div};\Omega)$ such that their normal traces are equal to $g$ and $0$ respectively almost everywhere in $\Gamma_{\rm D}$. With these notations, the weak form reads: find $(u,p)\in H_g(\mathrm{div};\Omega)\times L^2(\Omega)$ such that $a((u,q),(v,q)) = b(v,q)$ for all $(v,q)\in H_0(\mathrm{div};\Omega)\times L^2(\Omega)$, where
 #
 # ```math
 # \begin{aligned}
-# a((v,q),(u,p)) &\doteq \int_{\Omega}  v \cdot \left(\kappa^{-1} u\right) \ {\rm d}\Omega - \int_{\Omega} (\nabla \cdot v)\ p \ {\rm d}\Omega + \int_{\Omega} q\ (\nabla \cdot u) \ {\rm d}\Omega,\\
+# a((u,q),(v,q)) &\doteq \int_{\Omega}  v \cdot \left(\kappa^{-1} u\right) \ {\rm d}\Omega - \int_{\Omega} (\nabla \cdot v)\ p \ {\rm d}\Omega + \int_{\Omega} q\ (\nabla \cdot u) \ {\rm d}\Omega,\\
 # b(v,q) &\doteq \int_{\Omega} q\ f \ {\rm  d}\Omega - \int_{\Gamma_{\rm N}} (v\cdot n)\ h  \ {\rm  d}\Gamma.
 # \end{aligned}
 # ```
@@ -45,7 +45,7 @@
 # 
 #  ## Numerical scheme
 # 
-# In this tutorial, we use the Raviart-Thomas (RT)  space for the flux approximation [1]. On a reference square with sides aligned with the Cartesian axes, the RT space of order $k$ is represented as $Q_{(k,k-1)} \times Q_{(k-1,k)}$, being the polynomial space defined as follows. The component $\alpha$ of a vector field in $Q_{(k,k-1)} \times Q_{(k-1,k)}$ is obtained as the tensor product of univariate polynomials of order $k$ in direction $\alpha$ times univariate polynomials of order $k-1$ on the other directions. Note that this definition applies to arbitrary dimensions. The global FE space for the flux $V$ is obtained by mapping the cell-wise RT space into the physical space using the Piola transformation and enforcing continuity of normal traces across cells (see [1] for specific details). 
+# In this tutorial, we use the Raviart-Thomas (RT)  space for the flux approximation [1]. On a reference square with sides aligned with the Cartesian axes, the RT space of order $k$ is represented as $Q_{(k+1,k)} \times Q_{(k,k+1)}$, being the polynomial space defined as follows. The component $\alpha$ of a vector field in $Q_{(k+1,k)} \times Q_{(k,k+1)}$ is obtained as the tensor product of univariate polynomials of order $k+1$ in direction $\alpha$ times univariate polynomials of order $k$ on the other directions. Note that this definition applies to arbitrary dimensions. The global FE space for the flux $V$ is obtained by mapping the cell-wise RT space into the physical space using the Piola transformation and enforcing continuity of normal traces across cells (see [1] for specific details). 
 # 
 #  We consider the subspace  $V_0$ of functions in $V$ with zero normal trace on $\Gamma_{\rm D}$, and the subspace $V_g$ of functions in $V$ with normal trace equal to the projection of $g$ onto the space of traces of $V$ on $\Gamma_{\rm D}$. With regard to the pressure, we consider the discontinuous space of cell-wise polynomials in $Q_{k-1}$, i.e., multivariate polynomials of degree at most $k-1$ in each of the spatial coordinates.
 # 
@@ -62,14 +62,14 @@ model = CartesianDiscreteModel(domain,partition)
 # 
 # Next, we build the FE spaces. We consider the second order RT space for the flux and the discontinuous pressure space as described above.  This mixed FE pair satisfies the inf-sup condition and, thus, it is stable.
 
-order = 2
+order = 1
 
 V = FESpace(
   reffe=:RaviartThomas, order=order, valuetype=VectorValue{2,Float64},
   conformity=:HDiv, model=model, dirichlet_tags=[5,6])
 
 Q = FESpace(
-  reffe=:QLagrangian, order=order-1, valuetype=Float64,
+  reffe=:QLagrangian, order=order, valuetype=Float64,
   conformity=:L2, model=model)
 
 # Note that the Dirichlet boundary for the flux are the bottom and top sides of the squared domain (identified with the boundary tags 5, and 6 respectively), whereas no Dirichlet data can be imposed on the pressure space. We select `conformity=:HDiv` for the flux (i.e., shape functions with $H^1(\mathrm{div};\Omega)$ regularity) and `conformity=:L2` for the pressure (i.e. discontinuous shape functions).
@@ -97,7 +97,6 @@ quad = CellQuadrature(trian,degree)
 
 neumanntags = [8,]
 btrian = BoundaryTriangulation(model,neumanntags)
-degree = 2*order
 bquad = CellQuadrature(btrian,degree)
 
 # ## Weak form
@@ -118,7 +117,7 @@ end
 
 px = get_physical_coordinate(trian)
 
-function a(y,x)
+function a(x,y)
    v, q = y
    u, p = x
    v*σ(px,u) - (∇*v)*p + q*(∇*u)
@@ -141,7 +140,7 @@ end
 
 t_Ω = LinearFETerm(a,trian,quad)
 t_ΓN = FESource(b_ΓN,btrian,bquad)
-op = AffineFEOperator(Y,X,t_Ω,t_ΓN)
+op = AffineFEOperator(X,Y,t_Ω,t_ΓN)
 xh = solve(op)
 uh, ph = xh
 

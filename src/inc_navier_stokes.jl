@@ -43,12 +43,12 @@
 # where $U_g$ and $V_0$ are the set of functions in $V$ fulfilling the Dirichlet boundary condition $g$ and $0$  on $\partial\Omega$ respectively. The weak residual $r$ evaluated at a given pair $(u,p)$ is the linear form defined as
 #
 # ```math
-# [r(u,p)](v,q) \doteq a((v,q),(u,p))+ [c(u)](v),
+# [r(u,p)](v,q) \doteq a((u,p),(v,q))+ [c(u)](v),
 # ```
 # with 
 # ```math
 # \begin{aligned}
-# a((v,q),(u,p)) &\doteq \int_{\Omega} \nabla v \cdot \nabla u \ {\rm d}\Omega - \int_{\Omega} (\nabla\cdot v) \ p \ {\rm d}\Omega + \int_{\Omega} q \ (\nabla \cdot u) \ {\rm d}\Omega,\\
+# a((u,p),(v,q)) &\doteq \int_{\Omega} \nabla v \cdot \nabla u \ {\rm d}\Omega - \int_{\Omega} (\nabla\cdot v) \ p \ {\rm d}\Omega + \int_{\Omega} q \ (\nabla \cdot u) \ {\rm d}\Omega,\\
 # [c(u)](v) &\doteq \int_{\Omega} v 	\cdot \left( (u\cdot\nabla)\ u \right)\ {\rm d}\Omega.\\
 # \end{aligned}
 # ```
@@ -57,11 +57,11 @@
 # In order to solve this nonlinear weak equation with a Newton-Raphson method, one needs to compute the Jacobian associated with the residual $r$. In this case, the Jacobian $j$ evaluated at a pair $(u,p)$ is the bilinear form defined as
 #
 # ```math
-# [j(u,p)]((v,q),(\delta u, \delta p)) \doteq a((v,q),(\delta u,\delta p))  + [{\rm d}c(u)](v,\delta u),
+# [j(u,p)]((\delta u, \delta p),(v,q)) \doteq a((\delta u,\delta p),(v,q))  + [{\rm d}c(u)](\delta u,v),
 # ```
 # where ${\rm d}c$ results from the linearization of the convective term, namely
 # ```math
-# [{\rm d}c(u)](v,\delta u) \doteq \int_{\Omega} v \cdot \left( (u\cdot\nabla)\ \delta u \right) \ {\rm d}\Omega + \int_{\Omega} v \cdot \left( (\delta u\cdot\nabla)\ u \right)  \ {\rm d}\Omega. 
+# [{\rm d}c(u)](\delta u,v) \doteq \int_{\Omega} v \cdot \left( (u\cdot\nabla)\ \delta u \right) \ {\rm d}\Omega + \int_{\Omega} v \cdot \left( (\delta u\cdot\nabla)\ u \right)  \ {\rm d}\Omega. 
 # ```
 # The implementation of this numerical scheme is done in Gridap by combining the concepts previously seen for single-field nonlinear PDEs  and linear multi-field problems.
 # 
@@ -93,7 +93,7 @@ V = TestFESpace(
 
 # The interpolation space for the pressure is build as follows
 
-Q = FESpace(
+Q = TestFESpace(
   reffe=:PLagrangian, conformity=:L2, valuetype=Float64,
   model=model, order=order-1, constraint=:zeromean)
 
@@ -115,26 +115,26 @@ const Re = 10.0
 @law conv(u,∇u) = Re*(∇u')*u
 @law dconv(du,∇du,u,∇u) = conv(u,∇du)+conv(du,∇u)
 
-function a(y,x)
+function a(x,y)
   u, p = x
   v, q = y
   inner(∇(v),∇(u)) - (∇*v)*p + q*(∇*u)
 end
 
-c(v,u) = v*conv(u,∇(u))
-dc(v,du,u) = v*dconv(du,∇(du),u,∇(u))
+c(u,v) = v*conv(u,∇(u))
+dc(u,du,v) = v*dconv(du,∇(du),u,∇(u))
 
 function res(x,y)
   u, p = x
   v, q = y
-  a(y,x) + c(v,u)
+  a(x,y) + c(u,v)
 end
 
-function jac(x,y,dx)
+function jac(x,dx,y)
   u, p = x
   v, q = y
   du, dp = dx
-  a(y,dx)+ dc(v,du,u)
+  a(dx,y)+ dc(u,du,v)
 end
 
 # With the functions `res`, and `jac` representing the weak residual and the Jacobian, we build the nonlinear FE problem:
@@ -143,7 +143,7 @@ trian = Triangulation(model)
 degree = (order-1)*2
 quad = CellQuadrature(trian,degree)
 t_Ω = FETerm(res,jac,trian,quad)
-op = FEOperator(Y,X,t_Ω)
+op = FEOperator(X,Y,t_Ω)
 
 # ## Nonlinear solver phase
 # 

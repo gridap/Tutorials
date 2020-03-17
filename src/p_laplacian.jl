@@ -50,7 +50,7 @@ model = DiscreteModelFromFile("../models/model.json")
 
 writevtk(model,"model")
 
-# and by opening the file `"model_0"` in Paraview that the boundary identified as `"sides"` only includes the vertices in the interior of $\Gamma_0$, but here we want to impose Dirichlet boundary conditions in the closure of $\Gamma_0$, i.e., also on the vertices on the contour of $\Gamma_0$. Fortunately, the objects on the contour of $\Gamma_0$ are identified  with the tag `"sides_c"` (see next figure). Thus, the Dirichlet boundary $\Gamma_0$ can be build as the union of the objects identified as `"sides"` and `"sides_c"`.
+# and by opening the file `"model_0"` in Paraview that the boundary identified as `"sides"` only includes the vertices in the interior of $\Gamma_0$, but here we want to impose Dirichlet boundary conditions in the closure of $\Gamma_0$, i.e., also on the vertices on the contour of $\Gamma_0$. Fortunately, the objects on the contour of $\Gamma_0$ are identified  with the tag `"sides_c"` (see next figure). Thus, the Dirichlet boundary $\Gamma_0$ can be built as the union of the objects identified as `"sides"` and `"sides_c"`.
 # 
 # ![](../assets/p_laplacian/sides_c.png)
 # 
@@ -85,7 +85,7 @@ Ug = TrialFESpace(V0,[0,g])
 # 
 # At this point, we are ready to build the nonlinear FE problem. To this end, we need to define the weak residual and also its corresponding Jacobian. This is done following a similar procedure to the one considered in previous tutorials to define the bilinear and linear forms associated with linear FE problems. In this case, instead of an `AffineFETerm` (which is for linear problems), we use a `FETerm` which accounts for the non-linear case. An instance of `FETerm` is constructed by providing the integrands of the weak residual and its Jacobian (in a similar way an `AffineFETerm` is constructed from the integrands of the bilinear and linear forms). 
 # 
-# On the one hand, the integrand of the weak residual is build as follows
+# On the one hand, the integrand of the weak residual is built as follows
 
 using LinearAlgebra: norm
 const p = 3

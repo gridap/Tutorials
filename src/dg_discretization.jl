@@ -112,7 +112,7 @@ domain2D = (0.0, L, 0.0, L)
 partition2D = (n,n)
 model2D = CartesianDiscreteModel(domain2D,partition2D)
 
-# You could also generate a mesh for the unit tesseract $(0,1)^4$ (i.e., the unit cube in 4D). Look how the 2D and 3D models are build and just follow the sequence.
+# You could also generate a mesh for the unit tesseract $(0,1)^4$ (i.e., the unit cube in 4D). Look how the 2D and 3D models are built and just follow the sequence.
 # 
 # ## FE spaces
 # 

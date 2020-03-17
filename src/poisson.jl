@@ -71,7 +71,7 @@ writevtk(model,"model")
 # 
 # ## FE spaces
 # 
-#  Once we have a discretization of the computational domain, the next step is to generate a discrete approximation of the finite element spaces $V_0$ and $U_g$ (i.e. the test and trial FE spaces) of the problem. To do so, first, we are going to build a discretization of $V_0$ as the standard Conforming Lagrangian FE space (with zero boundary conditions) associated with the discretization of the computational domain. The approximation of the FE space $V_0$ is build as follows:
+#  Once we have a discretization of the computational domain, the next step is to generate a discrete approximation of the finite element spaces $V_0$ and $U_g$ (i.e. the test and trial FE spaces) of the problem. To do so, first, we are going to build a discretization of $V_0$ as the standard Conforming Lagrangian FE space (with zero boundary conditions) associated with the discretization of the computational domain. The approximation of the FE space $V_0$ is built as follows:
 
 V0 = TestFESpace(
   reffe=:Lagrangian, order=1, valuetype=Float64,
@@ -124,7 +124,7 @@ t_Γ = FESource(b_Γ,btrian,bquad)
 # 
 #  ## FE Problem
 #
-#  At this point, we can build the FE problem that, once solved, will provide the numerical solution we are looking for. A FE problem is represented in Gridap by types inheriting from the abstract type `FEOperator` (both for linear and nonlinear cases). Since we want to solve a linear problem, we use the concrete type `AffineFEOperator`, i.e., a problem represented by a matrix and a right hand side vector.
+#  At this point, we can built the FE problem that, once solved, will provide the numerical solution we are looking for. A FE problem is represented in Gridap by types inheriting from the abstract type `FEOperator` (both for linear and nonlinear cases). Since we want to solve a linear problem, we use the concrete type `AffineFEOperator`, i.e., a problem represented by a matrix and a right hand side vector.
 
 op = AffineFEOperator(Ug,V0,t_Ω,t_Γ)
 
@@ -137,7 +137,7 @@ op = AffineFEOperator(Ug,V0,t_Ω,t_Γ)
 ls = LUSolver()
 solver = LinearFESolver(ls)
 
-#  `LinearFESolver` objects are build from a given algebraic linear solver. In this case, we use a LU factorization. Now we are ready to solve the FE problem with the FE solver as follows:
+#  `LinearFESolver` objects are built from a given algebraic linear solver. In this case, we use a LU factorization. Now we are ready to solve the FE problem with the FE solver as follows:
 
 uh = solve(solver,op)
 

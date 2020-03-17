@@ -45,7 +45,7 @@
 # 
 #  ## Numerical scheme
 # 
-# In this tutorial, we use the Raviart-Thomas (RT)  space for the flux approximation [1]. On a reference square with sides aligned with the Cartesian axes, the RT space of order $k$ is represented as $Q_{(k,k-1)} \times Q_{(k-1,k)}$, being the polynomial space defined as follows. The component $\alpha$ of a vector field in $Q_{(k,k-1)} \times Q_{(k-1,k)}$ is obtained as the tensor product of univariate polynomials of order $k$ in direction $\alpha$ times univariate polynomials of order $k-1$ on the other directions. Note that this definition applies to arbitrary dimensions. The global FE space for the flux $V$ is obtained by mapping the cell-wise RT space into the physical space using the Piola transformation and enforcing continuity of normal traces across cells (see [1] for specific details). 
+# In this tutorial, we use the Raviart-Thomas (RT)  space for the flux approximation [1]. On a reference square with sides aligned with the Cartesian axes, the RT space of order $k$ is represented as $Q_{(k+1,k)} \times Q_{(k,k+1)}$, being the polynomial space defined as follows. The component $\alpha$ of a vector field in $Q_{(k+1,k)} \times Q_{(k,k+1)}$ is obtained as the tensor product of univariate polynomials of order $k+1$ in direction $\alpha$ times univariate polynomials of order $k$ on the other directions. Note that this definition applies to arbitrary dimensions. The global FE space for the flux $V$ is obtained by mapping the cell-wise RT space into the physical space using the Piola transformation and enforcing continuity of normal traces across cells (see [1] for specific details). 
 # 
 #  We consider the subspace  $V_0$ of functions in $V$ with zero normal trace on $\Gamma_{\rm D}$, and the subspace $V_g$ of functions in $V$ with normal trace equal to the projection of $g$ onto the space of traces of $V$ on $\Gamma_{\rm D}$. With regard to the pressure, we consider the discontinuous space of cell-wise polynomials in $Q_{k-1}$, i.e., multivariate polynomials of degree at most $k-1$ in each of the spatial coordinates.
 # 
@@ -62,14 +62,14 @@ model = CartesianDiscreteModel(domain,partition)
 # 
 # Next, we build the FE spaces. We consider the second order RT space for the flux and the discontinuous pressure space as described above.  This mixed FE pair satisfies the inf-sup condition and, thus, it is stable.
 
-order = 2
+order = 1
 
 V = FESpace(
   reffe=:RaviartThomas, order=order, valuetype=VectorValue{2,Float64},
   conformity=:HDiv, model=model, dirichlet_tags=[5,6])
 
 Q = FESpace(
-  reffe=:QLagrangian, order=order-1, valuetype=Float64,
+  reffe=:QLagrangian, order=order, valuetype=Float64,
   conformity=:L2, model=model)
 
 # Note that the Dirichlet boundary for the flux are the bottom and top sides of the squared domain (identified with the boundary tags 5, and 6 respectively), whereas no Dirichlet data can be imposed on the pressure space. We select `conformity=:HDiv` for the flux (i.e., shape functions with $H^1(\mathrm{div};\Omega)$ regularity) and `conformity=:L2` for the pressure (i.e. discontinuous shape functions).
@@ -97,7 +97,6 @@ quad = CellQuadrature(trian,degree)
 
 neumanntags = [8,]
 btrian = BoundaryTriangulation(model,neumanntags)
-degree = 2*order
 bquad = CellQuadrature(btrian,degree)
 
 # ## Weak form

@@ -86,7 +86,7 @@ us_0(x) = VectorValue( 0.0, 0.0 )
 
 # ### neumann
 # ...
-h(x) = VectorValue( 0.0, 0.0 )
+hN(x) = VectorValue( 0.0, 0.0 )
 p_jump(x) = 0.0
 
 # ## Body forces
@@ -110,7 +110,7 @@ add_tag_from_tags!(labels,"inlet",[7])
 add_tag_from_tags!(labels,"noSlip",[1,2,3,4,5,6])
 add_tag_from_tags!(labels,"outlet",[8])
 
-# Solid & fluid triangulation
+# Solid & fluid triangulation & models
 const width = 0.2
 const height = 1.2
 const x0 = 2.0
@@ -128,6 +128,8 @@ cell_to_is_solid = collect1d(apply(is_in,cell_to_coods))
 cell_to_is_fluid = Vector{Bool}(.! cell_to_is_solid)
 trian_solid = RestrictedTriangulation(trian, cell_to_is_solid)
 trian_fluid = RestrictedTriangulation(trian, cell_to_is_fluid)
+model_solid = DiscreteModel(model, cell_to_is_solid)
+model_fluid = DiscreteModel(model, cell_to_is_fluid)
 
 # ## FE Spaces
 # ### Case A: same FE space for fluid and solid velocities
@@ -141,14 +143,14 @@ Va = TestFESpace(
 
 # ### Case B: Different FE space for fluid and solid velocities
 Vbf = TestFESpace(
-    triangulation=trian_fluid,
+    model=model_fluid,
     valuetype=VectorValue{2,Float64},
     reffe=:QLagrangian,
     order=order,
     conformity =:H1,
     dirichlet_tags=["inlet", "noSlip"])
 Vbs = TestFESpace(
-    triangulation=trian_solid,
+    model=model_solid,
     valuetype=VectorValue{2,Float64},
     reffe=:QLagrangian,
     order=order,
@@ -220,41 +222,72 @@ const (λ_f,μ_f) = lame_parameters(E_f,ν_f)
 # Fluid Cauchy stress tensor
 @law σ_f(ε) = 2*μ_f*ε
 
-# ### Weak conform
-function a_solid(x,y)
+# ### Weak form
+# Case A
+function a_solid_A(x,y)
   u,p = x
   v,q = y
   inner( ε(v), σ_s(ε(u)) )
 end
 
-function l_solid(y)
+function l_solid_A(y)
   v,q = y
   v*s
 end
 
-function a_fluid(x,y)
+function a_fluid_A(x,y)
   u,p = x
   v,q = y
   inner( ε(v), σ_f(ε(u)) ) - (∇*v)*p + q*(∇*u)
 end
 
-function l_fluid(y)
+function l_fluid_A(y)
   v,q = y
   v*f + q*g
 end
 
-function l_Γn_fluid(y)
+function l_Γn_fluid_A(y)
   v,q = y
-  v*h
+  v*hN
 end
 
 # Pressure drop at the interface
-function l_Γ(y)
+function l_Γ_A(y)
   v,q = y
-  - mean(n_Γ*v)*p_jump
+  - mean(n_Γfs*v)*p_jump
+end
+
+# Case B
+function a_solid_B(x,y)
+  us,uf,p = x
+  vs,vf,q = y
+  inner( ε(vs), σ_s(ε(us)) )
+end
+
+function l_solid_B(y)
+  vs,vf,q = y
+  vs*s
+end
+
+function a_fluid_B(x,y)
+  us,uf,p = x
+  vs,vf,q = y
+  inner( ε(vf), σ_f(ε(uf)) ) - (∇*vf)*p + q*(∇*uf)
+end
+
+function l_fluid_B(y)
+  vs,vf,q = y
+  vf*f + q*g
+end
+
+function l_Γn_fluid_B(y)
+  vs,vf,q = y
+  vf*hN
 end
 
 # Nitsche's method to enforce interface conditions
+const γ = 1.0
+const h = 0.05
 function nitsche_Γ(x,y)
   us_Γ, uf_Γ, p_Γ = x
   vs_Γ, vf_Γ, q_Γ = y
@@ -265,11 +298,11 @@ function nitsche_Γ(x,y)
   q = q_Γ.left
   vs = vs_Γ.right
   # Penalty:
-  penaltyTerms = (γ/h) * (vf - vs) * (uf - us)
+  penaltyTerms = (γ/h)*vf*uf - (γ/h)*vf*us - (γ/h)*vs*uf + (γ/h)*vs*us
   # Integration by parts terms:
-  integrationByParts = (vf - vs) * (p*n_Γfs - n_Γfs*ε(uf) - n_Γsf*ε(us))
+  integrationByParts = ( vf*p*n_Γfs - vf*n_Γfs*ε(uf) - vf*n_Γsf*ε(us) ) - ( vs*p*n_Γfs - vs*n_Γfs*ε(uf) - vs*n_Γsf*ε(us) )
   # Symmetric terms:
-  symmetricTerms = (q*n_Γfs - n_Γfs*ε(vf) - n_Γsf*ε(vs)) * (uf - us)
+  symmetricTerms = (q*(n_Γfs*uf) - n_Γfs*ε(vf)*uf - n_Γsf*ε(vs)*uf) - ( q*n_Γfs*us- n_Γfs*ε(vf)*us - n_Γsf*ε(vs)*us )
   # (γ/h)*vf*uf - vf*(n_Γ*ε(uf)) - (n_Γ*ε(vf))*uf + (p*n_Γ)*vf + (q*n_Γ)*uf
   #    - (γ/h)*vf*us + (n_Γ*ε(vf))*us - (q*n_Γ)*us
   #    + (γ/h)*vs*us + vs*(n_Γ*ε(us)) + (n_Γ*ε(vs))*us
@@ -277,45 +310,36 @@ function nitsche_Γ(x,y)
   penaltyTerms + integrationByParts + symmetricTerms
 end
 
-t_Ω_solid = AffineFETerm(a_solid,l_solid,trian_solid,quad_solid)
-t_Ω_fluid = AffineFETerm(a_fluid,l_fluid,trian_fluid,quad_fluid)
-t_Γfs = AffineFETerm(nitsche_Γ,l_Γ,trian_Γfs,quad_Γfs)
-t_Γn_fluid = FESource(l_Γn_fluid,trian_Γout,quad_Γout)
-t_Γ = FESource(l_Γ,trian_Γ,quad_Γ)
+# Pressure drop at the interface
+function l_Γ_B(y)
+  vs,vf,q = y
+  - n_Γfs*vf.left*p_jump
+end
 
-opA = AffineFEOperator(Xa,Ya,t_Ω_solid,t_Ω_fluid,t_Γn_fluid,t_Γ)
+t_Ω_solid_A = AffineFETerm(a_solid_A,l_solid_A,trian_solid,quad_solid)
+t_Ω_solid_B= AffineFETerm(a_solid_B,l_solid_B,trian_solid,quad_solid)
+t_Ω_fluid_A = AffineFETerm(a_fluid_A,l_fluid_A,trian_fluid,quad_fluid)
+t_Ω_fluid_B = AffineFETerm(a_fluid_B,l_fluid_B,trian_fluid,quad_fluid)
+t_Γfs = AffineFETerm(nitsche_Γ,l_Γ_B,trian_Γfs,quad_Γfs)
+#t_Γfs = FESource(l_Γ_B,trian_Γfs,quad_Γfs)
+
+t_Γn_fluid_A = FESource(l_Γn_fluid_A,trian_Γout,quad_Γout)
+t_Γn_fluid_B = FESource(l_Γn_fluid_B,trian_Γout,quad_Γout)
+t_Γ = FESource(l_Γ_A,trian_Γfs,quad_Γfs)
+
+opA = AffineFEOperator(Xa,Ya,t_Ω_solid_A,t_Ω_fluid_A,t_Γn_fluid_A,t_Γ)
 uhA, phA = solve(opA)
-opB = AffineFEOperator(Xb,Yb,t_Ω_solid,t_Ω_fluid,t_Γn_fluid,t_Γfs)
-uhA, phA = solve(opA)
-uhsB, uhfB, phB = solve(opA)
+opB = AffineFEOperator(Xb,Yb,t_Ω_solid_B,t_Ω_fluid_B,t_Γn_fluid_B,t_Γfs)
+uhsB, uhfB, phB = solve(opB)
 
 # Visualization
 phA_fluid = restrict(phA, trian_fluid)
 phB_fluid = restrict(phB, trian_fluid)
 uhfB_fluid = restrict(uhfB, trian_fluid)
-uhsB_fluid = restrict(uhsB, trian_solid)
-
-#eu = u - uh
-#ep = p - ph
-#ep_fluid = p - ph_fluid
+uhsB_solid = restrict(uhsB, trian_solid)
 
 writevtk(trian_fluid,"trian_fluid",cellfields=["phA"=>phA_fluid,"uhfB"=>uhfB_fluid])
 writevtk(trian_solid,"trian_solid",cellfields=["uhsB"=>uhsB_solid])
-#
 writevtk(trian,"trian", cellfields=["uhA" => uhA, "phA"=> phA, "uhsB" => uhsB, "uhfB" => uhfB, "phB" => phB])
-
-# Errors
-
-# l2(v) = v*v
-# h1(v) = v*v + inner(∇(v),∇(v))
-#
-# eu_l2 = sqrt(sum(integrate(l2(eu),trian,quad)))
-# eu_h1 = sqrt(sum(integrate(h1(eu),trian,quad)))
-# ep_l2 = sqrt(sum(integrate(l2(ep_fluid),trian_fluid,quad_fluid)))
-#
-# tol = 1.0e-9
-# @test eu_l2 < tol
-# @test eu_h1 < tol
-# @test ep_l2 < tol
 
 end # module

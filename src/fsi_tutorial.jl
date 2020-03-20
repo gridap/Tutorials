@@ -219,7 +219,7 @@ const E_f = 1.0
 const ν_f = 0.5
 const (λ_f,μ_f) = lame_parameters(E_f,ν_f)
 
-# Fluid Cauchy stress tensor
+# Fluid Cauchy stress tensor (deviatoric part)
 @law σ_f(ε) = 2*μ_f*ε
 
 # ### Weak form
@@ -291,29 +291,31 @@ const h = 0.05
 function nitsche_Γ(x,y)
   us_Γ, uf_Γ, p_Γ = x
   vs_Γ, vf_Γ, q_Γ = y
-  uf = uf_Γ.left
-  p = p_Γ.left
-  us = us_Γ.right
-  vf = vf_Γ.left
-  q = q_Γ.left
-  vs = vs_Γ.right
+  uf = jump(uf_Γ)
+  p = jump(p_Γ)
+  us = -jump(us_Γ)
+  vf = jump(vf_Γ)
+  q = jump(q_Γ)
+  vs = -jump(vs_Γ)
+  εuf = 0.5 * ( jump(∇(uf_Γ)) + jump(transpose(∇(uf_Γ))) )
+  εvf = 0.5 * ( jump(∇(vf_Γ)) + jump(transpose(∇(vf_Γ))) )
+  εus = 0.5 * ( jump(∇(us_Γ)) + jump(transpose(∇(us_Γ))) )
+  εvs = 0.5 * ( jump(∇(vs_Γ)) + jump(transpose(∇(vs_Γ))) )
+
   # Penalty:
   penaltyTerms = (γ/h)*vf*uf - (γ/h)*vf*us - (γ/h)*vs*uf + (γ/h)*vs*us
   # Integration by parts terms:
-  integrationByParts = ( vf*p*n_Γfs - vf*n_Γfs*ε(uf) - vf*n_Γsf*ε(us) ) - ( vs*p*n_Γfs - vs*n_Γfs*ε(uf) - vs*n_Γsf*ε(us) )
+  integrationByParts = ( vf*(p*n_Γfs) - vf*(σ_f(εuf)*n_Γfs) ) - ( vs*(p*n_Γfs) - vs*(σ_f(εuf)*n_Γfs) )
   # Symmetric terms:
-  symmetricTerms = (q*(n_Γfs*uf) - n_Γfs*ε(vf)*uf - n_Γsf*ε(vs)*uf) - ( q*n_Γfs*us- n_Γfs*ε(vf)*us - n_Γsf*ε(vs)*us )
-  # (γ/h)*vf*uf - vf*(n_Γ*ε(uf)) - (n_Γ*ε(vf))*uf + (p*n_Γ)*vf + (q*n_Γ)*uf
-  #    - (γ/h)*vf*us + (n_Γ*ε(vf))*us - (q*n_Γ)*us
-  #    + (γ/h)*vs*us + vs*(n_Γ*ε(us)) + (n_Γ*ε(vs))*us
-  #    - (γ/h)*vf*uf - (n_Γ*ε(vf))*uf + (q*n_Γ)*uf
+  symmetricTerms = (q*(n_Γfs*uf) - (σ_f(εvf)*n_Γfs)*uf ) - ( q*n_Γfs*us - (σ_f(εvf)*n_Γfs)*us )
+
   penaltyTerms + integrationByParts + symmetricTerms
 end
 
 # Pressure drop at the interface
 function l_Γ_B(y)
   vs,vf,q = y
-  - n_Γfs*vf.left*p_jump
+  - n_Γfs*jump(vf)*p_jump
 end
 
 t_Ω_solid_A = AffineFETerm(a_solid_A,l_solid_A,trian_solid,quad_solid)

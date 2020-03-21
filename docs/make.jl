@@ -1,5 +1,7 @@
 using Documenter
 using Literate
+using Printf
+using Tutorials
 
 models_src = joinpath(@__DIR__,"..","models")
 models_dst = joinpath(@__DIR__,"src","models")
@@ -21,32 +23,40 @@ Sys.rm(notebooks_dir;recursive=true,force=true)
 
 repo_src = joinpath(@__DIR__,"..","src")
 
-files = [
-  "t001_poisson",
-  "t002_validation",
-  "t003_elasticity", 
-  "t0041_p_laplacian",
-  "t004_hyperelasticity",
-  "t005_dg_discretization",
-  "t007_darcy",
-  "t008_inc_navier_stokes"]
+# Add index.md file as introduction to navigation menu
+pages = ["Introduction"=> "index.md"]
 
-for file in files
-  file_jl = file*".jl"
-  Literate.markdown(joinpath(repo_src,file_jl), pages_dir; codefence="```julia" => "```")
-  Literate.notebook(joinpath(repo_src,file_jl), notebooks_dir; documenter=false, execute=false)
+binder_logo = "https://mybinder.org/badge_logo.svg"
+nbviwer_logo = "https://img.shields.io/badge/show-nbviewer-579ACA.svg"
+
+for (i,(title,filename)) in enumerate(Tutorials.files)
+  # Generate strings
+  tutorial_prefix = string("t",@sprintf "%03d_" i)
+  tutorial_title = string("# # Tutorial ", i, ": ", title)
+  tutorial_file = string(tutorial_prefix,splitext(filename)[1])
+  notebook_filename = string(tutorial_file, ".ipynb")
+  binder_url = joinpath("@__BINDER_ROOT_URL__","notebooks", notebook_filename)
+  nbviwer_url = joinpath("@__NBVIEWER_ROOT_URL__","notebooks", notebook_filename)
+  binder_badge = string("# [![](",binder_logo,")](",binder_url,")")
+  nbviwer_badge = string("# [![](",nbviwer_logo,")](",nbviwer_url,")")
+
+  # Generate notebooks
+  function preprocess_notebook(content)
+    return string(tutorial_title, "\n\n", content)
+  end
+  Literate.notebook(joinpath(repo_src,filename), notebooks_dir; name=tutorial_file, preprocess=preprocess_notebook, documenter=false, execute=false)
+
+  # Generate markdown
+  function preprocess_docs(content)
+    return string(tutorial_title, "\n", binder_badge, "\n", nbviwer_badge, "\n\n", content)
+  end
+  Literate.markdown(joinpath(repo_src,filename), pages_dir; name=tutorial_file, preprocess=preprocess_docs, codefence="```julia" => "```")
+
+  # Generate navigation menu entries
+  ordered_title = string(i, " ", title)
+  path_to_markdown_file = joinpath("pages",string(tutorial_file,".md"))
+  push!(pages, (ordered_title=>path_to_markdown_file))
 end
-
-pages = [
-  "Introduction"=> "index.md",
-  "1 Poisson equation" => "pages/t001_poisson.md",
-  "2 Code validation" => "pages/t002_validation.md",
-  "3 Linear elasticity" => "pages/t003_elasticity.md",
-  "4 p-Laplacian" => "pages/t0041_p_laplacian.md",
-  "5 Hyper-elasticity" => "pages/t004_hyperelasticity.md",
-  "6 Poisson equation (with DG)" => "pages/t005_dg_discretization.md",
-  "7 Darcy equation (with RT)" => "pages/t007_darcy.md",
-  "8 Incompressible Navier-Stokes" => "pages/t008_inc_navier_stokes.md" ]
 
 makedocs(
     sitename = "Gridap tutorials",

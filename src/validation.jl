@@ -1,8 +1,3 @@
-# # Tutorial 2: Code validation
-#
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t002_validation.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t002_validation.ipynb)
-#
 # In this tutorial, we will learn
 # - How to implement the method of manufactured solutions
 # - How to perform a convergence test
@@ -64,7 +59,7 @@ domain3d = (0,1,0,1,0,1)
 partition3d = (4,4,4)
 model3d = CartesianDiscreteModel(domain3d,partition3d)
 
-# You could also generate a mesh for the unit tesseract $(0,1)^4$ (i.e., the unit cube in 4D). Look how the 2D and 3D models are build and just follow the sequence.
+# You could also generate a mesh for the unit tesseract $(0,1)^4$ (i.e., the unit cube in 4D). Look how the 2D and 3D models are built and just follow the sequence.
 #
 
 # Let us return to the 2D `CartesianDiscreteModel` that we have already constructed. You can inspect it by writing it into vtk format. Note that you can also print a 3D model, but not a 4D one. In the future, it would be cool to generate a movie from a 4D model, but this functionality is not yet implemented.
@@ -76,11 +71,11 @@ writevtk(model,"model")
 #
 # These are the vertices in the model
 #
-# ![](../assets/t002_validation/model_0.png)
+# ![](../assets/validation/model_0.png)
 #
 # and these the facets
 #
-# ![](../assets/t002_validation/model_1.png)
+# ![](../assets/validation/model_1.png)
 #
 # As you can see in the pictures, the objects on the boundary are correctly tagged with the name "boundary".
 
@@ -100,11 +95,11 @@ trian = Triangulation(model)
 degree = 2
 quad = CellQuadrature(trian,degree)
 
-a(v,u) = ∇(v)*∇(u)
+a(u,v) = ∇(v)*∇(u)
 b(v) = v*f
 
 t_Ω = AffineFETerm(a,b,trian,quad)
-op = AffineFEOperator(V0,U,t_Ω)
+op = AffineFEOperator(U,V0,t_Ω)
 
 uh = solve(op)
 
@@ -123,7 +118,7 @@ writevtk(trian,"error",cellfields=["e" => e])
 
 # This generates a file called `error.vtu`. Open it with Paraview to check that the error is of the order of the machine precision.
 #
-# ![](../assets/t002_validation/error.png)
+# ![](../assets/validation/error.png)
 #
 # A more rigorous way of quantifying the error is to measure it with a norm. Here, we use the $L^2$ and $H^1$ norms, which are defined as
 #
@@ -182,11 +177,11 @@ function run(n,order)
   U = TrialFESpace(V0,u)
 
   trian = Triangulation(model)
-  degree=order+2
+  degree=2*order
   quad = CellQuadrature(trian,degree)
 
   t_Ω = AffineFETerm(a,b,trian,quad)
-  op = AffineFEOperator(V0,U,t_Ω)
+  op = AffineFEOperator(U,V0,t_Ω)
 
   uh = solve(op)
 
@@ -239,7 +234,7 @@ plot(hs,[el2s eh1s],
 #src savefig("conv.png")
 
 #md # If you run the code in a notebook, you will see a figure like this one:
-#md # ![](../assets/t002_validation/conv.png)
+#md # ![](../assets/validation/conv.png)
 #
 #
 # The generated curves make sense. It is observed that the convergence of the $H^1$ error is slower that $L^2$ one. However, in order to be more conclusive, we need to compute the slope of these lines. It can be done with this little function that internally uses a linear regression.

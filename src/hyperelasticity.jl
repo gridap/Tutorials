@@ -1,8 +1,3 @@
-# # Tutorial 5: Hyperelasticity
-#
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t004_hyperelasticity.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t004_hyperelasticity.ipynb)
-#
 #md # !!! note
 #
 #     This tutorial is under construction, but the code below is already functional.
@@ -54,11 +49,11 @@ end
 
 res(u,v) = inner( dE(∇(v),∇(u)) , S(∇(u)) )
 
-jac_mat(u,v,du) = inner( dE(∇(v),∇(u)), dS(∇(du),∇(u)) )
+jac_mat(u,du,v) = inner( dE(∇(v),∇(u)), dS(∇(du),∇(u)) )
 
-jac_geo(u,v,du) = inner( ∇(v), S(∇(u))*∇(du) )
+jac_geo(u,du,v) = inner( ∇(v), S(∇(u))*∇(du) )
 
-jac(u,v,du) = jac_mat(u,v,du) + jac_geo(u,v,du)
+jac(u,du,v) = jac_mat(u,v,du) + jac_geo(u,v,du)
 
 # Model
 domain = (0,1,0,1)
@@ -99,7 +94,7 @@ function run(x0,disp_x,step,nsteps)
   U = TrialFESpace(V,[g0,g1])
 
   #FE problem
-  op = FEOperator(V,U,t_Ω)
+  op = FEOperator(U,V,t_Ω)
   
   println("\n+++ Solving for disp_x $disp_x in step $step of $nsteps +++\n")
   
@@ -132,11 +127,11 @@ end
 runs()
 
 # Picture of the last load step
-# ![](../assets/t004_hyperelasticity/neo_hook_2d.png)
+# ![](../assets/hyperelasticity/neo_hook_2d.png)
 #
 # ##  Extension to 3D
 # 
 # Extending this tutorial to the 3D case is straightforward. It is leaved as an exercise.
 #
-# ![](../assets/t004_hyperelasticity/neo_hook_3d.png)
+# ![](../assets/hyperelasticity/neo_hook_3d.png)
 

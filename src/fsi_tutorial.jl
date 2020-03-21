@@ -80,7 +80,8 @@ using Gridap.Geometry
 # u_{\rm F,0}(x,y) = [0, 0]\quad\mbox{on }\Gamma_{\rm F,D_{0}}
 # u_{\rm S,0}(x,y) = [0, 0]\quad\mbox{on }\Gamma_{\rm S,D_{0}}
 # ```
-uf_in(x) = VectorValue( (1+x[2])*(1-x[2]), 0.0 )
+u0 = 1.5
+uf_in(x) = VectorValue( u0*4.0/0.1681*x[2]*(0.41-x[2]), 0.0 )
 uf_0(x) = VectorValue( 0.0, 0.0 )
 us_0(x) = VectorValue( 0.0, 0.0 )
 
@@ -95,78 +96,56 @@ s(x) = VectorValue( 0.0, 0.0 )
 g(x) = 0.0
 
 # ## Discrete model
-# Computational domain: channel of size 4x2
-mesh = (80,40)
-domain = (0.0,4.0,-1.0,1.0)
-order = 2
-model = CartesianDiscreteModel(domain, mesh)
+# Computational domain: elastic Flag
+# *Turek, S., Hron, J., Madlik, M., Razzaq, M., Wobker, H., & Acker, J. F. (2011). Numerical simulation and benchmarking of a monolithic multigrid solver for fluid-structure interaction problems with application to hemodynamics. In Fluid Structure Interaction II (pp. 193-220). Springer, Berlin, Heidelberg.*
+#model = CartesianDiscreteModel(domain, mesh)
+model = DiscreteModelFromFile("models/elasticFlag.json")
 
 # Triangulation of the full domain
 trian = Triangulation(model)
 
-# Boundary conditions on the full domain
-labels = get_face_labeling(model)
-add_tag_from_tags!(labels,"inlet",[7])
-add_tag_from_tags!(labels,"noSlip",[1,2,3,4,5,6])
-add_tag_from_tags!(labels,"outlet",[8])
-
 # Solid & fluid triangulation & models
-const width = 0.2
-const height = 1.2
-const x0 = 2.0
-function is_in(coords)
-  n = length(coords)
-  x = (1/n)*sum(coords)
-  box_min_x = x0 - width/2.0
-  box_min_y = -1.0
-  box_max_x = x0 + width/2.0
-  box_max_y = height - 1.0
-  (x[1] > box_min_x) && (x[2] > box_min_y) && (x[1] < box_max_x) && (x[2] < box_max_y)
-end
-cell_to_coods = get_cell_coordinates(trian)
-cell_to_is_solid = collect1d(apply(is_in,cell_to_coods))
-cell_to_is_fluid = Vector{Bool}(.! cell_to_is_solid)
-trian_solid = RestrictedTriangulation(trian, cell_to_is_solid)
-trian_fluid = RestrictedTriangulation(trian, cell_to_is_fluid)
-model_solid = DiscreteModel(model, cell_to_is_solid)
-model_fluid = DiscreteModel(model, cell_to_is_fluid)
+model_solid = DiscreteModel(model,"solid")
+model_fluid = DiscreteModel(model,"fluid")
+trian_solid = Triangulation(model_solid)
+trian_fluid = Triangulation(model_fluid)
 
 # ## FE Spaces
+order = 2
 # ### Case A: same FE space for fluid and solid velocities
 Va = TestFESpace(
   model=model,
   valuetype=VectorValue{2,Float64},
-  reffe=:QLagrangian,
+  reffe=:Lagrangian,
   order=order,
   conformity =:H1,
-  dirichlet_tags=["inlet", "noSlip"])
+  dirichlet_tags=["inlet", "noSlip", "cylinder", "fixed"])
 
 # ### Case B: Different FE space for fluid and solid velocities
 Vbf = TestFESpace(
     model=model_fluid,
     valuetype=VectorValue{2,Float64},
-    reffe=:QLagrangian,
+    reffe=:Lagrangian,
     order=order,
     conformity =:H1,
-    dirichlet_tags=["inlet", "noSlip"])
+    dirichlet_tags=["inlet", "noSlip", "cylinder"])
 Vbs = TestFESpace(
     model=model_solid,
     valuetype=VectorValue{2,Float64},
-    reffe=:QLagrangian,
+    reffe=:Lagrangian,
     order=order,
     conformity =:H1,
-    dirichlet_tags=["noSlip"])
+    dirichlet_tags=["fixed"])
 
 Q = TestFESpace(
-  triangulation=trian_fluid,
+  model=model_fluid,
   valuetype=Float64,
   order=order-1,
-  reffe=:PLagrangian,
-  conformity=:L2)
+  reffe=:Lagrangian,
+  conformity=:C0)
 
-
-Ua = TrialFESpace(Va,[uf_in, uf_0])
-Ubf = TrialFESpace(Vbf,[uf_in, uf_0])
+Ua = TrialFESpace(Va,[uf_in, uf_0, uf_0, us_0])
+Ubf = TrialFESpace(Vbf,[uf_in, uf_0, uf_0])
 Ubs = TrialFESpace(Vbs,[us_0])
 P = TrialFESpace(Q)
 
@@ -177,7 +156,6 @@ Xb = MultiFieldFESpace([Ubs,Ubf,P])
 
 # ## Numerical integration
 # Interior quadratures:
-order = 2
 degree = 2*order
 quad = CellQuadrature(trian,degree)
 quad_solid = CellQuadrature(trian_solid,degree)
@@ -185,7 +163,7 @@ quad_fluid = CellQuadrature(trian_fluid,degree)
 
 # Boundary triangulations and quadratures:
 bdegree = 2*order
-trian_Γout = BoundaryTriangulation(model,labels,"outlet")
+trian_Γout = BoundaryTriangulation(model,"outlet")
 quad_Γout = CellQuadrature(trian_Γout,bdegree)
 n_Γout = get_normal_vector(trian_Γout)
 
@@ -193,7 +171,7 @@ n_Γout = get_normal_vector(trian_Γout)
 # This returns a SkeletonTriangulation whose normal vector
 # goes outwards to the fluid domain.
 idegree = 2*order
-trian_Γfs = InterfaceTriangulation(model,cell_to_is_fluid)
+trian_Γfs = InterfaceTriangulation(model_fluid,model_solid)
 n_Γfs = get_normal_vector(trian_Γfs)
 n_Γsf = - n_Γfs
 quad_Γfs = CellQuadrature(trian_Γfs,idegree)
@@ -286,8 +264,10 @@ function l_Γn_fluid_B(y)
 end
 
 # Nitsche's method to enforce interface conditions
+# See for instance: *Burman, Erik, and Miguel A. Fernández. "Stabilized explicit coupling for fluid–structure interaction using Nitsche's method." Comptes Rendus Mathematique 345.8 (2007): 467-472.*
 const γ = 1.0
 const h = 0.05
+const χ = -1.0
 function nitsche_Γ(x,y)
   us_Γ, uf_Γ, p_Γ = x
   vs_Γ, vf_Γ, q_Γ = y
@@ -307,7 +287,7 @@ function nitsche_Γ(x,y)
   # Integration by parts terms:
   integrationByParts = ( vf*(p*n_Γfs) - vf*(σ_f(εuf)*n_Γfs) ) - ( vs*(p*n_Γfs) - vs*(σ_f(εuf)*n_Γfs) )
   # Symmetric terms:
-  symmetricTerms = (q*(n_Γfs*uf) - (σ_f(εvf)*n_Γfs)*uf ) - ( q*n_Γfs*us - (σ_f(εvf)*n_Γfs)*us )
+  symmetricTerms =  ( -χ*q*(n_Γfs*uf) - χ*(σ_f(εvf)*n_Γfs)*uf ) - ( -χ*q*(n_Γfs*us) - χ*(σ_f(εvf)*n_Γfs)*us )
 
   penaltyTerms + integrationByParts + symmetricTerms
 end
@@ -323,7 +303,6 @@ t_Ω_solid_B= AffineFETerm(a_solid_B,l_solid_B,trian_solid,quad_solid)
 t_Ω_fluid_A = AffineFETerm(a_fluid_A,l_fluid_A,trian_fluid,quad_fluid)
 t_Ω_fluid_B = AffineFETerm(a_fluid_B,l_fluid_B,trian_fluid,quad_fluid)
 t_Γfs = AffineFETerm(nitsche_Γ,l_Γ_B,trian_Γfs,quad_Γfs)
-#t_Γfs = FESource(l_Γ_B,trian_Γfs,quad_Γfs)
 
 t_Γn_fluid_A = FESource(l_Γn_fluid_A,trian_Γout,quad_Γout)
 t_Γn_fluid_B = FESource(l_Γn_fluid_B,trian_Γout,quad_Γout)

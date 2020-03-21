@@ -279,8 +279,8 @@ function nitsche_Γ(x,y)
   vs = -jump(vs_Γ)
   εuf = 0.5 * ( jump(∇(uf_Γ)) + jump(transpose(∇(uf_Γ))) )
   εvf = 0.5 * ( jump(∇(vf_Γ)) + jump(transpose(∇(vf_Γ))) )
-  εus = 0.5 * ( jump(∇(us_Γ)) + jump(transpose(∇(us_Γ))) )
-  εvs = 0.5 * ( jump(∇(vs_Γ)) + jump(transpose(∇(vs_Γ))) )
+  εus = 0.5 * ( -jump(∇(us_Γ)) + -jump(transpose(∇(us_Γ))) )
+  εvs = 0.5 * ( -jump(∇(vs_Γ)) + -jump(transpose(∇(vs_Γ))) )
 
   # Penalty:
   penaltyTerms = (γ/h)*vf*uf - (γ/h)*vf*us - (γ/h)*vs*uf + (γ/h)*vs*us
@@ -323,4 +323,13 @@ writevtk(trian_fluid,"trian_fluid",cellfields=["phA"=>phA_fluid,"uhfB"=>uhfB_flu
 writevtk(trian_solid,"trian_solid",cellfields=["uhsB"=>uhsB_solid])
 writevtk(trian,"trian", cellfields=["uhA" => uhA, "phA"=> phA, "uhsB" => uhsB, "uhfB" => uhfB, "phB" => phB])
 
+# Quantities of Interest
+trian_ΓS = BoundaryTriangulation(model,["cylinder","interface"])
+quad_ΓS = CellQuadrature(trian_ΓS,bdegree)
+n_ΓS = get_normal_vector(trian_ΓS)
+uh_ΓS = restrict(uhfB_fluid,trian_ΓS)
+ph_ΓS = restrict(phB_fluid,trian_ΓS)
+FD, FL = sum( integrate( (σ_f(ε(uh_ΓS))*n_ΓS - ph_ΓS*n_ΓS), trian_ΓS, quad_ΓS ) )
+println("Drag force: ", FD)
+println("Lift force: ", FL)
 end # module

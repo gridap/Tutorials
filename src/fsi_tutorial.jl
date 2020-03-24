@@ -277,11 +277,9 @@ function nitsche_Γ(x,y)
   vf = jump(vf_Γ)
   q = jump(q_Γ)
   vs = -jump(vs_Γ)
-  εuf = 0.5 * ( jump(∇(uf_Γ)) + jump(transpose(∇(uf_Γ))) )
-  εvf = 0.5 * ( jump(∇(vf_Γ)) + jump(transpose(∇(vf_Γ))) )
-  εus = 0.5 * ( -jump(∇(us_Γ)) + -jump(transpose(∇(us_Γ))) )
-  εvs = 0.5 * ( -jump(∇(vs_Γ)) + -jump(transpose(∇(vs_Γ))) )
-
+  εuf = jump(ε(uf_Γ))
+  εvf = jump(ε(vf_Γ))
+  
   # Penalty:
   penaltyTerms = (γ/h)*vf*uf - (γ/h)*vf*us - (γ/h)*vs*uf + (γ/h)*vs*us
   # Integration by parts terms:

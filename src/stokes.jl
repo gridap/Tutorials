@@ -1,3 +1,7 @@
+#md # !!! note
+#
+#     This tutorial is under construction, but the code below is already functional.
+#
 # Driver that computes the lid-driven cavity benchmark at low Reynolds numbers
 # when using a mixed FE Q(k)/Pdisc(k-1).
 
@@ -36,13 +40,13 @@ trian = get_triangulation(model); degree = 2
 quad = CellQuadrature(trian,degree)
 
 # Define and solve the FE problem
-function a(y,x)
+function a(x,y)
   v,q = y
   u,p = x
   inner(∇(v),∇(u)) - (∇*v)*p + q*(∇*u)
 end
 t_Ω = LinearFETerm(a,trian,quad)
-op = AffineFEOperator(Y,X,t_Ω)
+op = AffineFEOperator(X,Y,t_Ω)
 uh, ph = solve(op)
 
 # Export results to vtk

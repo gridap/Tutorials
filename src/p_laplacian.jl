@@ -1,8 +1,3 @@
-# # Tutorial 4: p-Laplacian
-#
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t0041_p_laplacian.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t0041_p_laplacian.ipynb)
-# 
 # In this tutorial, we will learn
 #    - How to solve a simple nonlinear PDE in Gridap
 #    - How to define the weak residual and its Jacobian
@@ -26,7 +21,7 @@
 # with $p>2$.
 # The computational domain $\Omega$ is the one depicted in next figure, which is the same as in the first tutorial. However, we slightly change the boundary conditions here. We impose homogeneous Dirichlet and homogeneous Neumann boundary conditions on $\Gamma_0$ and $\Gamma_{\rm N}$  respectively, and in-homogeneous Dirichlet conditions on $\Gamma_g$. The Dirichlet boundaries $\Gamma_0$ and $\Gamma_g$ are defined as the closure of the green and blue surfaces in next figure respectively, whereas the Neumann boundary is $\Gamma_{\rm N}\doteq\partial\Omega \setminus (\Gamma_0\cup\Gamma_g)$. In this example, we consider the values $p=3$, $f=1$, and $g=2$.
 # 
-# ![](../assets/t0041_p_laplacian/model.png)
+# ![](../assets/p_laplacian/model.png)
 # 
 # ## Numerical scheme
 # 
@@ -36,10 +31,10 @@
 # [r(u)](v) \doteq \int_\Omega \nabla v \cdot \left( |\nabla u|^{p-2}\ \nabla u \right) \ {\rm d}\Omega - \int_\Omega v\ f \ {\rm d}\Omega.
 # ```
 # 
-# In order to solve this nonlinear weak equation, we consider a Newton-Raphson method, which is associated with a linearization of the problem in an arbitrary direction $\delta u\in V_0$, namely $[r(u+\delta u)](v)\approx [r(u)](v) + [j(u)](v,\delta u)$. In previous formula,  $j(u)$ is the Jacobian evaluated at $u\in U_g$, which is the bilinear form
+# In order to solve this nonlinear weak equation, we consider a Newton-Raphson method, which is associated with a linearization of the problem in an arbitrary direction $\delta u\in V_0$, namely $[r(u+\delta u)](v)\approx [r(u)](v) + [j(u)](\delta u,v)$. In previous formula,  $j(u)$ is the Jacobian evaluated at $u\in U_g$, which is the bilinear form
 # 
 # ```math
-# [j(u)](v,\delta u) = \int_\Omega \nabla v \cdot \left( |\nabla u|^{p-2}\ \nabla \delta u \right) \ {\rm d}\Omega + (p-2) \int_\Omega \nabla v \cdot \left(  |\nabla u|^{p-4} (\nabla u \cdot \nabla \delta u) \nabla u  \right) \ {\rm d}\Omega.
+# [j(u)](\delta u,v) = \int_\Omega \nabla v \cdot \left( |\nabla u|^{p-2}\ \nabla \delta u \right) \ {\rm d}\Omega + (p-2) \int_\Omega \nabla v \cdot \left(  |\nabla u|^{p-4} (\nabla u \cdot \nabla \delta u) \nabla u  \right) \ {\rm d}\Omega.
 # ```
 # 
 # Note that the solution of this nonlinear PDE with a Newton-Raphson method, will require to discretize both the residual $r$ and the Jacobian $j$. In Gridap, this is done by following an approach similar to the one already shown in previous tutorials for discretizing the bilinear and linear forms associated with a linear FE problem. The specific details are discussed now.
@@ -55,9 +50,9 @@ model = DiscreteModelFromFile("../models/model.json")
 
 writevtk(model,"model")
 
-# and by opening the file `"model_0"` in Paraview that the boundary identified as `"sides"` only includes the vertices in the interior of $\Gamma_0$, but here we want to impose Dirichlet boundary conditions in the closure of $\Gamma_0$, i.e., also on the vertices on the contour of $\Gamma_0$. Fortunately, the objects on the contour of $\Gamma_0$ are identified  with the tag `"sides_c"` (see next figure). Thus, the Dirichlet boundary $\Gamma_0$ can be build as the union of the objects identified as `"sides"` and `"sides_c"`.
+# and by opening the file `"model_0"` in Paraview that the boundary identified as `"sides"` only includes the vertices in the interior of $\Gamma_0$, but here we want to impose Dirichlet boundary conditions in the closure of $\Gamma_0$, i.e., also on the vertices on the contour of $\Gamma_0$. Fortunately, the objects on the contour of $\Gamma_0$ are identified  with the tag `"sides_c"` (see next figure). Thus, the Dirichlet boundary $\Gamma_0$ can be built as the union of the objects identified as `"sides"` and `"sides_c"`.
 # 
-# ![](../assets/t0041_p_laplacian/sides_c.png)
+# ![](../assets/p_laplacian/sides_c.png)
 # 
 # Gridap provides a convenient way to create new object identifiers (referred to as "tags") from existing ones. First, we need to extract from the model, the object that holds the information about the boundary identifiers (referred to as `FaceLabeling`):
 
@@ -81,7 +76,7 @@ V0 = TestFESpace(
   conformity=:H1, model=model, labels=labels,
   dirichlet_tags=["diri0", "dirig"])
 
-# The construction of this space is essentially the same as in the first tutorial (we build a continuous scalar-valued Lagrangian interpolation of first order). However, we also pass here the `labels` object (that contains the newly created boundary tags). From this FE space, we define the test and trial FE spaces
+# The construction of this space is essentially the same as in the first tutorial (we build a continuous scalar-valued Lagrangian interpolation of first order). However, we also pass here the `labels` object (that contains the newly created boundary tags). From this FE space, we define the trial FE spaces
 
 g = 1
 Ug = TrialFESpace(V0,[0,g])
@@ -90,7 +85,7 @@ Ug = TrialFESpace(V0,[0,g])
 # 
 # At this point, we are ready to build the nonlinear FE problem. To this end, we need to define the weak residual and also its corresponding Jacobian. This is done following a similar procedure to the one considered in previous tutorials to define the bilinear and linear forms associated with linear FE problems. In this case, instead of an `AffineFETerm` (which is for linear problems), we use a `FETerm` which accounts for the non-linear case. An instance of `FETerm` is constructed by providing the integrands of the weak residual and its Jacobian (in a similar way an `AffineFETerm` is constructed from the integrands of the bilinear and linear forms). 
 # 
-# On the one hand, the integrand of the weak residual is build as follows
+# On the one hand, the integrand of the weak residual is built as follows
 
 using LinearAlgebra: norm
 const p = 3
@@ -104,7 +99,7 @@ res(u,v) = ∇(v)*flux(∇(u)) - v*f
 
 @law dflux(∇du,∇u) =
   (p-2)*norm(∇u)^(p-4)*inner(∇u,∇du)*∇u + norm(∇u)^(p-2) * ∇du
-jac(u,v,du) = ∇(v)*dflux(∇(du),∇(u))
+jac(u,du,v) = ∇(v)*dflux(∇(du),∇(u))
 
 # The first argument of function `jac` stands for function $u\in U_g$, where the Jacobian is evaluated. The second argument is a test function $v\in V_0$, and the third argument represents an arbitrary direction $\delta u \in V_0$. Note that we have also used the macro `@law` to define the linearization of the nonlinear flux. 
 # 
@@ -117,7 +112,7 @@ t_Ω = FETerm(res,jac,trian,quad)
 
 # We build the `FETerm` by passing in the first and second arguments the functions that represent the integrands of the residual and Jacobian respectively. The other two arguments, are the triangulation and quadrature used to perform the integrals numerically. From this `FETerm` object, we finally construct the nonlinear FE problem
 
-op = FEOperator(V0,Ug,t_Ω)
+op = FEOperator(Ug,V0,t_Ω)
 
 # Here, we have constructed an instance of `FEOperator`, which is the type that represents a general nonlinear FE problem in Gridap. The constructor takes the test and trial spaces, and the `FETerms` objects describing the corresponding weak form (in this case only a single term).
 # 
@@ -146,5 +141,5 @@ uh, = solve!(uh0,solver,op)
 
 writevtk(trian,"results",cellfields=["uh"=>uh])
 
-# ![](../assets/t0041_p_laplacian/sol-plap.png)
+# ![](../assets/p_laplacian/sol-plap.png)
 # 

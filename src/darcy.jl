@@ -1,8 +1,3 @@
-# # Tutorial 7: Darcy equation (with RT)
-#
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t007_darcy.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t007_darcy.ipynb)
-#
 # In this tutorial, we will learn
 #  - How to implement multi-field PDEs
 #  - How to build div-conforming FE spaces
@@ -23,7 +18,7 @@
 #    \right.
 # ```
 #
-# being $n$ the outwards unit normal vector to the boundary $\partial\Omega$.  In this particular tutorial, we consider the unit square $\Omega \doteq (0,1)^2$ as the computational domain, the Neumann boundary $\Gamma_{\rm N}$ is the right and left sides of $\Omega$, and $\Gamma_{\rm D}$ is the bottom and top sides of $\Omega$. We consider $f = g \doteq 0$ and $h(x) \doteq x_1$, i.e., $h$ equal to 0 on the left side and 1 on the right side. The permeability tensor $\kappa^{-1}(x)$ is chosen equal to
+# being $n$ the outwards unit normal vector to the boundary $\partial\Omega$.  In this particular tutorial, we consider the unit square $\Omega \doteq (0,1)^2$ as the computational domain, the Neumann boundary $\Gamma_{\rm N}$ is the right and left sides of $\Omega$, and $\Gamma_{\rm D}$ is the bottom and top sides of $\Omega$. We consider $f = g \doteq 0$ and $h(x) \doteq x_1$, i.e., $h$ equal to 0 on the left side and 1 on the right side. The inverse of the permeability tensor, namely $\kappa^{-1}(x)$, is chosen equal to
 #
 # ```math
 # \begin{pmatrix}
@@ -38,11 +33,11 @@
 # \ \text	{otherwise.}
 # ```
 #
-# In order to state this problem in weak form, we introduce the following Sobolev spaces. $H(\mathrm{div};\Omega)$ is the space of vector fields in $\Omega$, whose components and divergence are in $L^2(\Omega)$. On the other hand, $H_g(\mathrm{div};\Omega)$ and $H_0(\mathrm{div};\Omega)$ are the subspaces of functions in $H(\mathrm{div};\Omega)$ such that their normal traces are equal to $g$ and $0$ respectively almost everywhere in $\Gamma_{\rm D}$. With these notations, the weak form reads: find $(u,p)\in H_g(\mathrm{div};\Omega)\times L^2(\Omega)$ such that $a((v,q),(u,q)) = b(v,q)$ for all $(v,q)\in H_0(\mathrm{div};\Omega)\times L^2(\Omega)$, where
+# In order to state this problem in weak form, we introduce the following Sobolev spaces. $H(\mathrm{div};\Omega)$ is the space of vector fields in $\Omega$, whose components and divergence are in $L^2(\Omega)$. On the other hand, $H_g(\mathrm{div};\Omega)$ and $H_0(\mathrm{div};\Omega)$ are the subspaces of functions in $H(\mathrm{div};\Omega)$ such that their normal traces are equal to $g$ and $0$ respectively almost everywhere in $\Gamma_{\rm D}$. With these notations, the weak form reads: find $(u,p)\in H_g(\mathrm{div};\Omega)\times L^2(\Omega)$ such that $a((u,q),(v,q)) = b(v,q)$ for all $(v,q)\in H_0(\mathrm{div};\Omega)\times L^2(\Omega)$, where
 #
 # ```math
 # \begin{aligned}
-# a((v,q),(u,p)) &\doteq \int_{\Omega}  v \cdot \left(\kappa^{-1} u\right) \ {\rm d}\Omega - \int_{\Omega} (\nabla \cdot v)\ p \ {\rm d}\Omega + \int_{\Omega} q\ (\nabla \cdot u) \ {\rm d}\Omega,\\
+# a((u,q),(v,q)) &\doteq \int_{\Omega}  v \cdot \left(\kappa^{-1} u\right) \ {\rm d}\Omega - \int_{\Omega} (\nabla \cdot v)\ p \ {\rm d}\Omega + \int_{\Omega} q\ (\nabla \cdot u) \ {\rm d}\Omega,\\
 # b(v,q) &\doteq \int_{\Omega} q\ f \ {\rm  d}\Omega - \int_{\Gamma_{\rm N}} (v\cdot n)\ h  \ {\rm  d}\Gamma.
 # \end{aligned}
 # ```
@@ -50,9 +45,9 @@
 # 
 #  ## Numerical scheme
 # 
-# In this tutorial, we use the Raviart-Thomas (RT)  space for the flux approximation [1]. On a reference square with sides aligned with the Cartesian axes, the RT space of order $k$ is represented as $Q_{(k,k-1)} \times Q_{(k-1,k)}$, being the polynomial space defined as follows. The component $\alpha$ of a vector field in $Q_{(k,k-1)} \times Q_{(k-1,k)}$ is obtained as the tensor product of univariate polynomials of order $k$ in direction $\alpha$ times univariate polynomials of order $k-1$ on the other directions. Note that this definition applies to arbitrary dimensions. The global FE space for the flux $V$ is obtained by mapping the cell-wise RT space into the physical space using the Piola transformation and enforcing continuity of normal traces across cells (see [1] for specific details). 
+# In this tutorial, we use the Raviart-Thomas (RT)  space for the flux approximation [1]. On a reference square with sides aligned with the Cartesian axes, the \ac{rt} space of order $k$ is represented as $Q_{(k+1,k)} \times Q_{(k,k+1)}$, being the polynomial space defined as follows. The component  $w_\alpha$ of a vector field $w$ in $Q_{(k+1,k)} \times Q_{(k,k+1)}$ is obtained as the tensor product of univariate polynomials of order $k+1$ in direction $\alpha$ times univariate polynomials of order $k$ on the other directions. That is, $\nabla\cdot w \in Q_k$, where $Q_k$ is the multivariate polynomial space of degree at most $k$ in each of the spatial coordinates. Note that the definition of the \ac{rt} space also applies to arbitrary dimensions. The global FE space for the flux $V$ is obtained by mapping the cell-wise RT space into the physical space using the Piola transformation and enforcing continuity of normal traces across cells (see [1] for specific details). 
 # 
-#  We consider the subspace  $V_0$ of functions in $V$ with zero normal trace on $\Gamma_{\rm D}$, and the subspace $V_g$ of functions in $V$ with normal trace equal to the projection of $g$ onto the space of traces of $V$ on $\Gamma_{\rm D}$. With regard to the pressure, we consider the discontinuous space of cell-wise polynomials in $Q_{k-1}$, i.e., multivariate polynomials of degree at most $k-1$ in each of the spatial coordinates.
+#  We consider the subspace  $V_0$ of functions in $V$ with zero normal trace on $\Gamma_{\rm D}$, and the subspace $V_g$ of functions in $V$ with normal trace equal to the projection of $g$ onto the space of traces of $V$ on $\Gamma_{\rm D}$. With regard to the pressure, we consider the discontinuous space of cell-wise polynomials in $Q_k$.
 # 
 # ## Discrete model
 # 
@@ -65,21 +60,21 @@ model = CartesianDiscreteModel(domain,partition)
 
 # ## Multi-field FE spaces
 # 
-# Next, we build the FE spaces. We consider the second order RT space for the flux and the discontinuous pressure space as described above.  This mixed FE pair satisfies the inf-sup condition and, thus, it is stable.
+# Next, we build the FE spaces. We consider the first order RT space for the flux and the discontinuous pressure space as described above.  This mixed FE pair satisfies the inf-sup condition and, thus, it is stable.
 
-order = 2
+order = 1
 
-V = FESpace(
+V = TestFESpace(
   reffe=:RaviartThomas, order=order, valuetype=VectorValue{2,Float64},
   conformity=:HDiv, model=model, dirichlet_tags=[5,6])
 
-Q = FESpace(
-  reffe=:QLagrangian, order=order-1, valuetype=Float64,
+Q = TestFESpace(
+  reffe=:QLagrangian, order=order, valuetype=Float64,
   conformity=:L2, model=model)
 
 # Note that the Dirichlet boundary for the flux are the bottom and top sides of the squared domain (identified with the boundary tags 5, and 6 respectively), whereas no Dirichlet data can be imposed on the pressure space. We select `conformity=:HDiv` for the flux (i.e., shape functions with $H^1(\mathrm{div};\Omega)$ regularity) and `conformity=:L2` for the pressure (i.e. discontinuous shape functions).
 # 
-# From these objects, we construct the test and trial spaces. Note that we impose homogeneous boundary conditions for the flux.
+# From these objects, we construct the trial spaces. Note that we impose homogeneous boundary conditions for the flux.
 
 uD = VectorValue(0.0,0.0)
 U = TrialFESpace(V,uD)
@@ -102,12 +97,11 @@ quad = CellQuadrature(trian,degree)
 
 neumanntags = [8,]
 btrian = BoundaryTriangulation(model,neumanntags)
-degree = 2*order
 bquad = CellQuadrature(btrian,degree)
 
 # ## Weak form
 # 
-# We start by defining the permeability tensors commented above using the `@law` macro.
+# We start by defining the permeability tensors inverses commented above using the `@law` macro.
 
 const kinv1 = TensorValue(1.0,0.0,0.0,1.0)
 const kinv2 = TensorValue(100.0,90.0,90.0,100.0)
@@ -123,13 +117,13 @@ end
 
 px = get_physical_coordinate(trian)
 
-function a(y,x)
+function a(x,y)
    v, q = y
    u, p = x
    v*σ(px,u) - (∇*v)*p + q*(∇*u)
 end
 
-# The arguments `y` and `x` of previous function represent a test and a trial function in the multi-field test and trial spaces `Y` and `X` respectively. In the first lines in the function definition, we unpack the single-field test and trial functions from the multi-field ones. E.g., `v` represents a test function for the flux and `q` for the pressure. These quantities can also be written as `y[1]` and `y[2]` respectively. From the single-field functions, we write the different terms of the bilinear form as we have done in previous tutorials.
+# The arguments `x` and `y` of previous function represent a trial and a test function in the multi-field test and trial spaces `X` and `Y` respectively. In the first lines in the function definition, we unpack the single-field test and trial functions from the multi-field ones. E.g., `v` represents a test function for the flux and `q` for the pressure. These quantities can also be written as `y[1]` and `y[2]` respectively. From the single-field functions, we write the different terms of the bilinear form as we have done in previous tutorials.
 # 
 # In a similar way, we can define the forcing term related to the Neumann boundary condition.
 
@@ -142,11 +136,11 @@ end
 
 # ## Multi-field FE problem
 # 
-# Finally, we can assemble the FE problem and solve it. Note that we build the `LinearFEOperator` object using the multi-field test and trial spaces `Y` and `X`.
+# Finally, we can assemble the FE problem and solve it. Note that we build the `AffineFEOperator` object using the multi-field trial and test spaces `Y` and `X`.
 
 t_Ω = LinearFETerm(a,trian,quad)
 t_ΓN = FESource(b_ΓN,btrian,bquad)
-op = AffineFEOperator(Y,X,t_Ω,t_ΓN)
+op = AffineFEOperator(X,Y,t_Ω,t_ΓN)
 xh = solve(op)
 uh, ph = xh
 
@@ -154,7 +148,7 @@ uh, ph = xh
 
 writevtk(trian,"darcyresults",cellfields=["uh"=>uh,"ph"=>ph])
  
-# ![](../assets/t007_darcy/darcy_results.png)
+# ![](../assets/darcy/darcy_results.png)
 #
 # ## References
 #

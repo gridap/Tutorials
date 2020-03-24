@@ -1,9 +1,3 @@
-
-# # Tutorial 1: Poisson equation
-#
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t001_poisson.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t001_poisson.ipynb)
-#
 # In this tutorial, we will learn
 # 
 #    -  How to solve a simple PDE in Julia with Gridap
@@ -19,7 +13,7 @@
 # In this first tutorial, we provide an overview of a complete simulation pipeline in Gridap: from the construction of the FE mesh to the visualization of the computed results. To this end, we consider a simple model problem: the Poisson equation.
 #  We want to solve the Poisson equation on the 3D domain depicted in next figure with Dirichlet and Neumann boundary conditions. Dirichlet boundary conditions are applied on $\Gamma_{\rm D}$, being the outer sides of the prism (marked in red). Non-homogeneous Neumann conditions are applied to the internal boundaries $\Gamma_{\rm G}$, $\Gamma_{\rm Y}$, and $\Gamma_{\rm B}$ (marked in green, yellow and blue respectively). And homogeneous Neumann boundary conditions are applied in $\Gamma_{\rm W}$, the remaining portion of the boundary (marked in white).
 # 
-# ![](../assets/t001_poisson/model-r1-2.png)
+# ![](../assets/poisson/model-r1-2.png)
 # 
 #  Formally, the problem to solve is: find the scalar field $u$ such that
 # 
@@ -36,9 +30,9 @@
 # 
 #  ## Numerical scheme
 # 
-#  To solve this PDE, we use a conventional Galerkin finite element (FE) method with conforming Lagrangian FE spaces (see, e.g., [1] for specific details on this formulation). The weak form associated with this formulation is: find $u\in U_g$ such that $ a(v,u) = b(v) $ for all $v\in V_0$, where $U_g$ and $V_0$ are the subset of functions in $H^1(\Omega)$ that fulfill the Dirichlet boundary condition $g$ and $0$ respectively. The bilinear and linear forms for this problems are
+#  To solve this PDE, we use a conventional Galerkin finite element (FE) method with conforming Lagrangian FE spaces (see, e.g., [1] for specific details on this formulation). The weak form associated with this formulation is: find $u\in U_g$ such that $ a(u,v) = b(v) $ for all $v\in V_0$, where $U_g$ and $V_0$ are the subset of functions in $H^1(\Omega)$ that fulfill the Dirichlet boundary condition $g$ and $0$ respectively. The bilinear and linear forms for this problems are
 # ```math
-#   a(v,u) \doteq \int_{\Omega} \nabla v \cdot \nabla u \ {\rm d}\Omega, \quad b(v) \doteq \int_{\Omega} v\ f  \ {\rm  d}\Omega + \int_{\Gamma_{\rm N}} v\ h \ {\rm d}\Gamma_{\rm N}.
+#   a(u,v) \doteq \int_{\Omega} \nabla v \cdot \nabla u \ {\rm d}\Omega, \quad b(v) \doteq \int_{\Omega} v\ f  \ {\rm  d}\Omega + \int_{\Gamma_{\rm N}} v\ h \ {\rm d}\Gamma_{\rm N}.
 # ```
 # The problem is solved numerically by approximating the spaces $U_g$ and $V_0$ by their discrete counterparts associated with a FE mesh of the computational domain $\Omega$. As we have anticipated, we consider standard conforming Lagrangian FE spaces for this purpose.
 # 
@@ -66,18 +60,18 @@ writevtk(model,"model")
 # 
 # For instance, if you want to see which faces of the model are on the boundary $\Gamma_{\rm B}$ (i.e., the walls of the circular perforation), open the file `model_2.vtu` and chose coloring by the element field "circle". You should see that only the faces on the circular hole have a value different from zero (see next figure).
 # 
-# ![](../assets/t001_poisson/fig_faces_on_circle.png)
+# ![](../assets/poisson/fig_faces_on_circle.png)
 # 
 # It is also possible to see which vertices are on the Dirichlet boundary $\Gamma_{\rm D}$. To do so, open the file `model_0.vtu` and chose coloring by the field "sides" (see next figure).
 # 
-# ![](../assets/t001_poisson/fig_vertices_on_sides.png)
+# ![](../assets/poisson/fig_vertices_on_sides.png)
 # 
 # That is, the boundary $\Gamma_{\rm B}$ (i.e., the walls of the circular hole) is called "circle" and the Dirichlet boundary $\Gamma_{\rm D}$ is called "sides" in the model. In addition, the walls of the triangular hole $\Gamma_{\rm G}$ and the walls of the square hole $\Gamma_{\rm Y}$ are identified in the model with the names "triangle" and "square" respectively. You can easily check this by opening the corresponding file in Paraview.
 # 
 # 
 # ## FE spaces
 # 
-#  Once we have a discretization of the computational domain, the next step is to generate a discrete approximation of the finite element spaces $V_0$ and $U_g$ (i.e. the test and trial FE spaces) of the problem. To do so, first, we are going to build a discretization of $V_0$ as the standard Conforming Lagrangian FE space (with zero boundary conditions) associated with the discretization of the computational domain. The approximation of the FE space $V_0$ is build as follows:
+#  Once we have a discretization of the computational domain, the next step is to generate a discrete approximation of the finite element spaces $V_0$ and $U_g$ (i.e. the test and trial FE spaces) of the problem. To do so, first, we are going to build a discretization of $V_0$ as the standard Conforming Lagrangian FE space (with zero boundary conditions) associated with the discretization of the computational domain. The approximation of the FE space $V_0$ is built as follows:
 
 V0 = TestFESpace(
   reffe=:Lagrangian, order=1, valuetype=Float64,
@@ -116,7 +110,7 @@ bquad = CellQuadrature(btrian,degree)
 # With all the ingredients presented so far, we are ready to define the weak form. This is done by means of types inheriting from the abstract type `FETerm`. In this tutorial, we will use the sub-types `AffineFETerm` and `FESource`. An `AffineFETerm` is a term that contributes both to the system matrix and the right-hand-side vector, whereas a `FESource` only contributes to the right hand side vector. Here, we use an `AffineFETerm` to represent all the terms in the weak form that are integrated over the interior of the domain $\Omega$.
 
 f(x) = 1.0
-a(v,u) = ∇(v)*∇(u)
+a(u,v) = ∇(v)*∇(u)
 b_Ω(v) = v*f
 t_Ω = AffineFETerm(a,b_Ω,trian,quad)
 
@@ -130,9 +124,9 @@ t_Γ = FESource(b_Γ,btrian,bquad)
 # 
 #  ## FE Problem
 #
-#  At this point, we can build the FE problem that, once solved, will provide the numerical solution we are looking for. A FE problem is represented in Gridap by types inheriting from the abstract type `FEOperator` (both for linear and nonlinear cases). Since we want to solve a linear problem, we use the concrete type `AffineFEOperator`, i.e., a problem represented by a matrix and a right hand side vector.
+#  At this point, we can built the FE problem that, once solved, will provide the numerical solution we are looking for. A FE problem is represented in Gridap by types inheriting from the abstract type `FEOperator` (both for linear and nonlinear cases). Since we want to solve a linear problem, we use the concrete type `AffineFEOperator`, i.e., a problem represented by a matrix and a right hand side vector.
 
-op = AffineFEOperator(V0,Ug,t_Ω,t_Γ)
+op = AffineFEOperator(Ug,V0,t_Ω,t_Γ)
 
 # Note that the `AffineFEOperator` object representing our FE problem is built from the test and trial FE spaces `V0` and `Ug`, and the objects `t_Ω` and `t_Γ` representing the weak form.
 # 
@@ -143,7 +137,7 @@ op = AffineFEOperator(V0,Ug,t_Ω,t_Γ)
 ls = LUSolver()
 solver = LinearFESolver(ls)
 
-#  `LinearFESolver` objects are build from a given algebraic linear solver. In this case, we use a LU factorization. Now we are ready to solve the FE problem with the FE solver as follows:
+#  `LinearFESolver` objects are built from a given algebraic linear solver. In this case, we use a LU factorization. Now we are ready to solve the FE problem with the FE solver as follows:
 
 uh = solve(solver,op)
 
@@ -153,7 +147,7 @@ writevtk(trian,"results",cellfields=["uh"=>uh])
 
 #  which will generate a file named `results.vtu` having a nodal field named `"uh"` containing the solution of our problem (see next figure). 
 #
-# ![](../assets/t001_poisson/fig_uh.png)
+# ![](../assets/poisson/fig_uh.png)
 #
 # ## References
 #

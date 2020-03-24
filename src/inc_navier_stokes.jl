@@ -1,15 +1,10 @@
-# # Tutorial 8: Incompressible Navier-Stokes equations
-#
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/t008_inc_navier_stokes.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/t008_inc_navier_stokes.ipynb)
-# 
 # In this tutorial, we will learn
 #  - How to solve nonlinear multi-field PDEs in Gridap
 #  - How to build FE spaces whose functions have zero mean value
 # 
 # ## Problem statement
 # 
-# The goal of this last tutorial is to solve a nonlinear multi-field PDE. As a model problem, we consider a well known benchmark in computational fluid dynamics: the lid-driven cavity for the incompressible Navier-Stokes equations. Formally, the PDE we want to solve is: find the velocity vector $u$ and the pressure $p$ such that
+# The goal of this last tutorial is to solve a nonlinear multi-field PDE. As a model problem, we consider a well known benchmark in computational fluid dynamics, the lid-driven cavity for the incompressible Navier-Stokes equations. Formally, the PDE we want to solve is: find the velocity vector $u$ and the pressure $p$ such that
 #
 # ```math
 # \left\lbrace
@@ -34,7 +29,7 @@
 # ```math
 # V \doteq \{ v \in [C^0(\Omega)]^d:\ v|_T\in [Q_k(T)]^d \text{ for all } T\in\mathcal{T} \},
 # ```
-# where $T$ denotes an arbitrary cell of the FE mesh $\mathcal{T}$, and $Q_k(T)$ is the local polynomial space in cell $T$ defined as the multi-variate polynomials in $T$ of order less or equal to $k$ in each spatial coordinate. Note that, this is the usual continuous vector-valued Lagrangian FE space of order $k$ defined on a mesh of quadrilaterals or hexahedra.  On the other hand, the space for the pressure~is
+# where $T$ denotes an arbitrary cell of the FE mesh $\mathcal{T}$, and $Q_k(T)$ is the local polynomial space in cell $T$ defined as the multi-variate polynomials in $T$ of order less or equal to $k$ in each spatial coordinate. Note that, this is the usual continuous vector-valued Lagrangian FE space of order $k$ defined on a mesh of quadrilaterals or hexahedra.  On the other hand, the space for the pressure is
 #
 # ```math
 # \begin{aligned}
@@ -48,12 +43,12 @@
 # where $U_g$ and $V_0$ are the set of functions in $V$ fulfilling the Dirichlet boundary condition $g$ and $0$  on $\partial\Omega$ respectively. The weak residual $r$ evaluated at a given pair $(u,p)$ is the linear form defined as
 #
 # ```math
-# [r(u,p)](v,q) \doteq a((v,q),(u,p))+ [c(u)](v),
+# [r(u,p)](v,q) \doteq a((u,p),(v,q))+ [c(u)](v),
 # ```
 # with 
 # ```math
 # \begin{aligned}
-# a((v,q),(u,p)) &\doteq \int_{\Omega} \nabla v \cdot \nabla u \ {\rm d}\Omega - \int_{\Omega} (\nabla\cdot v) \ p \ {\rm d}\Omega + \int_{\Omega} q \ (\nabla \cdot u) \ {\rm d}\Omega,\\
+# a((u,p),(v,q)) &\doteq \int_{\Omega} \nabla v \cdot \nabla u \ {\rm d}\Omega - \int_{\Omega} (\nabla\cdot v) \ p \ {\rm d}\Omega + \int_{\Omega} q \ (\nabla \cdot u) \ {\rm d}\Omega,\\
 # [c(u)](v) &\doteq \int_{\Omega} v 	\cdot \left( (u\cdot\nabla)\ u \right)\ {\rm d}\Omega.\\
 # \end{aligned}
 # ```
@@ -62,11 +57,11 @@
 # In order to solve this nonlinear weak equation with a Newton-Raphson method, one needs to compute the Jacobian associated with the residual $r$. In this case, the Jacobian $j$ evaluated at a pair $(u,p)$ is the bilinear form defined as
 #
 # ```math
-# [j(u,p)]((v,q),(\delta u, \delta p)) \doteq a((v,q),(\delta u,\delta p))  + [{\rm d}c(u)](v,\delta u),
+# [j(u,p)]((\delta u, \delta p),(v,q)) \doteq a((\delta u,\delta p),(v,q))  + [{\rm d}c(u)](\delta u,v),
 # ```
 # where ${\rm d}c$ results from the linearization of the convective term, namely
 # ```math
-# [{\rm d}c(u)](v,\delta u) \doteq \int_{\Omega} v \cdot \left( (u\cdot\nabla)\ \delta u \right) \ {\rm d}\Omega + \int_{\Omega} v \cdot \left( (\delta u\cdot\nabla)\ u \right)  \ {\rm d}\Omega. 
+# [{\rm d}c(u)](\delta u,v) \doteq \int_{\Omega} v \cdot \left( (u\cdot\nabla)\ \delta u \right) \ {\rm d}\Omega + \int_{\Omega} v \cdot \left( (\delta u\cdot\nabla)\ u \right)  \ {\rm d}\Omega. 
 # ```
 # The implementation of this numerical scheme is done in Gridap by combining the concepts previously seen for single-field nonlinear PDEs  and linear multi-field problems.
 # 
@@ -96,13 +91,13 @@ V = TestFESpace(
   reffe=:Lagrangian, conformity=:H1, valuetype=VectorValue{D,Float64},
   model=model, labels=labels, order=order, dirichlet_tags=["diri0","diri1"])
 
-# The interpolation space for the pressure is build as follows
+# The interpolation space for the pressure is built as follows
 
-Q = FESpace(
+Q = TestFESpace(
   reffe=:PLagrangian, conformity=:L2, valuetype=Float64,
   model=model, order=order-1, constraint=:zeromean)
 
-# With the options `reffe=:PLagrangian`, `valuetype=Float64`, and `order=order-1`, we select the local polynomial space $P_{k-1}(T)$ on the cells $T\in\mathcal{T}$. With the symbol `:PLagrangian` we specifically chose a local Lagrangian interpolation of type "P". Using `:Lagrangian`, would lead to a local Lagrangian of type "Q" since this is the default for quadrilateral or hexahedral elements. On the other hand, `constraint=:zeromean` leads to a FE space, whose functions are constrained to have mean value equal to zero, which is just what we need for the pressure space. With these objects, we build the test and trial multi-field FE spaces
+# With the options `reffe=:PLagrangian`, `valuetype=Float64`, and `order=order-1`, we select the local polynomial space $P_{k-1}(T)$ on the cells $T\in\mathcal{T}$. With the symbol `:PLagrangian` we specifically chose a local Lagrangian interpolation of type "P". Using `:Lagrangian`, would lead to a local Lagrangian of type "Q" since this is the default for quadrilateral or hexahedral elements. On the other hand, `constraint=:zeromean` leads to a FE space, whose functions are constrained to have mean value equal to zero, which is just what we need for the pressure space. With these objects, we build the trial multi-field FE spaces
 
 uD0 = VectorValue(0,0)
 uD1 = VectorValue(1,0)
@@ -120,26 +115,26 @@ const Re = 10.0
 @law conv(u,∇u) = Re*(∇u')*u
 @law dconv(du,∇du,u,∇u) = conv(u,∇du)+conv(du,∇u)
 
-function a(y,x)
+function a(x,y)
   u, p = x
   v, q = y
   inner(∇(v),∇(u)) - (∇*v)*p + q*(∇*u)
 end
 
-c(v,u) = v*conv(u,∇(u))
-dc(v,du,u) = v*dconv(du,∇(du),u,∇(u))
+c(u,v) = v*conv(u,∇(u))
+dc(u,du,v) = v*dconv(du,∇(du),u,∇(u))
 
 function res(x,y)
   u, p = x
   v, q = y
-  a(y,x) + c(v,u)
+  a(x,y) + c(u,v)
 end
 
-function jac(x,y,dx)
+function jac(x,dx,y)
   u, p = x
   v, q = y
   du, dp = dx
-  a(y,dx)+ dc(v,du,u)
+  a(dx,y)+ dc(u,du,v)
 end
 
 # With the functions `res`, and `jac` representing the weak residual and the Jacobian, we build the nonlinear FE problem:
@@ -148,7 +143,7 @@ trian = Triangulation(model)
 degree = (order-1)*2
 quad = CellQuadrature(trian,degree)
 t_Ω = FETerm(res,jac,trian,quad)
-op = FEOperator(Y,X,t_Ω)
+op = FEOperator(X,Y,t_Ω)
 
 # ## Nonlinear solver phase
 # 
@@ -167,7 +162,7 @@ uh, ph = solve(solver,op)
 
 writevtk(trian,"ins-results",cellfields=["uh"=>uh,"ph"=>ph])
 
-# ![](../assets/t008_inc_navier_stokes/ins_solution.png)
+# ![](../assets/inc_navier_stokes/ins_solution.png)
 # 
 #  ## References
 # 

@@ -58,39 +58,35 @@
 #
 
 # ## Setup environment
-
-module FSITest
-
-using Test
 using Gridap
-using Gridap.Arrays
-using Gridap.FESpaces
-import Gridap: ∇, ε
-using LinearAlgebra: tr
-using Gridap.Geometry
-
 
 # ## Definition of the Boundary conditions
-
 # ### Dirichlet
+# We apply Dirichlet boundary conditions at the channel inlet, upper and lower boundaries and on the cylinder.
 # ```math
 # \left\lbrace
 # \begin{aligned}
-# u_{\rm F,in}(x,y) = [(1+y)(1-y), 0]\quad\mbox{on }\Gamma_{\rm F,D_{in}}
-# u_{\rm F,0}(x,y) = [0, 0]\quad\mbox{on }\Gamma_{\rm F,D_{0}}
-# u_{\rm S,0}(x,y) = [0, 0]\quad\mbox{on }\Gamma_{\rm S,D_{0}}
+# u_{\rm F,in}(x,y) = = 1.5U\frac{y(H −y)}{\left(\frac{H}{2}\right)^2}\quad\mbox{on }\Gamma_{\rm F,D_{in}},\\
+# u_{\rm F,0}(x,y) = [0, 0]\quad\mbox{on }\Gamma_{\rm F,D_{0}},\\
+# u_{\rm S,0}(x,y) = [0, 0]\quad\mbox{on }\Gamma_{\rm S,D_{0}}.\\
+# \end{aligned}
 # ```
-u0 = 1.5
-uf_in(x) = VectorValue( u0*4.0/0.1681*x[2]*(0.41-x[2]), 0.0 )
+const U = 1.0
+const H = 0.41
+uf_in(x) = VectorValue( 1.5 * U * x[2] * ( H - x[2] ) / ( (H/2)^2 ), 0.0 )
 uf_0(x) = VectorValue( 0.0, 0.0 )
 us_0(x) = VectorValue( 0.0, 0.0 )
 
-# ### neumann
-# ...
+# ### Neumann
+# We consider a free tranction condition at the channel outlet
+# ```math
+# \boldsymbol{\sigma}_{\rm F}\cdot\cdot n_{\rm F} = \mathbf{0}\quad\mbox{on }\Gamma_{\rm F,N}
+# ```
 hN(x) = VectorValue( 0.0, 0.0 )
 p_jump(x) = 0.0
 
 # ## Body forces
+# In this test, the body forces acting on the fluid an solid are zero.
 f(x) = VectorValue( 0.0, 0.0 )
 s(x) = VectorValue( 0.0, 0.0 )
 g(x) = 0.0
@@ -98,7 +94,6 @@ g(x) = 0.0
 # ## Discrete model
 # Computational domain: elastic Flag
 # *Turek, S., Hron, J., Madlik, M., Razzaq, M., Wobker, H., & Acker, J. F. (2011). Numerical simulation and benchmarking of a monolithic multigrid solver for fluid-structure interaction problems with application to hemodynamics. In Fluid Structure Interaction II (pp. 193-220). Springer, Berlin, Heidelberg.*
-#model = CartesianDiscreteModel(domain, mesh)
 model = DiscreteModelFromFile("models/elasticFlag.json")
 
 # Triangulation of the full domain
@@ -279,7 +274,7 @@ function nitsche_Γ(x,y)
   vs = -jump(vs_Γ)
   εuf = jump(ε(uf_Γ))
   εvf = jump(ε(vf_Γ))
-  
+
   # Penalty:
   penaltyTerms = (γ/h)*vf*uf - (γ/h)*vf*us - (γ/h)*vs*uf + (γ/h)*vs*us
   # Integration by parts terms:
@@ -290,17 +285,11 @@ function nitsche_Γ(x,y)
   penaltyTerms + integrationByParts + symmetricTerms
 end
 
-# Pressure drop at the interface
-function l_Γ_B(y)
-  vs,vf,q = y
-  - n_Γfs*jump(vf)*p_jump
-end
-
 t_Ω_solid_A = AffineFETerm(a_solid_A,l_solid_A,trian_solid,quad_solid)
 t_Ω_solid_B= AffineFETerm(a_solid_B,l_solid_B,trian_solid,quad_solid)
 t_Ω_fluid_A = AffineFETerm(a_fluid_A,l_fluid_A,trian_fluid,quad_fluid)
 t_Ω_fluid_B = AffineFETerm(a_fluid_B,l_fluid_B,trian_fluid,quad_fluid)
-t_Γfs = AffineFETerm(nitsche_Γ,l_Γ_B,trian_Γfs,quad_Γfs)
+t_Γfs = LinearFETerm(nitsche_Γ,trian_Γfs,quad_Γfs)
 
 t_Γn_fluid_A = FESource(l_Γn_fluid_A,trian_Γout,quad_Γout)
 t_Γn_fluid_B = FESource(l_Γn_fluid_B,trian_Γout,quad_Γout)
@@ -330,4 +319,4 @@ ph_ΓS = restrict(phB_fluid,trian_ΓS)
 FD, FL = sum( integrate( (σ_f(ε(uh_ΓS))*n_ΓS - ph_ΓS*n_ΓS), trian_ΓS, quad_ΓS ) )
 println("Drag force: ", FD)
 println("Lift force: ", FL)
-end # module
+#end # module

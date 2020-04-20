@@ -1,13 +1,14 @@
 
-# # Tutorial 9: Fluid-structure interaction
+# # Tutorial 9: Steady fluid-structure interaction (FSI)
 #
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/notebooks/fsi_tutorial.ipynb)
 #md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/notebooks/fsi_tutorial.ipynb)
 #
 # In this tutorial, we will learn
 #
-#    -  Bla, bla
-#    -  Bla
+#    -  How to solve a surface-coupled multi-physics problem.
+#    -  Construct FE spaces defined in different domains.
+#    -  Define interface triangulations and integrate on them.
 #
 # 1. [Problem Statement](#probStat)
 #   1. [Strong form](#strongForm)
@@ -15,8 +16,8 @@
 #   3. [Boundary conditions and properties](#conditions)
 # 2. [Numerical scheme](#numericalScheme)
 #   1. [FE spaces](#feSpace)
-#   2. [Numerical integration](#integration)
-#   3. [Weak form](#weakForm)
+#   2. [Weak form](#weakForm)
+#   3. [Numerical integration](#integration)
 #   4. [Algebraic system of equations](#algebraic)
 # 3. [Post-processing](#postprocess)
 
@@ -121,6 +122,7 @@ p_jump(x) = 0.0
 # In this test, the body forces acting on the fluid an solid are zero.
 f(x) = VectorValue( 0.0, 0.0 )
 s(x) = VectorValue( 0.0, 0.0 )
+g(x) = 0.0
 
 # <a name="properties"></a>
 # #### Material properties
@@ -190,7 +192,7 @@ Qf = TestFESpace(
   valuetype=Float64,
   order=k-1,
   reffe=:Lagrangian,
-  conformity=:L2)
+  conformity=:C0)
 
 # The trial FE spaces are generated from the test FE spaces, adding the corresponding function for the various Dirichlet boundaries, leading to $U_{\rm F,g_{\rm F}}$, $U_{\rm S,g_{\rm S}}$ and $P_{\rm F}$.
 Uf = TrialFESpace(Vf,[uf_in, uf_0, uf_0])
@@ -227,7 +229,7 @@ end
 function a_f(x,y)
   us,uf,p = x
   vs,vf,q = y
- inner( ε(vf), σ_dev_f(ε(uf)) ) - (∇*vf)*p + q*(∇*uf) 
+ inner( ε(vf), σ_dev_f(ε(uf)) ) - (∇*vf)*p + q*(∇*uf)
 end
 
 # - $a_{fs}(\mathbf{x}^h,\mathbf{y}^h)$ is the bilinear form associated with the coupling between fluid and solid counterparts. To difine this form we use the well known Nitsche's method, which enforces the continuity of fluid and solid velocities as well as the continuity of the normal stresses, see for instance [2]. The final expression for this term reads:
@@ -244,8 +246,8 @@ end
 # Note that we use the `jump` operator to define the test and trial functions at the interface. (Do we want to explain the reason here, @fverdugo?)
 const γ = 1.0
 # @fverdugo, do we have the element size concept already implemented?
-const h = 0.05
-const χ = 1.0
+const h = 0.01
+const χ = -1.0
 function a_fs(x,y)
   us_Γ, uf_Γ, p_Γ = x
   vs_Γ, vf_Γ, q_Γ = y
@@ -278,7 +280,7 @@ end
 # ```
 function l_f(y)
   vs,vf,q = y
-  vf*f
+  vf*f + q*g
 end
 
 # - $l_{f,\Gamma_N}(\mathbf{y}^h)$ is the linear form associated with the fluid Neumann boundary condition, defined as
@@ -323,16 +325,32 @@ quad_Γfs = CellQuadrature(trian_Γfs,idegree)
 
 # <a name="algebraic"></a>
 # ### Algebraic System of Equations
-# Terms
+# After defining the weak form of the problem and the integration quadrature rules to perform the numerical integration, we are ready to assemble the linear system of equations. In this case, the system will have the following structure:
+# ```math
+# \begin{bmatrix}
+# \mathbf{A}_{u,\rm S}&\mathbf{A}_{u,\rm SF}&0\\
+# \mathbf{A}_{u,\rm FS}&\mathbf{A}_{u,\rm F}&\mathbf{A}_{up,\rm F}\\
+# 0&\mathbf{A}_{up,\rm F}&\mathbf{A}_{p,\rm F}\\
+# \end{bmatrix}\begin{bmatrix}
+# \mathbf{U}^h_{\rm S}\\
+# \mathbf{U}^h_{\rm F}\\
+# \mathbf{P}^h_{\rm F}\\
+# \end{bmatrix} = \begin{bmatrix}
+# \mathbf{F}^h_{u,\rm S}\\
+# \mathbf{F}^h_{u,\rm F}\\
+# \mathbf{F}^h_{p,\rm F}\\
+# \end{bmatrix}
+# ```
+# In order to construct the system we first define the diferent discrete terms using the functions `AffineFETerm`, that assemble contributions on the left-hand side and the right-hand side of the system, for the fluid and solid interior terms evaluated in the respective triangulations, $\mathcal{T}_{\rm F}$ and $\mathcal{T}_{\rm S}$. The fluid Neumann boundary condition is assembled using the function `FESource`, which only affects the right-hand side of the system, evaluating the corresponding form on the triangulation of the outlet boundary, $\Gamma_{\rm F,N_{out}}$. The coupling terms are evaluated at the interface $\Gamma_{\rm FS}$ using the function `LinearFETerm`, assembling only to the left-hand side of the system.
 t_Ω_s= AffineFETerm(a_s,l_s,trian_solid,quad_solid)
 t_Ω_f = AffineFETerm(a_f,l_f,trian_fluid,quad_fluid)
 t_Γfs = LinearFETerm(a_fs,trian_Γfs,quad_Γfs)
 t_Γn_f = FESource(l_f_Γn,trian_Γout,quad_Γout)
 
-# Operator
+# The final FE operator is constructed using the function `AffineFEOperator` and passing as arguments the trial and test FE spaces, $X$ and $Y$, and all the different terms previously defined.
 op = AffineFEOperator(X,Y,t_Ω_s,t_Ω_f,t_Γn_f,t_Γfs)
 
-# Solution
+# Finally, we call `solve` to obtain the solution vector of nodal values $[\mathbf{U}^h_{\rm S},\mathbf{U}^h_{\rm F},\mathbf{P}^h_{\rm F}]^T$
 uhs, uhf, ph = solve(op)
 
 
@@ -340,13 +358,17 @@ uhs, uhf, ph = solve(op)
 # ## Post-processing
 # <a name="visualization"></a>
 # ### Visualization
-ph_fluid = restrict(ph, trian_fluid)
-uhf_fluid = restrict(uhf, trian_fluid)
-uhs_solid = restrict(uhs, trian_solid)
-
-writevtk(trian_fluid,"trian_fluid",cellfields=["ph"=>ph_fluid,"uhf"=>uhf_fluid])
-writevtk(trian_solid,"trian_solid",cellfields=["uhs"=>uhs_solid])
+# The solution fields $[\mathbf{U}^h_{\rm S},\mathbf{U}^h_{\rm F},\mathbf{P}^h_{\rm F}]^T$ are defined over all the domain, extended with zeros on the inactive part. Calling the function `writevtk` passing the global triangulation, we will output the global fields.
 writevtk(trian,"trian", cellfields=["uhs" => uhs, "uhf" => uhf, "ph" => ph])
+# ![](../assets/fsi/Global_solution.png)
+
+# However, we can also restrict the fields to the active part by calling the function `restrict` with the field along with the respective active triangulation.
+uhs_solid = restrict(uhs, trian_solid)
+uhf_fluid = restrict(uhf, trian_fluid)
+ph_fluid = restrict(ph, trian_fluid)
+writevtk(trian_solid,"trian_solid",cellfields=["uhs"=>uhs_solid])
+writevtk(trian_fluid,"trian_fluid",cellfields=["ph"=>ph_fluid,"uhf"=>uhf_fluid])
+# ![](../assets/fsi/Local_solution.png)
 
 # <a name="QOIs"></a>
 # ### Quantities of Interest

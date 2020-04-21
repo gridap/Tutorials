@@ -243,9 +243,7 @@ end
 # \end{aligned}
 # ```
 # Where $ \chi $ is a parameter that can take values $1.0$ or $-1.0$ and it is used to define the symmetric or antisymmetric version of the method, respectively.
-# Note that we use the `jump` operator to define the test and trial functions at the interface. (Do we want to explain the reason here, @fverdugo?)
 const γ = 1.0
-# @fverdugo, do we have the element size concept already implemented?
 const h = 0.01
 const χ = -1.0
 function a_fs(x,y)

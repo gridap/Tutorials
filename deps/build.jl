@@ -7,14 +7,15 @@ notebooks_dir = joinpath(@__DIR__,"..","notebooks")
 files = [
   "Poisson equation"=>"poisson.jl",
   "Code validation"=>"validation.jl",
-  "Linear elasticity"=>"elasticity.jl", 
-  "p-Laplacian"=>"p_laplacian.jl", 
+  "Linear elasticity"=>"elasticity.jl",
+  "p-Laplacian"=>"p_laplacian.jl",
   "Hyper-elasticity"=>"hyperelasticity.jl",
   "Poisson equation (with DG)"=> "dg_discretization.jl",
   "Darcy equation (with RT)"=>"darcy.jl",
   "Incompressible Navier-Stokes"=>"inc_navier_stokes.jl",
   "Stokes equation" => "stokes.jl",
-  "Isotropic damage model" => "isotropic_damage.jl"]
+  "Isotropic damage model" => "isotropic_damage.jl",
+  "Fluid-Structure Interaction"=>"fsi_tutorial.jl"]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)
 for (i,(title,filename)) in enumerate(files)

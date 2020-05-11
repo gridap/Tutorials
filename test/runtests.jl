@@ -20,3 +20,8 @@ for (title,filename) in Tutorials.files
     rm(tmpfile)
 end 
 
+module fsi_tutorial
+using Test
+@testset "fsi_tutorial" begin include("../src/fsi_tutorial.jl") end
+end # module
+

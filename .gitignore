@@ -3,3 +3,4 @@ deps/deps.jl
 notebooks
 Manifest.toml
 .ipynb_checkpoints/
+*.vtu

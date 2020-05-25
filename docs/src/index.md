@@ -85,4 +85,4 @@ and instantiate the environment and build the notebooks again
 julia> include("deps/build.jl")
 ```
 
-Voila!
+Done!

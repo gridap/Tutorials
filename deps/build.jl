@@ -15,7 +15,8 @@ files = [
   "Incompressible Navier-Stokes"=>"inc_navier_stokes.jl",
   "Stokes equation" => "stokes.jl",
   "Isotropic damage model" => "isotropic_damage.jl",
-  "Fluid-Structure Interaction"=>"fsi_tutorial.jl"]
+  "Fluid-Structure Interaction"=>"fsi_tutorial.jl",
+  "Laminar flow around a cylinder"=>"transient_inc_navier_stokes.jl"]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)
 for (i,(title,filename)) in enumerate(files)

@@ -239,16 +239,16 @@ function runCylinder(model::DiscreteModel, labels)
     filePath = join([folderName, fileName], "/")
 
     # Output to Paraview
-    println("writeStokes")
-    writePVD(filePath, trian, [(xh0, 0.0)])
+    #println("writeStokes")
+    #writePVD(filePath, trian, [(xh0, 0.0)])
 
     # Transient Navier-Stokes solution (initial stage to reach fully developed flow)
     println("solveNavierStokes 1")
-    sol_t = solveNavierStokes(op, xh0, 0.0, 8.0, 1.0, 0.5)
+    sol_t = solveNavierStokes(op, xh0, 0.0, 8.0, 0.05, 0.5)
 
     # Output transient solution to Paraview
-    println("writeNavierStokes 1")
-    writePVD(filePath, trian, sol_t, append=true)
+    #println("writeNavierStokes 1")
+    #writePVD(filePath, trian, sol_t, append=true)
 
     # Get last solution snapshot as initial condition (this should be done overwriting Base.last)
     for (xh_tn, tn) in sol_t
@@ -257,11 +257,11 @@ function runCylinder(model::DiscreteModel, labels)
 
     # Transient Navier Stokes solution to pick statistics
     println("solveNavierStokes 2")
-    sol_t = solveNavierStokes(op, xh0, 8.0, 10.0, 1.0, 0.5)
+    sol_t = solveNavierStokes(op, xh0, 8.0, 10.0, 0.005, 0.5)
 
     # Output transient solution to Paraview
-    println("writeNavierStokes 2")
-    writePVD(filePath, trian, sol_t, append=true)
+    #println("writeNavierStokes 2")
+    #writePVD(filePath, trian, sol_t, append=true)
 
     # Output drag and lift coefficients
     (t, CD, CL) = computeForces(model, sol_t, xh0)
@@ -270,8 +270,8 @@ function runCylinder(model::DiscreteModel, labels)
 end
 
 ## Execute simulation
-(t, CD, CL) = @time runCylinder(model0, labels0)
-#(t, CD, CL) = @time runCylinder(model, labels)
+#(t, CD, CL) = @time runCylinder(model0, labels0)
+(t, CD, CL) = @time runCylinder(model, labels)
 p1 = plot(t, CD, label="CD")
 p2 = plot(t, CL, label="CL")
 display(plot(p1,p2,layout=(1,2)))
@@ -283,3 +283,7 @@ println("CDmax: ", maximum(CD), ", CLmax: ", maximum(CL))
 # ![](../assets/cylinder_ins/cylinder.gif)
 
 # Drag and lift coefficients evolution
+
+# |   | CD_max | CL_max |
+# | computed | 3.178 | 1.012 |
+# | Reference range | [3.220, 3.24] | [0.990,1.010] |

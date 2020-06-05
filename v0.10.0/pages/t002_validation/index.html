@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>2 Code validation · Gridap tutorials</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">Gridap tutorials</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><a class="tocitem" href="../t001_poisson/">1 Poisson equation</a></li><li class="is-active"><a class="tocitem" href>2 Code validation</a><ul class="internal"><li><a class="tocitem" href="#Problem-statement-1"><span>Problem statement</span></a></li><li><a class="tocitem" href="#Manufactured-solution-1"><span>Manufactured solution</span></a></li><li><a class="tocitem" href="#Cartesian-mesh-generation-1"><span>Cartesian mesh generation</span></a></li><li><a class="tocitem" href="#FE-approximation-1"><span>FE approximation</span></a></li><li><a class="tocitem" href="#Measuring-the-discretization-error-1"><span>Measuring the discretization error</span></a></li><li><a class="tocitem" href="#Convergence-test-1"><span>Convergence test</span></a></li></ul></li><li><a class="tocitem" href="../t003_elasticity/">3 Linear elasticity</a></li><li><a class="tocitem" href="../t004_p_laplacian/">4 p-Laplacian</a></li><li><a class="tocitem" href="../t005_hyperelasticity/">5 Hyper-elasticity</a></li><li><a class="tocitem" href="../t006_dg_discretization/">6 Poisson equation (with DG)</a></li><li><a class="tocitem" href="../t007_darcy/">7 Darcy equation (with RT)</a></li><li><a class="tocitem" href="../t008_inc_navier_stokes/">8 Incompressible Navier-Stokes</a></li><li><a class="tocitem" href="../t009_stokes/">9 Stokes equation</a></li><li><a class="tocitem" href="../t010_isotropic_damage/">10 Isotropic damage model</a></li><li><a class="tocitem" href="../t011_fsi_tutorial/">11 Fluid-Structure Interaction</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>2 Code validation</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>2 Code validation</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/gridap/Tutorials/blob/master/src/validation.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Tutorial-2:-Code-validation-1"><a class="docs-heading-anchor" href="#Tutorial-2:-Code-validation-1">Tutorial 2: Code validation</a><a class="docs-heading-anchor-permalink" href="#Tutorial-2:-Code-validation-1" title="Permalink"></a></h1><p><a href="https://mybinder.org/v2/gh/gridap/Tutorials/gh-pages?filepath=v0.10.0/notebooks/t002_validation.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt/></a> <a href="https://nbviewer.jupyter.org/github/gridap/Tutorials/blob/gh-pages/v0.10.0/notebooks/t002_validation.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt/></a></p><p>In this tutorial, we will learn</p><ul><li>How to implement the method of manufactured solutions</li><li>How to perform a convergence test</li><li>How to define the discretization error</li><li>How to integrate error norms</li><li>How to generate Cartesian meshes in arbitrary dimensions</li></ul><h2 id="Problem-statement-1"><a class="docs-heading-anchor" href="#Problem-statement-1">Problem statement</a><a class="docs-heading-anchor-permalink" href="#Problem-statement-1" title="Permalink"></a></h2><p>In this tutorial, we show how to validate a code using the well known <em>method of manufactured solutions</em>. For the sake of simplicity, we consider the Poisson equation in the unit square <span>$\Omega\doteq (0,1)^2$</span> as a model problem,</p><div>\[\left\lbrace
+\begin{aligned}
+-\Delta u = f  \ \text{in} \ \Omega\\
+u = g \ \text{on}\ \partial\Omega.\\
+\end{aligned}
+\right.\]</div><p>We are going to consider two different manufactured solutions. On the one hand, we consider function <span>$u(x)=x_1+x_2$</span>, which can be exactly represented by the FE interpolation that we construct below. Thus, one expects that the obtained approximation error is near the machine precision. We are going to check that this is true in the code. On the other hand, we consider a function that cannot be captured exactly by the interpolation, namely <span>$u(x)=x_2 \sin(2 \pi\ x_1)$</span>. Here, our goal is to confirm that the convergence order of the discretization error is the optimal one.</p><h2 id="Manufactured-solution-1"><a class="docs-heading-anchor" href="#Manufactured-solution-1">Manufactured solution</a><a class="docs-heading-anchor-permalink" href="#Manufactured-solution-1" title="Permalink"></a></h2><p>We start by defining the manufactured solution <span>$u(x) = x_1+x_2$</span> and the source term <span>$f$</span> associated with it, namely <span>$f\doteq-\Delta(x_1+x_2)=0$</span>.</p><pre><code class="language-julia">using Gridap
+
+u(x) = x[1] + x[2]
+f(x) = 0</code></pre><p>We also need to define the gradient of <span>$u$</span> since we will compute the <span>$H^1$</span> error norm later. In that case, the gradient is simply defined as</p><pre><code class="language-julia">∇u(x) = VectorValue(1,1)</code></pre><p>Note that we have used the constructor <code>VectorValue</code> to build the vector that represents the gradient. However, we still need a final trick. We need to tell the Gridap library that the gradient of the function <code>u</code> is available in the function <code>∇u</code> (at this moment <code>u</code> and <code>∇u</code> are two standard Julia functions without any connection between them). This is done by adding an extra method to the function <code>gradient</code> (aka <code>∇</code>) defined in Gridap:</p><pre><code class="language-julia">import Gridap: ∇
+∇(::typeof(u)) = ∇u</code></pre><p>Now, it is possible to recover function <code>∇u</code> from function <code>u</code> as <code>∇(u)</code>. You can check that the following expression evaluates to <code>true</code>.</p><pre><code class="language-julia">∇(u) === ∇u</code></pre><h2 id="Cartesian-mesh-generation-1"><a class="docs-heading-anchor" href="#Cartesian-mesh-generation-1">Cartesian mesh generation</a><a class="docs-heading-anchor-permalink" href="#Cartesian-mesh-generation-1" title="Permalink"></a></h2><p>In order to discretize the geometry of the unit square, we use the Cartesian mesh generator available in Gridap:</p><pre><code class="language-julia">domain = (0,1,0,1)
+partition = (4,4)
+model = CartesianDiscreteModel(domain,partition)</code></pre><p>The type <code>CartesianDiscreteModel</code> is a concrete type that inherits from <code>DiscreteModel</code>, which is specifically designed for building Cartesian meshes. The <code>CartesianDiscreteModel</code> constructor takes a tuple containing limits of the box we want to discretize  plus a tuple with the number of cells to be generated in each direction (here 4 by 4 cells). Note that the <code>CaresianDiscreteModel</code> is implemented for arbitrary dimensions. For instance, the following lines build a <code>CartesianDiscreteModel</code>  for the unit cube <span>$(0,1)^3$</span> with 4 cells per direction</p><pre><code class="language-julia">domain3d = (0,1,0,1,0,1)
+partition3d = (4,4,4)
+model3d = CartesianDiscreteModel(domain3d,partition3d)</code></pre><p>You could also generate a mesh for the unit tesseract <span>$(0,1)^4$</span> (i.e., the unit cube in 4D). Look how the 2D and 3D models are built and just follow the sequence.</p><p>Let us return to the 2D <code>CartesianDiscreteModel</code> that we have already constructed. You can inspect it by writing it into vtk format. Note that you can also print a 3D model, but not a 4D one. In the future, it would be cool to generate a movie from a 4D model, but this functionality is not yet implemented.</p><pre><code class="language-julia">writevtk(model,&quot;model&quot;)</code></pre><p>If you open the generated files, you will see that the boundary vertices and facets are identified with the name &quot;boundary&quot;. This is just what we need to impose the Dirichlet boundary conditions in this example.</p><p>These are the vertices in the model</p><p><img src="../../assets/validation/model_0.png" alt/></p><p>and these the facets</p><p><img src="../../assets/validation/model_1.png" alt/></p><p>As you can see in the pictures, the objects on the boundary are correctly tagged with the name &quot;boundary&quot;.</p><h2 id="FE-approximation-1"><a class="docs-heading-anchor" href="#FE-approximation-1">FE approximation</a><a class="docs-heading-anchor-permalink" href="#FE-approximation-1" title="Permalink"></a></h2><p>We compute a FE approximation of the Poisson problem above by following the steps detailed in the previous tutorial:</p><pre><code class="language-julia">order = 1
+V0 = TestFESpace(
+  reffe=:Lagrangian, order=order, valuetype=Float64,
+  conformity=:H1, model=model, dirichlet_tags=&quot;boundary&quot;)
+
+U = TrialFESpace(V0,u)
+
+trian = Triangulation(model)
+degree = 2
+quad = CellQuadrature(trian,degree)
+
+a(u,v) = ∇(v)*∇(u)
+b(v) = v*f
+
+t_Ω = AffineFETerm(a,b,trian,quad)
+op = AffineFEOperator(U,V0,t_Ω)
+
+uh = solve(op)</code></pre><p>Note that we are imposing Dirichlet boundary conditions on the objects tagged as &quot;boundary&quot; and that we are using the manufactured solution <code>u</code> to construct the trial FE space. Not also that we are not explicitly constructing an <code>Assembler</code> object nor a <code>FESolver</code>. We are relying on default values.</p><h2 id="Measuring-the-discretization-error-1"><a class="docs-heading-anchor" href="#Measuring-the-discretization-error-1">Measuring the discretization error</a><a class="docs-heading-anchor-permalink" href="#Measuring-the-discretization-error-1" title="Permalink"></a></h2><p>Our goal is to check that the discratization error associated with the computed approximation <code>uh</code> is close to machine precision. To this end, the first step is to compute the discretization error, which is done as you would expect:</p><pre><code class="language-julia">e = u - uh</code></pre><p>Once the error is defined, you can, e.g., visualize it.</p><pre><code class="language-julia">writevtk(trian,&quot;error&quot;,cellfields=[&quot;e&quot; =&gt; e])</code></pre><p>This generates a file called <code>error.vtu</code>. Open it with Paraview to check that the error is of the order of the machine precision.</p><p><img src="../../assets/validation/error.png" alt/></p><p>A more rigorous way of quantifying the error is to measure it with a norm. Here, we use the <span>$L^2$</span> and <span>$H^1$</span> norms, which are defined as</p><div>\[\| w \|_{L^2}^2 \doteq \int_{\Omega} w^2 \ \text{d}\Omega, \quad
+\| w \|_{H^1}^2 \doteq \int_{\Omega} w^2 + \nabla w \cdot \nabla w \ \text{d}\Omega.\]</div><p>In order to compute these norms, we are going to use the <code>integrate</code> function. To this end, we need to define the integrands that we want to integrate, namely</p><pre><code class="language-julia">l2(w) = w*w
+h1(w) = a(w,w) + l2(w)</code></pre><p>Note that in order to define the integrand of the <span>$H^1$</span> norm, we have reused function <code>a</code>, previously used to define the bilinear form of the problem.  Once we have defined the integrands, we are ready to compute the integrals. For the <span>$L^2$</span> norm</p><pre><code class="language-julia">el2 = sqrt(sum( integrate(l2(e),trian,quad) ))</code></pre><p>and for the <span>$H^1$</span> norm</p><pre><code class="language-julia">eh1 = sqrt(sum( integrate(h1(e),trian,quad) ))</code></pre><p>The <code>integrate</code> function works as follows. In the first argument, we pass the integrand. In the second and third arguments, we pass a <code>Triangulation</code> object and a<code>CellQuadrature</code> that represent the data needed in order to perform the integrals numerically. The <code>integrate</code> function returns an object containing the contribution to the integrated value of each cell in the given <code>Triangulation</code>. To end up with the desired error norms, one has to sum these contributions and take the square root. You can check that the computed error norms are close to machine precision (as one would expect).</p><pre><code class="language-julia">tol = 1.e-10
+@assert el2 &lt; tol
+@assert eh1 &lt; tol</code></pre><h2 id="Convergence-test-1"><a class="docs-heading-anchor" href="#Convergence-test-1">Convergence test</a><a class="docs-heading-anchor-permalink" href="#Convergence-test-1" title="Permalink"></a></h2><p>We end up this tutorial by performing a convergence test, where we are going to use all the new concepts we have learned.  We will consider a manufactured solution that does not belong to the FE interpolation space. In this test, we expect to see the optimal convergence order of the FE discretization.</p><p>Here, we define the manufactured functions</p><pre><code class="language-julia">const k = 2*pi
+u(x) = sin(k*x[1]) * x[2]
+∇u(x) = VectorValue(k*cos(k*x[1])*x[2], sin(k*x[1]))
+f(x) = (k^2)*sin(k*x[1])*x[2]</code></pre><p>Since we have redefined the valiables <code>u</code>, <code>∇u</code>, and <code>f</code>, we need to execute these lines again</p><pre><code class="language-julia">∇(::typeof(u)) = ∇u
+b(v) = v*f</code></pre><p>In order to perform the convergence test, we write in a function all the code needed to perform a single computation and measure its error. The input of this function is the number of cells in each direction and the interpolation order. The output is the computed <span>$L^2$</span> and <span>$H^1$</span> error norms.</p><pre><code class="language-julia">function run(n,order)
+
+  domain = (0,1,0,1)
+  partition = (n,n)
+  model = CartesianDiscreteModel(domain,partition)
+
+  V0 = TestFESpace(
+    reffe=:Lagrangian, order=order, valuetype=Float64,
+    conformity=:H1, model=model, dirichlet_tags=&quot;boundary&quot;)
+
+  U = TrialFESpace(V0,u)
+
+  trian = Triangulation(model)
+  degree=2*order
+  quad = CellQuadrature(trian,degree)
+
+  t_Ω = AffineFETerm(a,b,trian,quad)
+  op = AffineFEOperator(U,V0,t_Ω)
+
+  uh = solve(op)
+
+  e = u - uh
+
+  el2 = sqrt(sum( integrate(l2(e),trian,quad) ))
+  eh1 = sqrt(sum( integrate(h1(e),trian,quad) ))
+
+  (el2, eh1)
+
+end</code></pre><p>The following function does the convergence test. It takes a vector of integers (representing the number of cells per direction in each computation) plus the interpolation order. It returns the <span>$L^2$</span> and <span>$H^1$</span> error norms for each computation as well as the corresponding cell size.</p><pre><code class="language-julia">function conv_test(ns,order)
+
+  el2s = Float64[]
+  eh1s = Float64[]
+  hs = Float64[]
+
+  for n in ns
+
+    el2, eh1 = run(n,order)
+    h = 1.0/n
+
+    push!(el2s,el2)
+    push!(eh1s,eh1)
+    push!(hs,h)
+
+  end
+
+  (el2s, eh1s, hs)
+
+end</code></pre><p>We are ready to perform the test! We consider several mesh sizes and interpolation order equal to 2.</p><pre><code class="language-julia">el2s, eh1s, hs = conv_test([8,16,32,64,128],2);
+nothing #hide</code></pre><p>With the generated data, we do the classical convergence plot.</p><pre><code class="language-julia">using Plots
+
+plot(hs,[el2s eh1s],
+    xaxis=:log, yaxis=:log,
+    label=[&quot;L2&quot; &quot;H1&quot;],
+    shape=:auto,
+    xlabel=&quot;h&quot;,ylabel=&quot;error norm&quot;)</code></pre><p>If you run the code in a notebook, you will see a figure like this one: <img src="../../assets/validation/conv.png" alt/></p><p>The generated curves make sense. It is observed that the convergence of the <span>$H^1$</span> error is slower that <span>$L^2$</span> one. However, in order to be more conclusive, we need to compute the slope of these lines. It can be done with this little function that internally uses a linear regression.</p><pre><code class="language-julia">function slope(hs,errors)
+  x = log10.(hs)
+  y = log10.(errors)
+  linreg = hcat(fill!(similar(x), 1), x) \ y
+  linreg[2]
+end</code></pre><p>The slope for the <span>$L^2$</span> error norm is computed as</p><pre><code class="language-julia">slope(hs,el2s)</code></pre><p>and for the <span>$H^1$</span> error norm</p><pre><code class="language-julia">slope(hs,eh1s)</code></pre><p>If your run these lines in a notebook, you will see that the slopes for the <span>$L^2$</span> and <span>$H^1$</span> error norms are circa 3 and 2 respectively (as one expects for interpolation order 2)</p><p>Congrats, another tutorial done!</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../t001_poisson/">« 1 Poisson equation</a><a class="docs-footer-nextpage" href="../t003_elasticity/">3 Linear elasticity »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 5 June 2020 09:07">Friday 5 June 2020</span>. Using Julia version 1.3.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

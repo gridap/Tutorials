@@ -1,4 +1,5 @@
 
+
 #md # !!! note
 #
 #     This tutorial is under construction, but the code below is already functional.
@@ -159,7 +160,7 @@ function computeForces(model::DiscreteModel, sol, xh0)
         ph_Γc = restrict(phθ, trian_Γc)
         εθ = θ * ε(uh_Γc) + (1.0 - θ) * ε(uhn_Γc)
         FD, FL = sum(integrate(
-            (σ_dev(ε(uh_Γc)) * n_Γc - ph_Γc * n_Γc),
+            (n_Γc * σ_dev(ε(uh_Γc))  - ph_Γc * n_Γc),
             trian_Γc,
             quad_Γc,
         ))

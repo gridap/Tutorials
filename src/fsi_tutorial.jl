@@ -273,7 +273,7 @@ function a_fs(x,y)
   εuf = jump(ε(uf_Γ))
   εvf = jump(ε(vf_Γ))
   penaltyTerms = α*vf*uf - α*vf*us - α*vs*uf + α*vs*us
-	integrationByParts = ( vf*(p*n_Γfs) - vf*(n_Γfsσ_dev_f(εuf)) ) - ( vs*(p*n_Γfs) - vs*(n_Γfs*σ_dev_f(εuf)) )
+	integrationByParts = ( vf*(p*n_Γfs) - vf*(n_Γfs*σ_dev_f(εuf)) ) - ( vs*(p*n_Γfs) - vs*(n_Γfs*σ_dev_f(εuf)) )
 	symmetricTerms =  ( q*(n_Γfs*uf) - χ*(n_Γfs*σ_dev_f(εvf))*uf ) - ( q*(n_Γfs*us) - χ*(n_Γfs*σ_dev_f(εvf))*us )
   penaltyTerms + integrationByParts + symmetricTerms
 end

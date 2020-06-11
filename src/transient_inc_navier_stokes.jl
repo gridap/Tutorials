@@ -54,7 +54,7 @@ writevtk(model, "model")
 
 # ## Weak form
 # Laws
-@law conv(u, ∇u) = (∇u') * u
+@law conv(u, ∇u) = (∇u') ⋅ u
 @law dconv(du, ∇du, u, ∇u) = conv(u, ∇du) + conv(du, ∇u)
 @law σ_dev(ε) = 2 * ν * ε
 
@@ -62,19 +62,19 @@ writevtk(model, "model")
 function a(x, y)
     u, p = x
     v, q = y
-    inner(ε(v), σ_dev(ε(u))) - (∇ * v) * p + q * (∇ * u)
+    (ε(v) ⊙ σ_dev(ε(u))) - (∇⋅v) * p + q * (∇⋅u)
 end
 
 # Nonlinear convective term
-c(u, v) = v * conv(u, ∇(u))
-dc(u, du, v) = v * dconv(du, ∇(du), u, ∇(u))
+c(u, v) = v ⊙ conv(u, ∇(u))
+dc(u, du, v) = v ⊙ dconv(du, ∇(du), u, ∇(u))
 
 # Navier-Stokes residual
 function res(t, x, xt, y)
     u, p = x
     ut, pt = xt
     v, q = y
-    inner(ut, v) + a(x, y) + c(u, v)
+    (ut ⊙ v) + a(x, y) + c(u, v)
 end
 
 # Navier-Stokes jacobian (w.r.t space)
@@ -89,7 +89,7 @@ end
 function jac_t(t, x, xt, dxt, y)
     dut, dpt = dxt
     v, q = y
-    inner(dut, v)
+    (dut ⊙ v)
 end
 
 # ## Solver functions
@@ -160,7 +160,7 @@ function computeForces(model::DiscreteModel, sol, xh0)
         ph_Γc = restrict(phθ, trian_Γc)
         εθ = θ * ε(uh_Γc) + (1.0 - θ) * ε(uhn_Γc)
         FD, FL = sum(integrate(
-            (n_Γc * σ_dev(ε(uh_Γc))  - ph_Γc * n_Γc),
+            (n_Γc ⋅ σ_dev(ε(uh_Γc))  - ph_Γc * n_Γc),
             trian_Γc,
             quad_Γc,
         ))

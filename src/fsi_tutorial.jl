@@ -44,7 +44,7 @@
 # \left\lbrace
 # \begin{aligned}
 # u_{\rm F} = g_{\rm F} &\text{ on } \Gamma_{\rm F,D},\\
-# \boldsymbol{\sigma}_{\rm F}\cdot n_{\rm F} = 0 &\text{ on } \Gamma_{\rm F,N},\\
+# n_{\rm F} \cdot \boldsymbol{\sigma}_{\rm F} = 0 &\text{ on } \Gamma_{\rm F,N},\\
 # u_{\rm S} = g_{\rm S} &\text{ on } \Gamma_{\rm S,D},\\
 # \end{aligned}
 # \right.
@@ -55,7 +55,7 @@
 # \left\lbrace
 # \begin{aligned}
 # u_{\rm F} = u_{\rm S} &\text{ on } \Gamma_{\rm FS},\\
-# \boldsymbol{\sigma}_{\rm F}\cdot n_{\rm F} + \boldsymbol{\sigma}_{\rm S}\cdot n_{\rm S} = 0 &\text{ on } \Gamma_{\rm FS}.\\
+# n_{\rm F} \cdot \boldsymbol{\sigma}_{\rm F}  + n_{\rm S} \cdot \boldsymbol{\sigma}_{\rm S}  = 0 &\text{ on } \Gamma_{\rm FS}.\\
 # \end{aligned}
 # \right.
 # ```
@@ -118,7 +118,7 @@ us_0(x) = VectorValue( 0.0, 0.0 )
 
 # We consider a free tranction condition at the channel outlet
 # ```math
-# \boldsymbol{\sigma}_{\rm F}\cdot n_{\rm F} = \mathbf{0}\quad\textrm{on }\Gamma_{\rm F,N}
+# n_{\rm F} \cdot \boldsymbol{\sigma}_{\rm F}  = \mathbf{0}\quad\textrm{on }\Gamma_{\rm F,N}
 # ```
 hN(x) = VectorValue( 0.0, 0.0 )
 p_jump(x) = 0.0
@@ -252,9 +252,9 @@ end
 # ```math
 # \begin{aligned}
 # a_{fs}(\mathbf{x}^h,\mathbf{y}^h)=&\langle\gamma\frac{\mu_f}{h}(\mathbf{v}^h_{\rm F}-\mathbf{v}^h_{\rm S}),(\mathbf{u}^h_{\rm F}-\mathbf{u}^h_{\rm S})\rangle_{\Gamma_{\rm FS}}\\
-# &-  \langle(\mathbf{v}^h_{\rm F}-\mathbf{v}^h_{\rm S}),\boldsymbol{\sigma}^{dev}_f(\mathbf{u}^h_{\rm F})\cdot\mathbf{n}_{\rm FS}\rangle_{\Gamma_{\rm FS}}
+# &-  \langle(\mathbf{v}^h_{\rm F}-\mathbf{v}^h_{\rm S}),\mathbf{n}_{\rm FS}\cdot\boldsymbol{\sigma}^{dev}_f(\mathbf{u}^h_{\rm F})\rangle_{\Gamma_{\rm FS}}
 # +  \langle(\mathbf{v}^h_{\rm F}-\mathbf{v}^h_{\rm S}),p^h_{\rm F}\mathbf{n}_{\rm FS}\rangle_{\Gamma_{\rm FS}}\\
-# &-  \chi\langle\boldsymbol{\sigma}^{dev}_f(\mathbf{v}^h_{\rm F})\cdot\mathbf{n}_{\rm FS},(\mathbf{u}^h_{\rm F}-\mathbf{u}^h_{\rm S})\rangle_{\Gamma_{\rm FS}}
+# &-  \chi\langle\mathbf{n}_{\rm FS}\cdot\boldsymbol{\sigma}^{dev}_f(\mathbf{v}^h_{\rm F}),(\mathbf{u}^h_{\rm F}-\mathbf{u}^h_{\rm S})\rangle_{\Gamma_{\rm FS}}
 # +  \langle q^h_{\rm F}\mathbf{n}_{\rm FS},(\mathbf{u}^h_{\rm F}-\mathbf{u}^h_{\rm S})\rangle_{\Gamma_{\rm FS}}\\
 # \end{aligned}
 # ```
@@ -273,8 +273,8 @@ function a_fs(x,y)
   εuf = jump(ε(uf_Γ))
   εvf = jump(ε(vf_Γ))
   penaltyTerms = α*vf*uf - α*vf*us - α*vs*uf + α*vs*us
-  integrationByParts = ( vf*(p*n_Γfs) - vf*(σ_dev_f(εuf)*n_Γfs) ) - ( vs*(p*n_Γfs) - vs*(σ_dev_f(εuf)*n_Γfs) )
-  symmetricTerms =  ( q*(n_Γfs*uf) - χ*(σ_dev_f(εvf)*n_Γfs)*uf ) - ( q*(n_Γfs*us) - χ*(σ_dev_f(εvf)*n_Γfs)*us )
+	integrationByParts = ( vf*(p*n_Γfs) - vf*(n_Γfs*σ_dev_f(εuf)) ) - ( vs*(p*n_Γfs) - vs*(n_Γfs*σ_dev_f(εuf)) )
+	symmetricTerms =  ( q*(n_Γfs*uf) - χ*(n_Γfs*σ_dev_f(εvf))*uf ) - ( q*(n_Γfs*us) - χ*(n_Γfs*σ_dev_f(εvf))*us )
   penaltyTerms + integrationByParts + symmetricTerms
 end
 

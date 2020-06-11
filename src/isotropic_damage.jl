@@ -15,7 +15,7 @@ const ν = 0.3 # dim-less
 const λ = (E*ν)/((1+ν)*(1-2*ν))
 const μ = E/(2*(1+ν))
 @law σe(ε) = λ*tr(ε)*one(ε) + 2*μ*ε # Pa
-τ(ε) = sqrt(inner(ε,σe(ε))) # Pa^(1/2)
+τ(ε) = sqrt(ε ⊙ σe(ε)) # Pa^(1/2)
 
 # Damage
 const σ_u = 4.0e5 # Pa
@@ -63,7 +63,7 @@ end
     return (1-d_out)*σe(dε_in)
 
   else
-    c_inc = ((q(r_out) - H*r_out)*inner(σe(ε_in),dε_in))/(r_out^3)
+    c_inc = ((q(r_out) - H*r_out)*(σe(ε_in) ⊙ dε_in))/(r_out^3)
     return (1-d_out)*σe(dε_in) - c_inc*σe(ε_in)
 
   end
@@ -126,10 +126,10 @@ function main(;n,nsteps)
   function step(uh_in,factor)
 
     b = factor*b_max
-    res(u,v) = inner( ε(v), σ(ε(u),r,d) ) - v*b
+    res(u,v) = ( ε(v) ⊙ σ(ε(u),r,d) ) - v⋅b
     function jac(u,du,v)
       state = update(ε(u),r,d)
-      inner( ε(v), dσ(ε(du),ε(u),state) )
+      ε(v) ⊙ dσ(ε(du),ε(u),state)
     end
     t_Ω = FETerm(res,jac,trian,quad)
     op = FEOperator(U,V,t_Ω)

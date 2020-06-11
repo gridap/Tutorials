@@ -43,7 +43,7 @@ quad = CellQuadrature(trian,degree)
 function a(x,y)
   v,q = y
   u,p = x
-  inner(∇(v),∇(u)) - (∇*v)*p + q*(∇*u)
+  ∇(v)⊙∇(u) - (∇⋅v)*p + q*(∇⋅u)
 end
 t_Ω = LinearFETerm(a,trian,quad)
 op = AffineFEOperator(X,Y,t_Ω)

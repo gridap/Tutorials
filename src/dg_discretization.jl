@@ -168,7 +168,7 @@ ns = get_normal_vector(strian)
 #
 # With these ingredients we can define the different terms in the weak form. First, we start with the terms $a_\Omega(\cdot,\cdot)$ , and $b_\Omega(\cdot)$ associated with integrals in the volume $\Omega$. This is done as in the tutorial for the Poisson equation.
 
-a_Ω(u,v) = ∇(v)*∇(u)
+a_Ω(u,v) = ∇(v)⊙∇(u)
 b_Ω(v) = v*f
 t_Ω = AffineFETerm(a_Ω,b_Ω,trian,quad)
 
@@ -176,15 +176,15 @@ t_Ω = AffineFETerm(a_Ω,b_Ω,trian,quad)
 
 h = L / n
 γ = order*(order+1)
-a_∂Ω(u,v) = (γ/h)*v*u - v*(∇(u)*nb) - (∇(v)*nb)*u
-b_∂Ω(v) = (γ/h)*v*g - (∇(v)*nb)*g
+a_∂Ω(u,v) = (γ/h)*v*u - v*(∇(u)⋅nb) - (∇(v)⋅nb)*u
+b_∂Ω(v) = (γ/h)*v*g - (∇(v)⋅nb)*g
 t_∂Ω = AffineFETerm(a_∂Ω,b_∂Ω,btrian,bquad)
 
 # Note that in the definition of the functions `a_∂Ω` and `b_∂Ω`, we have used the object `nb` representing the outward unit normal to the boundary $\partial\Omega$. The code definition of  `a_∂Ω` and `b_∂Ω` is indeed very close to the mathematical definition of the forms  $a_{\partial\Omega}(\cdot,\cdot)$ and $b_{\partial\Omega}(\cdot)$. 
 # 
 # Finally, we need to define the term $a_\Gamma(\cdot,\cdot)$ integrated on the interior facets $\mathcal{F}_\Gamma$. In this case, we use a `LinearFETerm` since the terms integrated on the interior facets only contribute to the system matrix and not to the right-hand-side vector.
 
-a_Γ(u,v) = (γ/h)*jump(v*ns)*jump(u*ns) - jump(v*ns)*mean(∇(u)) - mean(∇(v))*jump(u*ns)
+a_Γ(u,v) = (γ/h)*jump(v*ns)⊙jump(u*ns) - jump(v*ns)⊙mean(∇(u)) - mean(∇(v))⊙jump(u*ns)
 t_Γ = LinearFETerm(a_Γ,strian,squad)
 
 # Note that the arguments `v`, `u` of function  `a_Γ` represent a test and trial function *restricted* to the interior facets $\mathcal{F}_\Gamma$. As mentioned before in the presentation of the DG formulation, the restriction of a function $v\in V$ to the interior faces leads to two different values $v^+$ and $v^-$ . In order to compute jumps and averages of the quantities $v^+$ and $v^-$, we use the functions `jump` and `mean`, which represent the jump and mean value operators $\lbrack\!\lbrack \cdot \rbrack\!\rbrack$ and $\{\! \!\{\cdot\}\! \!\}$ respectively. Note also that we have used the object `ns` representing the unit normal vector on the interior facets. As a result, the notation used to define function `a_Γ` is very close to the mathematical definition of the terms in the bilinear form $a_\Gamma(\cdot,\cdot)$. 

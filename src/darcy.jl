@@ -107,9 +107,9 @@ const kinv1 = TensorValue(1.0,0.0,0.0,1.0)
 const kinv2 = TensorValue(100.0,90.0,90.0,100.0)
 @law function σ(x,u)
    if ((abs(x[1]-0.5) <= 0.1) && (abs(x[2]-0.5) <= 0.1))
-      return kinv2*u
+      return kinv2⋅u
    else
-      return kinv1*u
+      return kinv1⋅u
    end
 end
 
@@ -120,7 +120,7 @@ px = get_physical_coordinate(trian)
 function a(x,y)
    v, q = y
    u, p = x
-   v*σ(px,u) - (∇*v)*p + q*(∇*u)
+   v⋅σ(px,u) - (∇⋅v)*p + q*(∇⋅u)
 end
 
 # The arguments `x` and `y` of previous function represent a trial and a test function in the multi-field test and trial spaces `X` and `Y` respectively. In the first lines in the function definition, we unpack the single-field test and trial functions from the multi-field ones. E.g., `v` represents a test function for the flux and `q` for the pressure. These quantities can also be written as `y[1]` and `y[2]` respectively. From the single-field functions, we write the different terms of the bilinear form as we have done in previous tutorials.
@@ -131,7 +131,7 @@ nb = get_normal_vector(btrian)
 h = -1.0
 function b_ΓN(y)
   v, q = y
-  (v*nb)*h
+  (v⋅nb)*h
 end
 
 # ## Multi-field FE problem

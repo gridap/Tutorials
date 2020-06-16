@@ -10,7 +10,7 @@ J(F) = sqrt(det(C(F)))
 
 #E(F) = 0.5*( F&#39;*F - one(F) )
 
-@law dE(∇du,∇u) = 0.5*( ∇du*F(∇u) + (∇du*F(∇u))&#39; )</code></pre><p>Right Cauchy-green deformation tensor</p><pre><code class="language-julia">C(F) = (F&#39;)*F</code></pre><p>Constitutive law (Neo hookean)</p><pre><code class="language-julia">@law function S(∇u)
+@law dE(∇du,∇u) = 0.5*( ∇du⋅F(∇u) + (∇du⋅F(∇u))&#39; )</code></pre><p>Right Cauchy-green deformation tensor</p><pre><code class="language-julia">C(F) = (F&#39;)⋅F</code></pre><p>Constitutive law (Neo hookean)</p><pre><code class="language-julia">@law function S(∇u)
   Cinv = inv(C(F(∇u)))
   μ*(one(∇u)-Cinv) + λ*log(J(F(∇u)))*Cinv
 end
@@ -18,12 +18,12 @@ end
 @law function dS(∇du,∇u)
   Cinv = inv(C(F(∇u)))
   _dE = dE(∇du,∇u)
-  λ*inner(Cinv,_dE)*Cinv + 2*(μ-λ*log(J(F(∇u))))*Cinv*_dE*(Cinv&#39;)
-end</code></pre><p>Cauchy stress tensor</p><pre><code class="language-julia">@law σ(∇u) = (1.0/J(F(∇u)))*F(∇u)*S(∇u)*(F(∇u))&#39;</code></pre><p>Weak form</p><pre><code class="language-julia">res(u,v) = inner( dE(∇(v),∇(u)) , S(∇(u)) )
+	λ*(Cinv⊙_dE)*Cinv + 2*(μ-λ*log(J(F(∇u))))*Cinv⋅_dE⋅(Cinv&#39;)
+end</code></pre><p>Cauchy stress tensor</p><pre><code class="language-julia">@law σ(∇u) = (1.0/J(F(∇u)))*F(∇u)⋅S(∇u)⋅(F(∇u))&#39;</code></pre><p>Weak form</p><pre><code class="language-julia">res(u,v) = dE(∇(v),∇(u)) ⊙ S(∇(u))
 
-jac_mat(u,du,v) = inner( dE(∇(v),∇(u)), dS(∇(du),∇(u)) )
+jac_mat(u,du,v) =  dE(∇(v),∇(u)) ⊙ dS(∇(du),∇(u))
 
-jac_geo(u,du,v) = inner( ∇(v), S(∇(u))*∇(du) )
+jac_geo(u,du,v) = ∇(v) ⊙ ( S(∇(u))⋅∇(du) )
 
 jac(u,du,v) = jac_mat(u,v,du) + jac_geo(u,v,du)</code></pre><p>Model</p><pre><code class="language-julia">domain = (0,1,0,1)
 partition = (20,20)
@@ -78,4 +78,4 @@ function runs()
 end
 
 #Do the work!
-runs()</code></pre><p>Picture of the last load step <img src="../../assets/hyperelasticity/neo_hook_2d.png" alt/></p><h2 id="Extension-to-3D-1"><a class="docs-heading-anchor" href="#Extension-to-3D-1">Extension to 3D</a><a class="docs-heading-anchor-permalink" href="#Extension-to-3D-1" title="Permalink"></a></h2><p>Extending this tutorial to the 3D case is straightforward. It is leaved as an exercise.</p><p><img src="../../assets/hyperelasticity/neo_hook_3d.png" alt/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../t004_p_laplacian/">« 4 p-Laplacian</a><a class="docs-footer-nextpage" href="../t006_dg_discretization/">6 Poisson equation (with DG) »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 11 June 2020 01:07">Thursday 11 June 2020</span>. Using Julia version 1.3.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+runs()</code></pre><p>Picture of the last load step <img src="../../assets/hyperelasticity/neo_hook_2d.png" alt/></p><h2 id="Extension-to-3D-1"><a class="docs-heading-anchor" href="#Extension-to-3D-1">Extension to 3D</a><a class="docs-heading-anchor-permalink" href="#Extension-to-3D-1" title="Permalink"></a></h2><p>Extending this tutorial to the 3D case is straightforward. It is leaved as an exercise.</p><p><img src="../../assets/hyperelasticity/neo_hook_3d.png" alt/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../t004_p_laplacian/">« 4 p-Laplacian</a><a class="docs-footer-nextpage" href="../t006_dg_discretization/">6 Poisson equation (with DG) »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 16 June 2020 10:14">Tuesday 16 June 2020</span>. Using Julia version 1.3.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

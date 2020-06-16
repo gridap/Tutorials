@@ -83,7 +83,6 @@ U = TrialFESpace(V0,[g1,g2])
 # 
 # Once the FE spaces are defined, the next step is to define the weak form.  In this example, the construction of the weak form requires more work than in previous tutorial since we need to account for the constitutive law that relates strain and stress. In this case, the integrand of the bilinear form of the problem is written in the code as follows:
 
-#a(u,v) = inner( ε(v), σ(ε(u)) )
 a(u,v) = ε(v) ⊙ σ(ε(u))
 
 # The symmetric gradient operator is represented by the function `ε` provided by Gridap (also available as `symmetric_gradient`). However, function `σ` representing the stress tensor is not predefined in the library and it has to be defined ad-hoc by the user. The way function `σ` and other types of constitutive laws are defined  in Gridap is by using the supplied macro `@law`:

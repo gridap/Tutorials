@@ -235,7 +235,7 @@ X = MultiFieldFESpace([Us,Uf,Pf])
 function a_s(x,y)
   us,uf,p = x
   vs,vf,q = y
-  inner( ε(vs), σ_s(ε(us)) )
+	ε(vs) ⊙ σ_s(ε(us))
 end
 
 # - $a_f(\mathbf{x}^h,\mathbf{y}^h)$ is the bilinear form associated with the fluid counterpart, defined as
@@ -245,7 +245,7 @@ end
 function a_f(x,y)
   us,uf,p = x
   vs,vf,q = y
- inner( ε(vf), σ_dev_f(ε(uf)) ) - (∇*vf)*p + q*(∇*uf)
+  (ε(vf) ⊙ σ_dev_f(ε(uf))) - (∇⋅vf)*p + q*(∇⋅uf)
 end
 
 # - $a_{fs}(\mathbf{x}^h,\mathbf{y}^h)$ is the bilinear form associated with the coupling between fluid and solid counterparts. To difine this form we use the well known Nitsche's method, which enforces the continuity of fluid and solid velocities as well as the continuity of the normal stresses, see for instance [2]. The final expression for this term reads:
@@ -272,9 +272,9 @@ function a_fs(x,y)
   vs = -jump(vs_Γ)
   εuf = jump(ε(uf_Γ))
   εvf = jump(ε(vf_Γ))
-  penaltyTerms = α*vf*uf - α*vf*us - α*vs*uf + α*vs*us
-	integrationByParts = ( vf*(p*n_Γfs) - vf*(n_Γfs*σ_dev_f(εuf)) ) - ( vs*(p*n_Γfs) - vs*(n_Γfs*σ_dev_f(εuf)) )
-	symmetricTerms =  ( q*(n_Γfs*uf) - χ*(n_Γfs*σ_dev_f(εvf))*uf ) - ( q*(n_Γfs*us) - χ*(n_Γfs*σ_dev_f(εvf))*us )
+  penaltyTerms = α*vf⋅uf - α*vf⋅us - α*vs⋅uf + α*vs⋅us
+	integrationByParts = ( vf⋅(p*n_Γfs) - vf⋅(n_Γfs⋅σ_dev_f(εuf)) ) - ( vs⋅(p*n_Γfs) - vs⋅(n_Γfs⋅σ_dev_f(εuf)) )
+	symmetricTerms =  ( q*(n_Γfs⋅uf) - χ*(n_Γfs⋅σ_dev_f(εvf))⋅uf ) - ( q*(n_Γfs⋅us) - χ*(n_Γfs⋅σ_dev_f(εvf))⋅us )
   penaltyTerms + integrationByParts + symmetricTerms
 end
 
@@ -284,7 +284,7 @@ end
 # ```
 function l_s(y)
   vs,vf,q = y
-  vs*s
+  vs⋅s
 end
 
 # - $l_f(\mathbf{y}^h)$ is the linear form associated with the fluid counterpart, defined as
@@ -293,7 +293,7 @@ end
 # ```
 function l_f(y)
   vs,vf,q = y
-  vf*f + q*g
+  vf⋅f + q*g
 end
 
 # - $l_{f,\Gamma_N}(\mathbf{y}^h)$ is the linear form associated with the fluid Neumann boundary condition, defined as
@@ -302,7 +302,7 @@ end
 # ```
 function l_f_Γn(y)
   vs,vf,q = y
-  vf*hN
+  vf⋅hN
 end
 
 # ```@raw HTML
@@ -406,7 +406,7 @@ quad_ΓS = CellQuadrature(trian_ΓS,bdegree)
 n_ΓS = get_normal_vector(trian_ΓS)
 uh_ΓS = restrict(uhf_fluid,trian_ΓS)
 ph_ΓS = restrict(ph_fluid,trian_ΓS)
-FD, FL = sum( integrate( (σ_dev_f(ε(uh_ΓS))*n_ΓS - ph_ΓS*n_ΓS), trian_ΓS, quad_ΓS ) )
+FD, FL = sum( integrate( (n_ΓS⋅σ_dev_f(ε(uh_ΓS))) - ph_ΓS*n_ΓS, trian_ΓS, quad_ΓS ) )
 println("Drag force: ", FD)
 println("Lift force: ", FL)
 

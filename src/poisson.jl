@@ -110,7 +110,7 @@ bquad = CellQuadrature(btrian,degree)
 # With all the ingredients presented so far, we are ready to define the weak form. This is done by means of types inheriting from the abstract type `FETerm`. In this tutorial, we will use the sub-types `AffineFETerm` and `FESource`. An `AffineFETerm` is a term that contributes both to the system matrix and the right-hand-side vector, whereas a `FESource` only contributes to the right hand side vector. Here, we use an `AffineFETerm` to represent all the terms in the weak form that are integrated over the interior of the domain $\Omega$.
 
 f(x) = 1.0
-a(u,v) = ∇(v)*∇(u)
+a(u,v) = ∇(v)⊙∇(u)
 b_Ω(v) = v*f
 t_Ω = AffineFETerm(a,b_Ω,trian,quad)
 

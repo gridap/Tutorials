@@ -22,11 +22,11 @@ J(F) = sqrt(det(C(F)))
 
 #E(F) = 0.5*( F'*F - one(F) )
 
-@law dE(∇du,∇u) = 0.5*( ∇du*F(∇u) + (∇du*F(∇u))' )
+@law dE(∇du,∇u) = 0.5*( ∇du⋅F(∇u) + (∇du⋅F(∇u))' )
 
 # Right Cauchy-green deformation tensor
 
-C(F) = (F')*F
+C(F) = (F')⋅F
 
 # Constitutive law (Neo hookean)
 
@@ -38,20 +38,20 @@ end
 @law function dS(∇du,∇u)
   Cinv = inv(C(F(∇u)))
   _dE = dE(∇du,∇u)
-  λ*inner(Cinv,_dE)*Cinv + 2*(μ-λ*log(J(F(∇u))))*Cinv*_dE*(Cinv')
+	λ*(Cinv⊙_dE)*Cinv + 2*(μ-λ*log(J(F(∇u))))*Cinv⋅_dE⋅(Cinv')
 end
 
 # Cauchy stress tensor
 
-@law σ(∇u) = (1.0/J(F(∇u)))*F(∇u)*S(∇u)*(F(∇u))'
+@law σ(∇u) = (1.0/J(F(∇u)))*F(∇u)⋅S(∇u)⋅(F(∇u))'
 
 # Weak form
 
-res(u,v) = inner( dE(∇(v),∇(u)) , S(∇(u)) )
+res(u,v) = dE(∇(v),∇(u)) ⊙ S(∇(u))
 
-jac_mat(u,du,v) = inner( dE(∇(v),∇(u)), dS(∇(du),∇(u)) )
+jac_mat(u,du,v) =  dE(∇(v),∇(u)) ⊙ dS(∇(du),∇(u))
 
-jac_geo(u,du,v) = inner( ∇(v), S(∇(u))*∇(du) )
+jac_geo(u,du,v) = ∇(v) ⊙ ( S(∇(u))⋅∇(du) )
 
 jac(u,du,v) = jac_mat(u,v,du) + jac_geo(u,v,du)
 

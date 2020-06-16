@@ -112,17 +112,17 @@ X = MultiFieldFESpace([U, P])
 # The different terms of the nonlinear weak form for this example are defined following an approach similar to the one discussed for the $p$-Laplacian equation, but this time using the notation for multi-field problems.
 
 const Re = 10.0
-@law conv(u,∇u) = Re*(∇u')*u
+@law conv(u,∇u) = Re*(∇u')⋅u
 @law dconv(du,∇du,u,∇u) = conv(u,∇du)+conv(du,∇u)
 
 function a(x,y)
   u, p = x
   v, q = y
-  inner(∇(v),∇(u)) - (∇*v)*p + q*(∇*u)
+  ∇(v)⊙∇(u) - (∇⋅v)*p + q*(∇⋅u)
 end
 
-c(u,v) = v*conv(u,∇(u))
-dc(u,du,v) = v*dconv(du,∇(du),u,∇(u))
+c(u,v) = v⊙conv(u,∇(u))
+dc(u,du,v) = v⊙dconv(du,∇(du),u,∇(u))
 
 function res(x,y)
   u, p = x

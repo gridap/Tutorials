@@ -91,15 +91,15 @@ using LinearAlgebra: norm
 const p = 3
 @law flux(∇u) = norm(∇u)^(p-2) * ∇u
 f(x) = 1
-res(u,v) = ∇(v)*flux(∇(u)) - v*f
+res(u,v) = ∇(v)⊙flux(∇(u)) - v*f
 
 # Function `res` is the one representing the integrand of the weak residual $[r(u)](v)$. The first argument of function `res` stands for the function $u\in U_g$, where the residual is evaluated, and the second argument stands for a generic test function $v\in V_0$. Note that we have used the macro `@law` to construct the "constitutive  law" that relates the nonlinear flux with the gradient of the solution.
 # 
 # On the other hand,  we implement a function `jac` representing the integrand of the Jacobian
 
 @law dflux(∇du,∇u) =
-  (p-2)*norm(∇u)^(p-4)*inner(∇u,∇du)*∇u + norm(∇u)^(p-2) * ∇du
-jac(u,du,v) = ∇(v)*dflux(∇(du),∇(u))
+  (p-2)*norm(∇u)^(p-4)*(∇u ⊙ ∇du)*∇u + norm(∇u)^(p-2) * ∇du
+jac(u,du,v) = ∇(v)⊙dflux(∇(du),∇(u))
 
 # The first argument of function `jac` stands for function $u\in U_g$, where the Jacobian is evaluated. The second argument is a test function $v\in V_0$, and the third argument represents an arbitrary direction $\delta u \in V_0$. Note that we have also used the macro `@law` to define the linearization of the nonlinear flux. 
 # 

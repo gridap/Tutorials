@@ -168,7 +168,6 @@ end
 #
 # Since we have constructed a new constitutive law, we need to re-define the bilinear form of the problem:
 
-#a(u,v) = inner( ε(v), σ_bimat(ε(u),tags) )
 a(u,v) = ε(v) ⊙ σ_bimat(ε(u),tags) 
 
 # In previous line, pay attention in the usage of the new constitutive law `σ_bimat`. Note that we have passed the vector `tags` containing the material identifiers in the last argument of the function`.

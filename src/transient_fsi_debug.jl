@@ -128,7 +128,7 @@ const ρ_f = 1.0e3
 const μ_f = ρ_f * Um * ⌀ / Re
 const β_m = 4 # β_m = λ_m / μ_m
 const E_m = 1.0
-const ν_m = 0.2
+const ν_m = 0.25
 
 # ### Constitutive laws
 @law F(∇u) = ∇u + one(∇u)
@@ -144,7 +144,7 @@ const ν_m = 0.2
 #@law σ_m2(α,∇ut,Finv) = 16.0*α*μ_s*tr(∇ut⋅Finv)*one(Finv) + α*μ_s*(∇ut⋅Finv + (Finv')⋅(∇ut')) 
 @law conv(c,∇v) = (∇v') ⋅ c
 @law Sm(∇u) = 2*μ_m*E(∇u) + λ_m*tr(E(∇u))*one(E(∇u))
-@law α(ve,J) = 5.0e-4/(J)
+@law α(ve,J) = 1.0e-5/(J)
 @law λ_m(α) = α * (E_m*ν_m) / ((1.0+ν_m)*(1.0-2.0*ν_m))
 @law μ_m(α) = α * E_m / (2.0*(1.0+ν_m))
 #@law λ_m(J) = (E_m*ν_m) / ((1.0+ν_m)*(1.0-2.0*ν_m))
@@ -159,7 +159,7 @@ const ν_m = 0.2
 @law dFinvT(∇u,∇du) = (dFinv(∇u,∇du)')
 @law dconv(dc,∇dv,c,∇v) = conv(c,∇dv) + conv(dc,∇v)
 @law dSm(∇u,∇du) = 2*μ_m*dE(∇u,∇du) + λ_m*tr(dE(∇u,∇du))*one(E(∇u))
-@law dα(ve,J,dJ) = - 5.0e-4 * 1.0 / (J*J) * dJ
+@law dα(ve,J,dJ) = - 1.0e-5 * 1.0 / (J*J) * dJ
 @law dλ_m(dα) = dα * (E_m*ν_m) / ((1.0+ν_m)*(1.0-2.0*ν_m))
 @law dμ_m(dα) = dα * E_m / (2.0*(1.0+ν_m))
 @law dσ_m(dα,ε) = dλ_m(dα)*tr(ε)*one(ε) + 2.0*dμ_m(dα)*ε

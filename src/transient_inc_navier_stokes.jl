@@ -2,7 +2,10 @@
 
 #md # !!! note
 #
-#     This tutorial is under construction, but the code below is already functional.
+#     In this tutorial we solve the benchmark descrived in [1], consisting on a transient incompressible flow over a cylinder.
+#
+#     This tutorial is under construction, but the code below is well commented and fully functional.
+#     For a detailed description of the weak form of the problem, see the static version of the incompressible Navier-Stokes equations tutorial.
 #
 
 using Gridap
@@ -154,11 +157,10 @@ function computeForces(model::DiscreteModel, sol, xh0)
         ## Get the solution at n+θ (where velocity and pressure are balanced)
         uh = xh.blocks[1]
         ph = xh.blocks[2]
+        uhθ = θ * uh + (1.0 - θ) * uhn
         phθ = θ * ph + (1.0 - θ) * phn
-        uh_Γc = restrict(uh, trian_Γc)
-        uhn_Γc = restrict(uhn, trian_Γc)
+        uh_Γc = restrict(uhθ, trian_Γc)
         ph_Γc = restrict(phθ, trian_Γc)
-        εθ = θ * ε(uh_Γc) + (1.0 - θ) * ε(uhn_Γc)
         FD, FL = sum(integrate(
             (n_Γc ⋅ σ_dev(ε(uh_Γc))  - ph_Γc * n_Γc),
             trian_Γc,
@@ -211,7 +213,7 @@ function runCylinder(model::DiscreteModel, labels)
 
     ## Multifield FE spaces
     Y = MultiFieldFESpace([V, Q])
-    X = MultiFieldFESpace([U, P])
+    X = TransientMultiFieldFESpace([U, P])
     X0 = MultiFieldFESpace([U0, P])
 
     ### Triangulation and CellQuadrature

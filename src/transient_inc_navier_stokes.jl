@@ -292,7 +292,7 @@ println("CDmax: ", maximum(CD), ", CLmax: ", maximum(CL))
 #
 # | QoI | CD_max | CL_max |
 # | :---: | :---:| :---: |
-# | Computed | 3.178 | 1.012 |
+# | Computed | 3.178 | 1.011 |
 # | Reference range | [3.220, 3.24] | [0.990,1.010] |
 #
 

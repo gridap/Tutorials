@@ -10,7 +10,7 @@ Depth = 1
 
 ## How to start
 
-There are different ways to access to the tutorials:
+There are different ways to use the tutorials:
 
 - **[Recommended]** Reading the html version of the tutorials. This is the recommended way if you want rapid access to the material with no setup steps. Simply click in one of the links in the [Contents](@ref) section.
 - **[Recommended]** Running the Jupyter notebooks locally. A working installation of Julia in the system is required. See instructions in the [How to run the notebooks locally](@ref) section. This is the recommended way to follow the tutorials if you want to run the code and inspect the generated results with Paraview.

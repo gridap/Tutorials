@@ -8,6 +8,8 @@
 
 # Let us start including `Gridap` and some of its packages, to have access to
 # a rich set of not so high-level methods
+# Note that the module `Gridap` provides the high-level API, whereas the sub-modules
+# like `Gridap.FESpaces` provide access to the different parts of the low-level API.
 
 using Gridap
 using Gridap.FESpaces
@@ -22,7 +24,7 @@ using Test
 # high-level interface. In this tutorial, we are not going to describe the
 # most of the geometrical machinery in detail, only what is relevant for the
 # discussion. To simplify the analysis of the outputs,
-# you can considered a 1D mesh, i.e., `D=1` (everything below works for any dim without
+# you can considered a 2D mesh, i.e., `D=2` (everything below works for any dim without
 # any extra complication). In order to make things slightly more interesting,
 # e.g., having non-constant Jacobians, we have considered a mesh that is
 # a stretching of a equal-sized structured mesh.
@@ -31,10 +33,32 @@ L = 2 # Domain length
 D = 2 # dim
 n = 4 # parts per dim
 
+#@fverdugo: Avoid generating a temporary array at each Gauss point. Eg:
+#function stretching(x::Point)
+# m = zero(mutable(x))
+# m[1] = x[1]^2
+# for i in 2:D
+#  m[i] = x[i]
+# end
+# Point(m)
+#end
+#@fverdugo now `mutable` returns a type. I would change this is a future version.
+#`mutable` should return an object with a copy of the input state and `Mutable` a type, so that we can write
+#
+#function stretching(x::Point)
+# m = mutable(x)
+# m[1] = x[1]^2
+# Point(m)
+#end
+#
 function stretching(x)
   a = Point([i==1 ? x[i]^2 : x[i] for i in 1:D])
 end
 
+#@fverdugo perhaps more clear
+#pmin = Point(Fill(0,D))
+#pmax = Point(Fill(L,D))
+#model = CartesianDiscreteModel(pmin,pmax,partition,map=stretching)
 Ω = Tuple([ L*mod(i,2) for i in 1:2*D]) # i.e., (0,L)^D
 partition = Tuple(Fill(n,D))
 model = CartesianDiscreteModel(Ω,partition,map=stretching)
@@ -60,8 +84,8 @@ Qₕ = CellQuadrature(Tₕ,2*order)
 # `Gridap`) in the parametric space in which finite element spaces are usually
 # defined (and always integrated) and their corresponding weights.
 
-q = get_coordinates(Qₕ)
-w = get_weights(Qₕ)
+qₖ = get_coordinates(Qₕ)
+wₖ = get_weights(Qₕ)
 
 # ## Exploring FE functions in `Gridap`
 
@@ -74,7 +98,7 @@ uₕ = FEFunction(Uₕ,rand(num_free_dofs(Uₕ)))
 
 uₖ = get_array(uₕ)
 
-# An essential part of `Gridap` is the concept of `Field`. It provide an
+# An essential part of `Gridap` is the concept of `Field`. It provides an
 # abstract representation of a physical field of scalar (e.g., a `Float64`),
 # vector (`VectorValue`), or tensor (`TensorValue`) type that takes points
 # (`Point`) in the domain in which it is defined and returns the scalar,
@@ -89,16 +113,19 @@ uₖ = get_array(uₕ)
 # map in FE methods.
 
 # **SB: get_cell_dof_labels ?**
+# @fverdugo I would call it `get_cell_dof_ids` (since with have get_cell_id(trian))
 
 σₖ = get_cell_dofs(Uₕ)
 
 # Finally, we can extract the vector of values.
 
 # **SB: get_dof_values is more precise, or get_cell_dof_values**
+# @fverdugo all the functions that return a cell-wise array are called get_cell_*
+# So, I would call it `get_cell_dof_values`
 
 Uₖ = get_cell_values(uₕ)
 
-# Take a look at the kind of array
+# Take a look at the type of array
 # it is. In Gridap we put negative labels to fixed DOFs and positive to free DOFs,
 # thus we use an array that combines σₖ with the two arrays of free and fixed values
 # accessing the right one depending on the index. But everything is lazy, only
@@ -114,6 +141,12 @@ du = get_cell_basis(Uₕ)
 # We note that these bases differ from the fact that the first one is of
 # test type and the second one of trial type (in the Galerkin method). This information
 # is consumed in different parts of the code.
+
+is_test(dv)
+
+##
+
+is_trial(du)
 
 # ## The geometrical model
 
@@ -135,10 +168,14 @@ du = get_cell_basis(Uₕ)
 # global array of `Point`. You can see that such array is stored using Cartesian
 # indices instead of linear indices. It is more natural for Cartesian meshes.
 
+#@fverdugo this function is only available for `Grid` objects, not for general `Triangulation` objects
+# Not so important since we could implement this function for a generic triangulation
+# as concatenation of the cell nodes
 X = get_node_coordinates(Tₕ)
 
 # You can also extract a cell-wise array that provides the node indices per cell
 
+#@fverdugo idem, only for Grid at this moment
 ctn = get_cell_nodes(Tₕ)
 
 # or the cell-wise nodal coordinates, combining the previous two arrays
@@ -191,12 +228,13 @@ Xₖ = LocalToGlobalArray(ctn,X)
 # Next, we can compute the geometrical map as the combination of these shape
 # functions in the parametric space with the node coordinates (at each cell)
 
-lc = Fill(Gridap.Fields.LinComValued(),num_cells(model))
-ψₖ = apply(lc,ϕrgₖ,Xₖ)
+lc = Gridap.Fields.LinComValued()
+lcₖ = Fill(lc,num_cells(model))
+ψₖ = apply(lcₖ,ϕrgₖ,Xₖ)
 
 #
 
-@test evaluate(ψₖ,q) == evaluate(ξₖ,q) # check
+@test evaluate(ψₖ,qₖ) == evaluate(ξₖ,qₖ) # check
 
 # We have re-computed (in a low-level way) the geometrical map. First, we have
 # created a (constant) array with the kernel `LinComValued`. We have internally
@@ -205,6 +243,12 @@ lc = Fill(Gridap.Fields.LinComValued(),num_cells(model))
 # nodal coordinates in the physical space (which are `VectorValued`). This is the
 # mathematical definition of the geometrical map in FEs!
 
+#@fverdugo Note that since we use the same kernel for all cells, we don't need to build the array of kernels
+# `lcₖ`, we can simply write
+
+ψₖ = apply(lc,ϕrgₖ,Xₖ)
+
+@test evaluate(ψₖ,qₖ) == evaluate(ξₖ,qₖ) # check
 
 # ** SB: Why Valued? It means to me that this kernel evaluates the basis in **
 # points first and next combines, but this in not the case (globally). It is the
@@ -212,8 +256,16 @@ lc = Fill(Gridap.Fields.LinComValued(),num_cells(model))
 # Valued. Then the problem is the array kernel LinCom I guess. Probably this is
 # the reason. We should make a difference between operations over fields and
 # arrays, e.g., LinearCombinationFields and LinearCombination?
+#
+# @fverdugo: We need two different kernels: one that returns a field (LinComValued)
+# and another that operates on the result of evaluating the basis (LinCom).
+# Perhaps, better names needed...
 
 # ** SB : Valued -> Evaluated ? **
+
+#@fverdugo Perhaps `LinearCombinationKernel` (currentlly LinComValued) the one that returns a field,
+#and `LinearCombinationResultKernel` the one that operates on the result.
+
 
 # At this point, let us define what `apply` is doing. It creates an `AppliedArray`,
 # which is one of the essential components of `Gridap`. An `AppliedArray` is a
@@ -226,6 +278,12 @@ lc = Fill(Gridap.Fields.LinComValued(),num_cells(model))
 # traversing these arrays. It is probably a good time to take a look at `AppliedArray`
 # and the abstract API of `Kernel` in `Gridap`.
 
+#@fverdugo perhaps it is good to mention that
+# apply(k,a,b) is equivalent to
+# map((ai,bi)->apply_kernel(k,ai,bi),a,b) but with a lazy result instead of a plain julia array.
+# In any case, it is perhaps a good idea to start writting a tutorial
+# on the Gridap.Array and Gridap.Fields before this one
+
 # With this, we can compute the Jacobian (cell-wise).
 # The Jacobian of the transformation is simply its gradient.
 # The gradient in the parametric space can be computed as a gradient of the
@@ -235,7 +293,7 @@ lc = Fill(Gridap.Fields.LinComValued(),num_cells(model))
 
 #
 
-@test evaluate(∇ϕrgₖ,q) == evaluate(∇(ϕrgₖ),q)
+@test evaluate(∇ϕrgₖ,qₖ) == evaluate(∇(ϕrgₖ),qₖ)
 
 #
 
@@ -243,7 +301,7 @@ J = apply(lc,∇ϕrgₖ,Xₖ)
 
 #
 
-@test all(evaluate(J,q) .≈ evaluate(∇(ξₖ),q))
+@test all(evaluate(J,qₖ) .≈ evaluate(∇(ξₖ),qₖ))
 
 # ## A low-level definition of FE space bases
 
@@ -258,12 +316,12 @@ reffe = LagrangianRefFE(T,pol,order)
 
 # As stated in FE theory, we can now define the shape functions in the physical
 # space, which are conceptually $ϕ(x) = ϕr_K(X)∘ξ_K^{-1}(x)$. We provide a kernel
-# for this, `AddMap`. First, we create the constant array
-# with this kernel, and then we apply it to the basis in the parametric space and
+# for this, `AddMap`. First, we create this kernel,
+# and then we apply it to the basis in the parametric space and
 # the geometrical map
 
-mapₖ = Fill(Gridap.Fields.AddMap(),num_cells(Tₕ))
-ϕₖ = apply(mapₖ,ϕrₖ,ξₖ)
+map = Gridap.Fields.AddMap()
+ϕₖ = apply(map,ϕrₖ,ξₖ)
 
 @test ϕₖ === attachmap(ϕrₖ,ξₖ)
 
@@ -287,13 +345,16 @@ mapₖ = Fill(Gridap.Fields.AddMap(),num_cells(Tₕ))
 # space). It takes again the cell map ξₖ
 
 # **SB: Why don't we take it from ϕₖ?**
+#
+# @fverdugo because `ϕₖ` can be anything that is an array of fields (bases in this case).
 
+# @fverdugo Perhaps we can do the tutorial without mentioning GenericCellBasis
 bₖ = GenericCellBasis(Val{false}(),ϕₖ,ξₖ,Val{true}())
 
 # We can check that the basis we have created return the same values as the
 # one obtained with high-level APIs
 
-@test collect(evaluate(dv,q)) == collect(evaluate(bₖ,q))
+@test collect(evaluate(dv,qₖ)) == collect(evaluate(bₖ,qₖ))
 
 # Another salient feature if Gridap is that for these finite element bases,
 # we can readily compute the gradient as ∇(ϕₖ), which internally is implemented
@@ -306,18 +367,18 @@ bₖ = GenericCellBasis(Val{false}(),ϕₖ,ξₖ,Val{true}())
 # It would be nice to create here the gradient in the physical space
 # with basic Gridap tools.
 
-gradₖ = Fill(Gridap.Fields.Valued(Gridap.Fields.PhysGrad()),num_cells(Tₕ))
+grad = Gridap.Fields.Valued(Gridap.Fields.PhysGrad())
 ∇ϕrₖ = Fill(Gridap.Fields.FieldGrad(ϕr),num_cells(Tₕ))
-∇ϕₖ = apply(gradₖ,∇ϕrₖ,J)
+∇ϕₖ = apply(grad,∇ϕrₖ,J)
 
 #
 
-@test evaluate(∇ϕₖ,q) == evaluate(∇(ϕₖ),q)
+@test evaluate(∇ϕₖ,qₖ) == evaluate(∇(ϕₖ),qₖ)
 
 # We can work evaluate both the CellBasis and the array of physical shape functions,
 # and check we get the same.
 
-@test evaluate(∇ϕₖ,q) == evaluate(∇(bₖ),q) == evaluate(∇(dv),q)
+@test evaluate(∇ϕₖ,qₖ) == evaluate(∇(bₖ),qₖ) == evaluate(∇(dv),qₖ)
 
 # ## A low-level definition of the FE function
 
@@ -329,18 +390,18 @@ gradₖ = Fill(Gridap.Fields.Valued(Gridap.Fields.PhysGrad()),num_cells(Tₕ))
 # In fact, we can create uₖ by our own with the ingredients we already have. uₖ is an
 # array that linearly combines the basis ϕₖ and the dof values Uₖ at each cell.
 # The kernel that does this in Gridap is `LinComValued()`. So, we create a
-# cell array with this kernel (a constant one, using `Fill`) and create
+# this kernel and create
 # and applied array with all these ingredients. As above, it is a lazy array
 # that will return the shape functions at each cell in the physical space
 
 # SB: Renaming here for LinComValued(), explain diff with LinCom()
 
-lc = Fill(Gridap.Fields.LinComValued(),num_cells(model))
-uₖ = Gridap.Arrays.AppliedArray(lc,ϕₖ,Uₖ)
+lc = Gridap.Fields.LinComValued()
+uₖ = apply(lc,ϕₖ,Uₖ)
 
 # We can check that we get the same results as uₕ
 
-@test evaluate(uₖ,q) == evaluate(uₕ,q)
+@test evaluate(uₖ,qₖ) == evaluate(uₕ,qₖ)
 
 # Now, since we can apply the gradient over this array
 
@@ -354,7 +415,7 @@ aux = ∇(uₖ)
 
 # We can check we get the expected result
 
-@test evaluate(∇uₖ,q) == evaluate(aux,q)
+@test evaluate(∇uₖ,qₖ) == evaluate(aux,qₖ)
 
 # ## A low-level implementation of the residual integration and assembly
 
@@ -370,16 +431,17 @@ intg = ∇(uₕ)⋅∇(dv)
 # First, we create an array that for each cell returns the dot operator
 
 # SB: Explain why the Valued is needed?
+# @fverdugo since you want to apply to fields a kernel that is defined on their result
+# We need to clarify this in a previous tutorial on Gridap.Fields
 
 dotop = Gridap.Fields.FieldBinOp(dot)
-dotₖ = Gridap.Fields.Valued(Fill(dotop,num_cells(model)))
-Iₖ = apply(dotₖ,∇uₖ,∇ϕₖ)
+dotopv = Gridap.Fields.Valued(dotop)
+Iₖ = apply(dotopv,∇uₖ,∇ϕₖ)
 # Next we consider a lazy `AppliedArray` that applies the `dot_ₖ` array of
 # operations (binary operator) over the gradient of the FE function and
 # the gradient of the FE basis in the physical space
 
-Iₖ = apply(dotₖ,∇uₖ,∇ϕₖ)
-@test evaluate(intg,q) == evaluate(Iₖ,q)
+@test evaluate(intg,qₖ) == evaluate(Iₖ,qₖ)
 
 # SB: Probably some comment about trial_style and ref_trait. Needed?
 
@@ -393,9 +455,9 @@ res = integrate(∇(uₕ)⋅∇(dv),Tₕ,Qₕ)
 # the `IntKernel` over the integrand evaluated at the integration
 # points, the weights, and the Jacobian evaluated at the integration points
 
-Jq = evaluate(J,q)
-intq = evaluate(Iₖ,q)
-iwq = apply(Gridap.Fields.IntKernel(),intq,w,Jq)
+Jq = evaluate(J,qₖ)
+intq = evaluate(Iₖ,qₖ)
+iwq = apply(Gridap.Fields.IntKernel(),intq,wₖ,Jq)
 
 @test all(res .≈ iwq)
 
@@ -407,6 +469,8 @@ collect(iwq)
 # Alternatively, we could use the high-level API that creates a `LinearFETerm`
 # that is the composition of a lambda-function with the bilinear form,
 # triangulation and quadrature
+
+#@fverdugo perhaps FETerms not needed in this tutorial
 
 blf(u,v) = ∇(u)⋅∇(v)
 term = LinearFETerm(blf,Tₕ,Qₕ)
@@ -442,12 +506,12 @@ assemble_vector!(b,assem,rs)
 # After computing the residual, we use similar ideas for the Jacobian.
 # The process is the same as above, so it does not require more explanations
 
-int = apply(dotₖ,∇(ϕₖ),∇(ϕₖ))
-@test all(collect(evaluate(int,q)) .== collect(evaluate(∇(du)⋅∇(dv),q)))
+int = apply(dotopv,∇(ϕₖ),∇(ϕₖ))
+@test all(collect(evaluate(int,qₖ)) .== collect(evaluate(∇(du)⋅∇(dv),qₖ)))
 
-intq = evaluate(int,q)
-Jq = evaluate(J,q)
-iwq = apply(Gridap.Fields.IntKernel(),intq,w,Jq)
+intq = evaluate(int,qₖ)
+Jq = evaluate(J,qₖ)
+iwq = apply(Gridap.Fields.IntKernel(),intq,wₖ,Jq)
 
 jac = integrate(int,Tₕ,Qₕ)
 @test collect(iwq) == collect(jac)

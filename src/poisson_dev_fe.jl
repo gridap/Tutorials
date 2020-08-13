@@ -167,7 +167,10 @@ _Xₖ = get_cell_coordinates(Tₕ)
 # First, we start with the reference topology of the representation that we
 # will use for the geometry. In this example, we consider that the geometry
 # is represented with a bilinear map, and we use a scalar-valued FE space to
-# combine the nodal coordinate values which is a Lagrangian first order space
+# combine the nodal coordinate values which is a Lagrangian first order space.
+# To this end, we first need to create a Polytope using an array of dimension D
+# with the parameter HEX_AXIS. This respresents an n-cube of dimension D. Then,
+# this is used to create the scalar first order Lagrangian reference FE.
 # It is not the purpose of this tutorial to describe the `ReferenceFE` in Gridap.
 
 pol = Polytope((Fill(HEX_AXIS,D)...))
@@ -230,7 +233,7 @@ lcₖ = Fill(lc,num_cells(model))
 # only computed when accessing the corresponding index, thus lazy. This way,
 # we are implementing expression trees of arrays. On top of this, these arrays
 # can be arrays of `Field`, as `ϕrgₖ` above. These lazy arrays are implemented
-# in an efficient way, creating a cache for the result of evaluating it a a given
+# in an efficient way, creating a cache for the result of evaluating it at a given
 # index. This way, the code is performant, and does involve allocations when
 # traversing these arrays. It is probably a good time to take a look at `AppliedArray`
 # and the abstract API of `Kernel` in `Gridap`.

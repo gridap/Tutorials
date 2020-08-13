@@ -1,3 +1,9 @@
+# Disclaimer: This tutorial is about a low-level definition of finite element
+# methods. It would be nice to have two (or three) previous tutorials, about
+# `Field`, the lazy array machinery related to `AppliedArray` for _numbers_,
+# and the combination of both to create lazy arrays that involve fieds. This
+# is work in progress.
+
 # This tutorial is advanced and you only need to go through this if you want
 # to know the internals of `Gridap` and what it is doing under the hood.
 # Even though you will likely want to use the high-level APIs in `Gridap`,
@@ -33,36 +39,19 @@ L = 2 # Domain length
 D = 2 # dim
 n = 4 # parts per dim
 
-#@fverdugo: Avoid generating a temporary array at each Gauss point. Eg:
-#function stretching(x::Point)
-# m = zero(mutable(x))
-# m[1] = x[1]^2
-# for i in 2:D
-#  m[i] = x[i]
-# end
-# Point(m)
-#end
-#@fverdugo now `mutable` returns a type. I would change this is a future version.
-#`mutable` should return an object with a copy of the input state and `Mutable` a type, so that we can write
-#
-#function stretching(x::Point)
-# m = mutable(x)
-# m[1] = x[1]^2
-# Point(m)
-#end
-#
-function stretching(x)
-  a = Point([i==1 ? x[i]^2 : x[i] for i in 1:D])
+function stretching(x::Point)
+m = zero(mutable(x))
+m[1] = x[1]^2
+for i in 2:D
+ m[i] = x[i]
+end
+Point(m)
 end
 
-#@fverdugo perhaps more clear
-#pmin = Point(Fill(0,D))
-#pmax = Point(Fill(L,D))
-#model = CartesianDiscreteModel(pmin,pmax,partition,map=stretching)
-Ω = Tuple([ L*mod(i,2) for i in 1:2*D]) # i.e., (0,L)^D
+pmin = Point(Fill(0,D))
+pmax = Point(Fill(L,D))
 partition = Tuple(Fill(n,D))
-model = CartesianDiscreteModel(Ω,partition,map=stretching)
-
+model = CartesianDiscreteModel(pmin,pmax,partition,map=stretching)
 
 # Now, we define the finite element (FE) spaces (Lagrangian, scalar, H1-conforming, i.e.
 # continuous). We are going to extract from these FE spaces some information to
@@ -112,16 +101,9 @@ uₖ = get_array(uₕ)
 # We can also extract the global indices of the DOFs in each cell, the well-known local-to-global
 # map in FE methods.
 
-# **SB: get_cell_dof_labels ?**
-# @fverdugo I would call it `get_cell_dof_ids` (since with have get_cell_id(trian))
-
 σₖ = get_cell_dofs(Uₕ)
 
 # Finally, we can extract the vector of values.
-
-# **SB: get_dof_values is more precise, or get_cell_dof_values**
-# @fverdugo all the functions that return a cell-wise array are called get_cell_*
-# So, I would call it `get_cell_dof_values`
 
 Uₖ = get_cell_values(uₕ)
 
@@ -168,14 +150,10 @@ is_trial(du)
 # global array of `Point`. You can see that such array is stored using Cartesian
 # indices instead of linear indices. It is more natural for Cartesian meshes.
 
-#@fverdugo this function is only available for `Grid` objects, not for general `Triangulation` objects
-# Not so important since we could implement this function for a generic triangulation
-# as concatenation of the cell nodes
 X = get_node_coordinates(Tₕ)
 
 # You can also extract a cell-wise array that provides the node indices per cell
 
-#@fverdugo idem, only for Grid at this moment
 ctn = get_cell_nodes(Tₕ)
 
 # or the cell-wise nodal coordinates, combining the previous two arrays
@@ -206,8 +184,6 @@ reffe_g = LagrangianRefFE(Float64,pol,1)
 # cells. We can do this efficiently with `FillArrays` package and its `Fill` method, it
 # only stores the value once and returns it for whatever index.
 
-# **SB: Probably a comment about CompressedArrays, but I think we want to change it**
-
 ϕrgₖ = Fill(ϕrg,num_cells(model))
 
 # We can use the following `LocalToGlobalArray` in `Gridap` that returns a
@@ -232,6 +208,11 @@ lc = Gridap.Fields.LinComValued()
 lcₖ = Fill(lc,num_cells(model))
 ψₖ = apply(lcₖ,ϕrgₖ,Xₖ)
 
+# Note that since we use the same kernel for all cells, we don't need to build the array of kernels
+# `lcₖ`, we can simply write
+
+ψₖ = apply(lc,ϕrgₖ,Xₖ)
+
 #
 
 @test evaluate(ψₖ,qₖ) == evaluate(ξₖ,qₖ) # check
@@ -242,30 +223,6 @@ lcₖ = Fill(lc,num_cells(model))
 # takes the reference FE basis functions and linearly combines them using the
 # nodal coordinates in the physical space (which are `VectorValued`). This is the
 # mathematical definition of the geometrical map in FEs!
-
-#@fverdugo Note that since we use the same kernel for all cells, we don't need to build the array of kernels
-# `lcₖ`, we can simply write
-
-ψₖ = apply(lc,ϕrgₖ,Xₖ)
-
-@test evaluate(ψₖ,qₖ) == evaluate(ξₖ,qₖ) # check
-
-# ** SB: Why Valued? It means to me that this kernel evaluates the basis in **
-# points first and next combines, but this in not the case (globally). It is the
-# case at each cell... probably too complicated. I think I would eliminate
-# Valued. Then the problem is the array kernel LinCom I guess. Probably this is
-# the reason. We should make a difference between operations over fields and
-# arrays, e.g., LinearCombinationFields and LinearCombination?
-#
-# @fverdugo: We need two different kernels: one that returns a field (LinComValued)
-# and another that operates on the result of evaluating the basis (LinCom).
-# Perhaps, better names needed...
-
-# ** SB : Valued -> Evaluated ? **
-
-#@fverdugo Perhaps `LinearCombinationKernel` (currentlly LinComValued) the one that returns a field,
-#and `LinearCombinationResultKernel` the one that operates on the result.
-
 
 # At this point, let us define what `apply` is doing. It creates an `AppliedArray`,
 # which is one of the essential components of `Gridap`. An `AppliedArray` is a
@@ -278,11 +235,9 @@ lcₖ = Fill(lc,num_cells(model))
 # traversing these arrays. It is probably a good time to take a look at `AppliedArray`
 # and the abstract API of `Kernel` in `Gridap`.
 
-#@fverdugo perhaps it is good to mention that
-# apply(k,a,b) is equivalent to
-# map((ai,bi)->apply_kernel(k,ai,bi),a,b) but with a lazy result instead of a plain julia array.
-# In any case, it is perhaps a good idea to start writting a tutorial
-# on the Gridap.Array and Gridap.Fields before this one
+# It is good to mention that `apply(k,a,b)`` is equivalent to
+# map((ai,bi)->apply_kernel(k,ai,bi),a,b) but with a lazy result instead of a
+# plain julia array.
 
 # With this, we can compute the Jacobian (cell-wise).
 # The Jacobian of the transformation is simply its gradient.
@@ -325,7 +280,7 @@ map = Gridap.Fields.AddMap()
 
 @test ϕₖ === attachmap(ϕrₖ,ξₖ)
 
-# Again, the result is an `AppliedAray` that provides a `Field` at each cell.
+# Again, the result is an `AppliedArray` that provides a `Field` at each cell.
 
 # We note that when using ref FEs in the parametric space, the points in which
 # we will evaluate the function are also in the parametric space (quadrature in
@@ -334,21 +289,16 @@ map = Gridap.Fields.AddMap()
 # when computing its gradient, later on. There is another path in Gridap, which
 # defines reference FEs in the physical space, but it won't be considered here.
 
-# **SB: Change Val{false} and Val{true} with more name-revealing names**
-
-# Now, we can construct a `GenericCellBasis` struct, which represents our
-# shape functions. It takes ϕₖ (the shape functions) and some metadata, namely
+# Even though this is not essential for this tutorial, we note that we can
+# create a cell basis, a `GenericCellBasis` struct, which represents our
+# shape functions. It takes ϕₖ (the shape functions), the cell map ξₖ and some metadata,
+# namely
 # the trial style (the first argument, true means it is a trial FE space, test FE space otherwise
 # in the Galerkin method parlance),
 # the reference trait (the last Val{true}, true means FEs define in the reference
 # FE space, the most common case, false means FEs with DOFs defined in the physical
-# space). It takes again the cell map ξₖ
+# space).
 
-# **SB: Why don't we take it from ϕₖ?**
-#
-# @fverdugo because `ϕₖ` can be anything that is an array of fields (bases in this case).
-
-# @fverdugo Perhaps we can do the tutorial without mentioning GenericCellBasis
 bₖ = GenericCellBasis(Val{false}(),ϕₖ,ξₖ,Val{true}())
 
 # We can check that the basis we have created return the same values as the
@@ -356,16 +306,23 @@ bₖ = GenericCellBasis(Val{false}(),ϕₖ,ξₖ,Val{true}())
 
 @test collect(evaluate(dv,qₖ)) == collect(evaluate(bₖ,qₖ))
 
-# Another salient feature if Gridap is that for these finite element bases,
+# There are some objects in `Gridap` that are nothing but a lazy array plus
+# some metadata. Another example could be an array of arrays of points like `q`.
+# `q` points are in the reference space. You could consider creating `CellPoints`
+# with a trait that tells you whether this points are in the parametric or
+# physical space, and use dispatching based on that. E.g., if you have a reference
+# FE in the reference space, you can easily evaluate in the parametric space,
+# but you should map the points to the physical space first with `ξₖ` when
+# dealing with FEs in the physical space.
+
+# Another salient feature of Gridap is that for these finite element bases,
 # we can readily compute the gradient as ∇(ϕₖ), which internally is implemented
 # as a lazy array as follows
 
-# SB: The computation of the gradient of FE shape functions in the physical space
+# The computation of the gradient of FE shape functions in the physical space
 # would require to create a Kernel with the inv() to create the inv(J)
 # that is needed for the computation of derivatives in the physical space
 # but we have merged all the operations in the PhysGrad() kernel.
-# It would be nice to create here the gradient in the physical space
-# with basic Gridap tools.
 
 grad = Gridap.Fields.Valued(Gridap.Fields.PhysGrad())
 ∇ϕrₖ = Fill(Gridap.Fields.FieldGrad(ϕr),num_cells(Tₕ))
@@ -393,8 +350,6 @@ grad = Gridap.Fields.Valued(Gridap.Fields.PhysGrad())
 # this kernel and create
 # and applied array with all these ingredients. As above, it is a lazy array
 # that will return the shape functions at each cell in the physical space
-
-# SB: Renaming here for LinComValued(), explain diff with LinCom()
 
 lc = Gridap.Fields.LinComValued()
 uₖ = apply(lc,ϕₖ,Uₖ)
@@ -430,10 +385,6 @@ intg = ∇(uₕ)⋅∇(dv)
 
 # First, we create an array that for each cell returns the dot operator
 
-# SB: Explain why the Valued is needed?
-# @fverdugo since you want to apply to fields a kernel that is defined on their result
-# We need to clarify this in a previous tutorial on Gridap.Fields
-
 dotop = Gridap.Fields.FieldBinOp(dot)
 dotopv = Gridap.Fields.Valued(dotop)
 Iₖ = apply(dotopv,∇uₖ,∇ϕₖ)
@@ -442,8 +393,6 @@ Iₖ = apply(dotopv,∇uₖ,∇ϕₖ)
 # the gradient of the FE basis in the physical space
 
 @test evaluate(intg,qₖ) == evaluate(Iₖ,qₖ)
-
-# SB: Probably some comment about trial_style and ref_trait. Needed?
 
 # Now, we can finally compute the cell-wise residual array, which using
 # the high-level `integrate` function is
@@ -470,12 +419,10 @@ collect(iwq)
 # that is the composition of a lambda-function with the bilinear form,
 # triangulation and quadrature
 
-#@fverdugo perhaps FETerms not needed in this tutorial
-
 blf(u,v) = ∇(u)⋅∇(v)
 term = LinearFETerm(blf,Tₕ,Qₕ)
 
-# We can check that we get the same residual as the one defined above
+# and check that we get the same residual as the one defined above
 
 cellvals = get_cell_residual(term,uₕ,dv)
 @test cellvals == iwq

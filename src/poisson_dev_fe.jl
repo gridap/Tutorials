@@ -40,7 +40,7 @@ D = 2 # dim
 n = 4 # parts per dim
 
 function stretching(x::Point)
-m = zero(mutable(x))
+m = zeros(length(x)) # zero(mutable(x))
 m[1] = x[1]^2
 for i in 2:D
  m[i] = x[i]

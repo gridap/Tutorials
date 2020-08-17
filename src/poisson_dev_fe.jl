@@ -30,10 +30,10 @@ using Test
 # high-level interface. In this tutorial, we are not going to describe the
 # most of the geometrical machinery in detail, only what is relevant for the
 # discussion. To simplify the analysis of the outputs,
-# you can considered a 2D mesh, i.e., `D=2` (everything below works for any dim without
+# you can consider a 2D mesh, i.e., `D=2` (everything below works for any dim without
 # any extra complication). In order to make things slightly more interesting,
 # e.g., having non-constant Jacobians, we have considered a mesh that is
-# a stretching of a equal-sized structured mesh.
+# a stretching of an equal-sized structured mesh.
 
 L = 2 # Domain length
 D = 2 # dim
@@ -93,13 +93,12 @@ uₖ = get_array(uₕ)
 # (`Point`) in the domain in which it is defined and returns the scalar,
 # vector, and tensor values, resp. at these points. The method
 # `evaluate_field!` implements this operation; it evaluates the field in
-# a _vector_ of points (for
-# performance, it is _vectorised_ wrt points). It has been implemented with
-# caches for high performance. You can take a look at the `Field` abstract type in Gridap at
-# this point, and check its API.
+# a _vector_ of points (for performance, it is _vectorised_ wrt points). It has
+# been implemented with caches for high performance. You can take a look at the
+# `Field` abstract type in Gridap at this point, and check its API.
 
-# We can also extract the global indices of the DOFs in each cell, the well-known local-to-global
-# map in FE methods.
+# We can also extract the global indices of the DOFs in each cell, the well-known
+# local-to-global map in FE methods.
 
 σₖ = get_cell_dofs(Uₕ)
 
@@ -309,7 +308,7 @@ bₖ = GenericCellBasis(Val{false}(),ϕₖ,ξₖ,Val{true}())
 # There are some objects in `Gridap` that are nothing but a lazy array plus
 # some metadata. Another example could be an array of arrays of points like `q`.
 # `q` points are in the reference space. You could consider creating `CellPoints`
-# with a trait that tells you whether this points are in the parametric or
+# with a trait that tells you whether these points are in the parametric or
 # physical space, and use dispatching based on that. E.g., if you have a reference
 # FE in the reference space, you can easily evaluate in the parametric space,
 # but you should map the points to the physical space first with `ξₖ` when
@@ -332,7 +331,7 @@ grad = Gridap.Fields.Valued(Gridap.Fields.PhysGrad())
 
 @test evaluate(∇ϕₖ,qₖ) == evaluate(∇(ϕₖ),qₖ)
 
-# We can work evaluate both the CellBasis and the array of physical shape functions,
+# We can now evaluate both the CellBasis and the array of physical shape functions,
 # and check we get the same.
 
 @test evaluate(∇ϕₖ,qₖ) == evaluate(∇(bₖ),qₖ) == evaluate(∇(dv),qₖ)
@@ -375,7 +374,7 @@ aux = ∇(uₖ)
 # ## A low-level implementation of the residual integration and assembly
 
 # We have the array uₖ that returns the finite element function uₕ at
-# each cell, and its gradient ∇u.
+# each cell, and its gradient ∇uₖ.
 # Let us consider now the integration of (bi)linear forms. The idea is to
 # compute first the following residual for our random function uₕ
 
@@ -439,7 +438,7 @@ cellvals = get_cell_residual(term,uₕ,dv)
 assem = SparseMatrixAssembler(Uₕ,Vₕ)
 
 # We create a tuple with 1-entry arrays with the cell-wise vectors and cell ids.
-# If we would have additional terms, we would have more entries in the array.
+# If we had additional terms, we would have more entries in the array.
 # You can take a look at the `SparseMatrixAssembler` struct.
 
 cellids = get_cell_id(Tₕ) # == identity_vector(num_cells(trian))

@@ -55,7 +55,6 @@ model = CartesianDiscreteModel(pmin,pmax,partition,map=stretching)
 
 # Now, we define the finite element (FE) spaces (Lagrangian, scalar, H1-conforming, i.e.
 # continuous). We are going to extract from these FE spaces some information to
-# be used in the low-level handling of cell-wise arrays.
 
 u(x) = x[1] # Analytical solution (for Dirichlet data)
 
@@ -231,7 +230,7 @@ lcₖ = Fill(lc,num_cells(model))
 # we are implementing expression trees of arrays. On top of this, these arrays
 # can be arrays of `Field`, as `ϕrgₖ` above. These lazy arrays are implemented
 # in an efficient way, creating a cache for the result of evaluating it a a given
-# index. This way, the code is performant, and does involve allocations when
+# index. This way, the code is performant, and does not involve allocations when
 # traversing these arrays. It is probably a good time to take a look at `AppliedArray`
 # and the abstract API of `Kernel` in `Gridap`.
 
@@ -397,7 +396,6 @@ Iₖ = apply(dotopv,∇uₖ,∇ϕₖ)
 # Now, we can finally compute the cell-wise residual array, which using
 # the high-level `integrate` function is
 
-get_free_values(uₕ)
 res = integrate(∇(uₕ)⋅∇(dv),Tₕ,Qₕ)
 
 # In a low-level, what we do is to apply (create a `AppliedArray`)

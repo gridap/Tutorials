@@ -194,7 +194,8 @@ Xₖ = LocalToGlobalArray(ctn,X)
 
 @test Xₖ == _Xₖ == get_cell_coordinates(Tₕ) # check
 
-# Even though the `@show` method is probably showing the full matrix, don't get
+# Even though inline evaluations in your code editor 
+# (or if you just call the @show method) are showing the full matrix, don't get
 # confused. This is because this method is evaluating the array at all indices and
 # collecting and printing the result. In practical runs, this array, as many other in
 # `Gridap`, is lazy. We only compute its entries for a given index on demand, by

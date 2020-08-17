@@ -1,7 +1,7 @@
 # Disclaimer: This tutorial is about a low-level definition of finite element
 # methods. It would be nice to have two (or three) previous tutorials, about
 # `Field`, the lazy array machinery related to `AppliedArray` for _numbers_,
-# and the combination of both to create lazy arrays that involve fieds. This
+# and the combination of both to create lazy arrays that involve fields. This
 # is work in progress.
 
 # This tutorial is advanced and you only need to go through this if you want
@@ -30,10 +30,10 @@ using Test
 # high-level interface. In this tutorial, we are not going to describe the
 # most of the geometrical machinery in detail, only what is relevant for the
 # discussion. To simplify the analysis of the outputs,
-# you can considered a 2D mesh, i.e., `D=2` (everything below works for any dim without
+# you can consider a 2D mesh, i.e., `D=2` (everything below works for any dim without
 # any extra complication). In order to make things slightly more interesting,
 # e.g., having non-constant Jacobians, we have considered a mesh that is
-# a stretching of a equal-sized structured mesh.
+# a stretching of an equal-sized structured mesh.
 
 L = 2 # Domain length
 D = 2 # dim
@@ -55,7 +55,6 @@ model = CartesianDiscreteModel(pmin,pmax,partition,map=stretching)
 
 # Now, we define the finite element (FE) spaces (Lagrangian, scalar, H1-conforming, i.e.
 # continuous). We are going to extract from these FE spaces some information to
-# be used in the low-level handling of cell-wise arrays.
 
 u(x) = x[1] # Analytical solution (for Dirichlet data)
 
@@ -78,7 +77,8 @@ wₖ = get_weights(Qₕ)
 
 # ## Exploring FE functions in `Gridap`
 
-# A FE function with rand free dofs in Uₕ can be defined as follows
+# A FE function with [rand](https://docs.julialang.org/en/v1/stdlib/Random/#Base.rand)
+# free dofs in Uₕ can be defined as follows
 
 uₕ = FEFunction(Uₕ,rand(num_free_dofs(Uₕ)))
 
@@ -93,13 +93,12 @@ uₖ = get_array(uₕ)
 # (`Point`) in the domain in which it is defined and returns the scalar,
 # vector, and tensor values, resp. at these points. The method
 # `evaluate_field!` implements this operation; it evaluates the field in
-# a _vector_ of points (for
-# performance, it is _vectorised_ wrt points). It has been implemented with
-# caches for high performance. You can take a look at the `Field` abstract type in Gridap at
-# this point, and check its API.
+# a _vector_ of points (for performance, it is _vectorised_ wrt points). It has
+# been implemented with caches for high performance. You can take a look at the
+# `Field` abstract type in Gridap at this point, and check its API.
 
-# We can also extract the global indices of the DOFs in each cell, the well-known local-to-global
-# map in FE methods.
+# We can also extract the global indices of the DOFs in each cell, the well-known
+# local-to-global map in FE methods.
 
 σₖ = get_cell_dofs(Uₕ)
 
@@ -124,11 +123,11 @@ du = get_cell_basis(Uₕ)
 # test type and the second one of trial type (in the Galerkin method). This information
 # is consumed in different parts of the code.
 
-is_test(dv)
+is_test(dv) # true
 
 ##
 
-is_trial(du)
+is_trial(du) # true
 
 # ## The geometrical model
 
@@ -162,7 +161,7 @@ _Xₖ = get_cell_coordinates(Tₕ)
 
 # ## A low-level definition of the cell map
 
-# Now, let us create the geometrical map almost from sratch, in order to
+# Now, let us create the geometrical map almost from scratch, in order to
 # get familiarised with the `Gridap` internals.
 # First, we start with the reference topology of the representation that we
 # will use for the geometry. In this example, we consider that the geometry
@@ -193,9 +192,10 @@ Xₖ = LocalToGlobalArray(ctn,X)
 
 #
 
-@test Xₖ == get_cell_coordinates(Tₕ) # check
+@test Xₖ == _Xₖ == get_cell_coordinates(Tₕ) # check
 
-# Even though the `@show` method is probably showing the full matrix, don't get
+# Even though inline evaluations in your code editor 
+# (or if you just call the @show method) are showing the full matrix, don't get
 # confused. This is because this method is evaluating the array at all indices and
 # collecting and printing the result. In practical runs, this array, as many other in
 # `Gridap`, is lazy. We only compute its entries for a given index on demand, by
@@ -231,7 +231,7 @@ lcₖ = Fill(lc,num_cells(model))
 # we are implementing expression trees of arrays. On top of this, these arrays
 # can be arrays of `Field`, as `ϕrgₖ` above. These lazy arrays are implemented
 # in an efficient way, creating a cache for the result of evaluating it a a given
-# index. This way, the code is performant, and does involve allocations when
+# index. This way, the code is performant, and does not involve allocations when
 # traversing these arrays. It is probably a good time to take a look at `AppliedArray`
 # and the abstract API of `Kernel` in `Gridap`.
 
@@ -309,7 +309,7 @@ bₖ = GenericCellBasis(Val{false}(),ϕₖ,ξₖ,Val{true}())
 # There are some objects in `Gridap` that are nothing but a lazy array plus
 # some metadata. Another example could be an array of arrays of points like `q`.
 # `q` points are in the reference space. You could consider creating `CellPoints`
-# with a trait that tells you whether this points are in the parametric or
+# with a trait that tells you whether these points are in the parametric or
 # physical space, and use dispatching based on that. E.g., if you have a reference
 # FE in the reference space, you can easily evaluate in the parametric space,
 # but you should map the points to the physical space first with `ξₖ` when
@@ -332,7 +332,7 @@ grad = Gridap.Fields.Valued(Gridap.Fields.PhysGrad())
 
 @test evaluate(∇ϕₖ,qₖ) == evaluate(∇(ϕₖ),qₖ)
 
-# We can work evaluate both the CellBasis and the array of physical shape functions,
+# We can now evaluate both the CellBasis and the array of physical shape functions,
 # and check we get the same.
 
 @test evaluate(∇ϕₖ,qₖ) == evaluate(∇(bₖ),qₖ) == evaluate(∇(dv),qₖ)
@@ -375,7 +375,7 @@ aux = ∇(uₖ)
 # ## A low-level implementation of the residual integration and assembly
 
 # We have the array uₖ that returns the finite element function uₕ at
-# each cell, and its gradient ∇u.
+# each cell, and its gradient ∇uₖ.
 # Let us consider now the integration of (bi)linear forms. The idea is to
 # compute first the following residual for our random function uₕ
 
@@ -397,7 +397,6 @@ Iₖ = apply(dotopv,∇uₖ,∇ϕₖ)
 # Now, we can finally compute the cell-wise residual array, which using
 # the high-level `integrate` function is
 
-get_free_values(uₕ)
 res = integrate(∇(uₕ)⋅∇(dv),Tₕ,Qₕ)
 
 # In a low-level, what we do is to apply (create a `AppliedArray`)
@@ -416,8 +415,9 @@ iwq = apply(Gridap.Fields.IntKernel(),intq,wₖ,Jq)
 collect(iwq)
 
 # Alternatively, we could use the high-level API that creates a `LinearFETerm`
-# that is the composition of a lambda-function with the bilinear form,
-# triangulation and quadrature
+# that is the composition of a lambda-function or
+# [anonymous function](https://docs.julialang.org/en/v1/manual/functions/#man-anonymous-functions-1)
+# with the bilinear form, triangulation and quadrature
 
 blf(u,v) = ∇(u)⋅∇(v)
 term = LinearFETerm(blf,Tₕ,Qₕ)
@@ -427,7 +427,7 @@ term = LinearFETerm(blf,Tₕ,Qₕ)
 cellvals = get_cell_residual(term,uₕ,dv)
 @test cellvals == iwq
 
-# ## Asembling a residual
+# ## Assembling a residual
 
 # Now, we need to assemble these cell-wise (lazy) residual contributions in a
 # global (non-lazy) array. With all this, we can assemble our vector using the
@@ -439,7 +439,7 @@ cellvals = get_cell_residual(term,uₕ,dv)
 assem = SparseMatrixAssembler(Uₕ,Vₕ)
 
 # We create a tuple with 1-entry arrays with the cell-wise vectors and cell ids.
-# If we would have additional terms, we would have more entries in the array.
+# If we had additional terms, we would have more entries in the array.
 # You can take a look at the `SparseMatrixAssembler` struct.
 
 cellids = get_cell_id(Tₕ) # == identity_vector(num_cells(trian))

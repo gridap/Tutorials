@@ -166,7 +166,10 @@ _Xₖ = get_cell_coordinates(Tₕ)
 # First, we start with the reference topology of the representation that we
 # will use for the geometry. In this example, we consider that the geometry
 # is represented with a bilinear map, and we use a scalar-valued FE space to
-# combine the nodal coordinate values which is a Lagrangian first order space
+# combine the nodal coordinate values which is a Lagrangian first order space.
+# To this end, we first need to create a Polytope using an array of dimension D
+# with the parameter HEX_AXIS. This respresents an n-cube of dimension D. Then,
+# this is used to create the scalar first order Lagrangian reference FE.
 # It is not the purpose of this tutorial to describe the `ReferenceFE` in Gridap.
 
 pol = Polytope((Fill(HEX_AXIS,D)...))

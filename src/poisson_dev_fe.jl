@@ -1,7 +1,7 @@
 # Disclaimer: This tutorial is about a low-level definition of finite element
 # methods. It would be nice to have two (or three) previous tutorials, about
 # `Field`, the lazy array machinery related to `AppliedArray` for _numbers_,
-# and the combination of both to create lazy arrays that involve fieds. This
+# and the combination of both to create lazy arrays that involve fields. This
 # is work in progress.
 
 # This tutorial is advanced and you only need to go through this if you want
@@ -162,7 +162,7 @@ _Xₖ = get_cell_coordinates(Tₕ)
 
 # ## A low-level definition of the cell map
 
-# Now, let us create the geometrical map almost from sratch, in order to
+# Now, let us create the geometrical map almost from scratch, in order to
 # get familiarised with the `Gridap` internals.
 # First, we start with the reference topology of the representation that we
 # will use for the geometry. In this example, we consider that the geometry
@@ -427,7 +427,7 @@ term = LinearFETerm(blf,Tₕ,Qₕ)
 cellvals = get_cell_residual(term,uₕ,dv)
 @test cellvals == iwq
 
-# ## Asembling a residual
+# ## Assembling a residual
 
 # Now, we need to assemble these cell-wise (lazy) residual contributions in a
 # global (non-lazy) array. With all this, we can assemble our vector using the

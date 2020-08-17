@@ -78,7 +78,8 @@ wₖ = get_weights(Qₕ)
 
 # ## Exploring FE functions in `Gridap`
 
-# A FE function with rand free dofs in Uₕ can be defined as follows
+# A FE function with [rand](https://docs.julialang.org/en/v1/stdlib/Random/#Base.rand)
+# free dofs in Uₕ can be defined as follows
 
 uₕ = FEFunction(Uₕ,rand(num_free_dofs(Uₕ)))
 
@@ -123,11 +124,11 @@ du = get_cell_basis(Uₕ)
 # test type and the second one of trial type (in the Galerkin method). This information
 # is consumed in different parts of the code.
 
-is_test(dv)
+is_test(dv) # true
 
 ##
 
-is_trial(du)
+is_trial(du) # true
 
 # ## The geometrical model
 
@@ -192,7 +193,7 @@ Xₖ = LocalToGlobalArray(ctn,X)
 
 #
 
-@test Xₖ == get_cell_coordinates(Tₕ) # check
+@test Xₖ == _Xₖ == get_cell_coordinates(Tₕ) # check
 
 # Even though the `@show` method is probably showing the full matrix, don't get
 # confused. This is because this method is evaluating the array at all indices and
@@ -415,8 +416,9 @@ iwq = apply(Gridap.Fields.IntKernel(),intq,wₖ,Jq)
 collect(iwq)
 
 # Alternatively, we could use the high-level API that creates a `LinearFETerm`
-# that is the composition of a lambda-function with the bilinear form,
-# triangulation and quadrature
+# that is the composition of a lambda-function or
+# [anonymous function](https://docs.julialang.org/en/v1/manual/functions/#man-anonymous-functions-1)
+# with the bilinear form, triangulation and quadrature
 
 blf(u,v) = ∇(u)⋅∇(v)
 term = LinearFETerm(blf,Tₕ,Qₕ)

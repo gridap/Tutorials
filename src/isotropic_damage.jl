@@ -117,8 +117,8 @@ function main(;n,nsteps)
   degree = 2*order
   quad = CellQuadrature(trian,degree)
 
-  r = QPointCellField(r_0,trian,quad)
-  d = QPointCellField(0.0,trian,quad)
+  r = CellField(r_0,trian,quad)
+  d = CellField(0.0,trian,quad)
 
   nls = NLSolver(show_trace=true, method=:newton)
   solver = FESolver(nls)

@@ -136,7 +136,7 @@ function main(;n,nsteps)
 
     uh_out, = solve!(uh_in,solver,op)
 
-    update_state_variables!(quad,update,ε(uh_out),r,d)
+    update_state_variables!(update,quad,ε(uh_out),r,d)
 
     uh_out
   end

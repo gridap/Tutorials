@@ -264,18 +264,9 @@ const χ = -1.0
 function a_fs(x,y)
   us_Γ, uf_Γ, p_Γ = x
   vs_Γ, vf_Γ, q_Γ = y
-  uf = jump(uf_Γ)
-  p = jump(p_Γ)
-  us = -jump(us_Γ)
-  vf = jump(vf_Γ)
-  q = jump(q_Γ)
-  vs = -jump(vs_Γ)
-  εuf = jump(ε(uf_Γ))
-  εvf = jump(ε(vf_Γ))
-  penaltyTerms = α*vf⋅uf - α*vf⋅us - α*vs⋅uf + α*vs⋅us
-	integrationByParts = ( vf⋅(p*n_Γfs) - vf⋅(n_Γfs⋅σ_dev_f(εuf)) ) - ( vs⋅(p*n_Γfs) - vs⋅(n_Γfs⋅σ_dev_f(εuf)) )
-	symmetricTerms =  ( q*(n_Γfs⋅uf) - χ*(n_Γfs⋅σ_dev_f(εvf))⋅uf ) - ( q*(n_Γfs⋅us) - χ*(n_Γfs⋅σ_dev_f(εvf))⋅us )
-  penaltyTerms + integrationByParts + symmetricTerms
+  us, uf, p = us_Γ.⁻, uf_Γ.⁺, p_Γ.⁺
+  vs, vf, q = vs_Γ.⁻, vf_Γ.⁺, q_Γ.⁺
+  α*(vf-vs)⋅(uf-us) + (vf-vs)⋅(p*n_Γfs-n_Γfs⋅σ_dev_f(ε(uf))) + (q*n_Γfs-χ*n_Γfs⋅σ_dev_f(ε(vf)))⋅(uf-us)
 end
 
 # - $l_s(\mathbf{y}^h)$ is the linear form associated with the solid counterpart, defined as

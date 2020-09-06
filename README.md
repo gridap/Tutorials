@@ -1,4 +1,4 @@
-# Gridap tutorials
+# Gridap tutorials <img src="https://github.com/gridap/Gridap.jl/blob/master/images/color-logo-only.png" width="40" title="Gridap logo">
 
 *Start solving PDEs in Julia*
 

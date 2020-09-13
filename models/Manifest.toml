@@ -14,9 +14,9 @@ version = "2.12.0"
 
 [[ArrayLayouts]]
 deps = ["FillArrays", "LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "e3e0a1e7dcbfdb1fc1061bfd889581a1d942cfcb"
+git-tree-sha1 = "bd09f450716f55c5a47b24de277a8825e2450729"
 uuid = "4c555306-a7a7-4459-81d9-ec55ddd5c99a"
-version = "0.4.5"
+version = "0.4.7"
 
 [[BSON]]
 git-tree-sha1 = "dd36d7cf3d185eeaaf64db902c15174b22f5dafb"
@@ -111,15 +111,15 @@ version = "0.4.2"
 
 [[FileIO]]
 deps = ["Pkg"]
-git-tree-sha1 = "d367ced062a113d955c0dff847eb36f2565f2894"
+git-tree-sha1 = "992b4aeb62f99b69fcf0cb2085094494cc05dfb3"
 uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
-version = "1.4.2"
+version = "1.4.3"
 
 [[FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays"]
-git-tree-sha1 = "56dc5338eb79a05e5ea120f510ed77efe7e9784d"
+git-tree-sha1 = "b955c227b0d1413a1a97e2ca0635a5de019d7337"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "0.9.5"
+version = "0.9.6"
 
 [[FiniteDiff]]
 deps = ["ArrayInterface", "LinearAlgebra", "Requires", "SparseArrays", "StaticArrays"]
@@ -135,7 +135,7 @@ version = "0.10.12"
 
 [[Gridap]]
 deps = ["AbstractTrees", "BSON", "BlockArrays", "Combinatorics", "DocStringExtensions", "FastGaussQuadrature", "FileIO", "FillArrays", "ForwardDiff", "JLD2", "JSON", "LineSearches", "LinearAlgebra", "NLsolve", "QuadGK", "SparseArrays", "StaticArrays", "Test", "WriteVTK"]
-git-tree-sha1 = "8a7ce7d546d9dfc00e559c95e8331d7b01123209"
+git-tree-sha1 = "d5470611f212c4ca8feda47b384ecda3cd8ec5b6"
 repo-rev = "master"
 repo-url = "https://github.com/gridap/Gridap.jl.git"
 uuid = "56d4f2e9-7ea1-5844-9cf6-b9c51ca7ce8e"
@@ -143,7 +143,7 @@ version = "0.14.0"
 
 [[GridapGmsh]]
 deps = ["Gridap", "Libdl"]
-git-tree-sha1 = "31358df88ecb2b37d2a0e05bd4e9a94426da51e1"
+git-tree-sha1 = "c83b9e96cbaf78d88e0fcc40e5ae3b3b6a222045"
 repo-rev = "master"
 repo-url = "https://github.com/gridap/GridapGmsh.jl.git"
 uuid = "3025c34a-b394-11e9-2a55-3fee550c04c8"
@@ -161,9 +161,9 @@ version = "0.1.14"
 
 [[JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
-git-tree-sha1 = "b34d7cef7b337321e97d22242c3c2b91f476748e"
+git-tree-sha1 = "81690084b6198a2e1da36fcfda16eeca9f9f24e4"
 uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
-version = "0.21.0"
+version = "0.21.1"
 
 [[LibGit2]]
 deps = ["Printf"]

@@ -63,7 +63,7 @@ jobs:
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@v1
       - run: cd test/; julia --project=.. --color=yes --check-bounds=yes runtests.jl p_laplacian.jl hyperelasticity.jl dg_discretization.jl fsi_tutorial.jl
-   tutorials_set_3:
+  tutorials_set_3:
     name: Tutorials ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     strategy:

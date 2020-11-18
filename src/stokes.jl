@@ -19,13 +19,14 @@ labels = get_face_labeling(model)
 add_tag_from_tags!(labels,"diri1",[6,])
 add_tag_from_tags!(labels,"diri0",[1,2,3,4,5,7,8])
 
-# Define test FESpaces (Q2/P1(disc) pair)
-V = TestFESpace(
-  reffe=:QLagrangian, conformity=:H1, valuetype=VectorValue{2,Float64},
-  model=model, labels=labels, order=2, dirichlet_tags=["diri0","diri1"])
-Q = TestFESpace(
-  reffe=:PLagrangian, conformity=:L2, valuetype=Float64,
-  model=model, order=1, constraint=:zeromean)
+# Define reference FE (Q2/P1(disc) pair)
+order = 2
+reffeᵤ = ReferenceFE(:Lagrangian,VectorValue{2,Float64},order)
+reffeₚ = ReferenceFE(:Lagrangian,Float64,order-1;space=:P)
+
+# Define test FESpaces
+V = TestFESpace(model,reffeᵤ,labels=labels,dirichlet_tags=["diri0","diri1"],conformity=:H1)
+Q = TestFESpace(model,reffeₚ,conformity=:L2,constraint=:zeromean)
 Y = MultiFieldFESpace([V,Q])
 
 # Define trial FESpaces from Dirichlet values
@@ -35,19 +36,21 @@ U = TrialFESpace(V,[u0,u1])
 P = TrialFESpace(Q)
 X = MultiFieldFESpace([U,P])
 
-# Define integration mesh and quadrature
-trian = get_triangulation(model); degree = 2
-quad = CellQuadrature(trian,degree)
+# Define triangulation and integration measure
+degree = order
+Ωₕ = Triangulation(model)
+∂Ω = LebesgueMeasure(Ωₕ,degree)
 
-# Define and solve the FE problem
-function a(x,y)
-  v,q = y
-  u,p = x
-  ∇(v)⊙∇(u) - (∇⋅v)*p + q*(∇⋅u)
-end
-t_Ω = LinearFETerm(a,trian,quad)
-op = AffineFEOperator(X,Y,t_Ω)
+# Define bilinear and linear form
+f = VectorValue(0.0,0.0)
+a((u,p),(v,q)) = ∫( ∇(v)⊙∇(u) - (∇⋅v)*p + q*(∇⋅u) )*∂Ω
+l((v,q)) = ∫( v⋅f )*∂Ω
+
+# Build affine FE operator
+op = AffineFEOperator(a,l,X,Y)
+
+# Solve
 uh, ph = solve(op)
 
 # Export results to vtk
-writevtk(trian,"results",order=2,cellfields=["uh"=>uh,"ph"=>ph])
+writevtk(Ωₕ,"results",order=2,cellfields=["uh"=>uh,"ph"=>ph])

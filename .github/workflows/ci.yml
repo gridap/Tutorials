@@ -33,7 +33,6 @@ jobs:
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@v1
       - run: cd test/; julia --project=.. --color=yes --check-bounds=yes runtests.jl poisson.jl validation.jl elasticity.jl 
-
   tutorials_set_2:
     name: Tutorials ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
@@ -64,7 +63,6 @@ jobs:
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@v1
       - run: cd test/; julia --project=.. --color=yes --check-bounds=yes runtests.jl p_laplacian.jl hyperelasticity.jl dg_discretization.jl fsi_tutorial.jl
-
    tutorials_set_3:
     name: Tutorials ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
@@ -95,7 +93,6 @@ jobs:
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@v1
       - run: cd test/; julia --project=.. --color=yes --check-bounds=yes runtests.jl darcy.jl  inc_navier_stokes.jl stokes.jl  
-
   tutorials_set_4:
     name: Tutorials ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}

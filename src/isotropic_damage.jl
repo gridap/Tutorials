@@ -117,8 +117,8 @@ function main(;n,nsteps)
   degree = 2*order
   quad = CellQuadrature(trian,degree)
 
-  r = QPointCellField(r_0,trian,quad)
-  d = QPointCellField(0.0,trian,quad)
+  r = CellField(r_0,trian,quad)
+  d = CellField(0.0,trian,quad)
 
   nls = NLSolver(show_trace=true, method=:newton)
   solver = FESolver(nls)
@@ -136,7 +136,7 @@ function main(;n,nsteps)
 
     uh_out, = solve!(uh_in,solver,op)
 
-    update_state_variables!(quad,update,ε(uh_out),r,d)
+    update_state_variables!(update,quad,ε(uh_out),r,d)
 
     uh_out
   end

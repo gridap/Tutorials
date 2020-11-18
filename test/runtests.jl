@@ -16,7 +16,7 @@ for (title,filename) in Tutorials.files
       println(f)
       println(f, "module $tmpmod include(\"$testpath\") end")
     end
-    @testset "$title" begin include(tmpfile) end
+    @time @testset "$title" begin include(tmpfile) end
     rm(tmpfile)
 end 
 

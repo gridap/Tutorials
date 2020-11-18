@@ -4,6 +4,13 @@ using Test
 
 Random.seed!(0);
 
+if (length(ARGS) != 0)
+  files = ARGS
+else
+  files = Tutorials.files
+end
+
+
 for (title,filename) in Tutorials.files
     # Create temporal modules to isolate and protect test scopes
     tmpmod = string("module_",randstring(['A':'Z'; '0':'9'], 12))
@@ -18,10 +25,9 @@ for (title,filename) in Tutorials.files
     end
     @time @testset "$title" begin include(tmpfile) end
     rm(tmpfile)
-end 
+end
 
 module fsi_tutorial
 using Test
-@testset "fsi_tutorial" begin include("../src/fsi_tutorial.jl") end
+@time @testset "fsi_tutorial" begin include("../src/fsi_tutorial.jl") end
 end # module
-

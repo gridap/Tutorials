@@ -1,5 +1,4 @@
 using Tutorials
-using Random
 using Test
 
 function get_title(files,filename)

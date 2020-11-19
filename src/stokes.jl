@@ -39,12 +39,12 @@ X = MultiFieldFESpace([U,P])
 # Define triangulation and integration measure
 degree = order
 Ωₕ = Triangulation(model)
-∂Ω = LebesgueMeasure(Ωₕ,degree)
+dΩ = LebesgueMeasure(Ωₕ,degree)
 
 # Define bilinear and linear form
 f = VectorValue(0.0,0.0)
-a((u,p),(v,q)) = ∫( ∇(v)⊙∇(u) - (∇⋅v)*p + q*(∇⋅u) )*∂Ω
-l((v,q)) = ∫( v⋅f )*∂Ω
+a((u,p),(v,q)) = ∫( ∇(v)⊙∇(u) - (∇⋅v)*p + q*(∇⋅u) )*dΩ
+l((v,q)) = ∫( v⋅f )*dΩ
 
 # Build affine FE operator
 op = AffineFEOperator(a,l,X,Y)

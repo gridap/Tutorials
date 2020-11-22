@@ -59,7 +59,7 @@ model = CartesianDiscreteModel(pmin,pmax,partition,map=stretching)
 u(x) = x[1] # Analytical solution (for Dirichlet data)
 
 T = Float64; order = 1
-Vₕ = FESpace(model=model,valuetype=T,reffe=:Lagrangian,order=1,
+Vₕ = FESpace(model=model,valuetype=T,reffe=:Lagrangian,order=order,
              conformity=:H1,dirichlet_tags="boundary")
 Uₕ = TrialFESpace(Vₕ,u)
 
@@ -168,11 +168,11 @@ _Xₖ = get_cell_coordinates(Tₕ)
 # is represented with a bilinear map, and we use a scalar-valued FE space to
 # combine the nodal coordinate values which is a Lagrangian first order space.
 # To this end, we first need to create a Polytope using an array of dimension D
-# with the parameter HEX_AXIS. This respresents an n-cube of dimension D. Then,
+# with the parameter HEX_AXIS. This represents an n-cube of dimension D. Then,
 # this is used to create the scalar first order Lagrangian reference FE.
 # It is not the purpose of this tutorial to describe the `ReferenceFE` in Gridap.
 
-pol = Polytope((Fill(HEX_AXIS,D)...))
+pol = Polytope(Fill(HEX_AXIS,D)...)
 reffe_g = LagrangianRefFE(Float64,pol,1)
 
 # Next, we extract the basis of shape functions for this Reference FE, which is
@@ -189,7 +189,8 @@ reffe_g = LagrangianRefFE(Float64,pol,1)
 ϕrgₖ = Fill(ϕrg,num_cells(model))
 
 # We can use the following `LocalToGlobalArray` in `Gridap` that returns a
-# lazy array of arrays of `Point`, i.e., the nodes per each cell.
+# lazy array of arrays of `Point`, i.e., the coordinates of the nodes per
+# each cell.
 
 Xₖ = LocalToGlobalArray(ctn,X)
 
@@ -197,7 +198,7 @@ Xₖ = LocalToGlobalArray(ctn,X)
 
 @test Xₖ == _Xₖ == get_cell_coordinates(Tₕ) # check
 
-# Even though inline evaluations in your code editor 
+# Even though inline evaluations in your code editor
 # (or if you just call the @show method) are showing the full matrix, don't get
 # confused. This is because this method is evaluating the array at all indices and
 # collecting and printing the result. In practical runs, this array, as many other in
@@ -240,7 +241,7 @@ lcₖ = Fill(lc,num_cells(model))
 
 # It is good to mention that `apply(k,a,b)`` is equivalent to
 # map((ai,bi)->apply_kernel(k,ai,bi),a,b) but with a lazy result instead of a
-# plain julia array.
+# plain Julia array.
 
 # With this, we can compute the Jacobian (cell-wise).
 # The Jacobian of the transformation is simply its gradient.
@@ -266,7 +267,7 @@ J = apply(lc,∇ϕrgₖ,Xₖ)
 # We proceed as before, creating the reference FE, the reference basis, and the
 # corresponding constant array.
 
-pol = Polytope((Fill(HEX_AXIS,D)...))
+pol = Polytope(Fill(HEX_AXIS,D)...)
 reffe = LagrangianRefFE(T,pol,order)
 
 ϕr = get_shapefuns(reffe)

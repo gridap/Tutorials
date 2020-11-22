@@ -23,6 +23,7 @@ using Gridap.ReferenceFEs
 using Gridap.Arrays
 using Gridap.Geometry
 using Gridap.Fields
+using Gridap.CellData
 using FillArrays
 using Test
 
@@ -303,12 +304,13 @@ map = Gridap.Fields.AddMap()
 # FE space, the most common case, false means FEs with DOFs defined in the physical
 # space).
 
-bₖ = GenericCellBasis(Val{false}(),ϕₖ,ξₖ,Val{true}())
+
+#bₖ = GenericCellBasis(Val{false}(),ϕₖ,ξₖ,Val{true}())
 
 # We can check that the basis we have created return the same values as the
 # one obtained with high-level APIs
 
-@test collect(evaluate(dv,qₖ)) == collect(evaluate(bₖ,qₖ))
+#@test collect(evaluate(dv,qₖ)) == collect(evaluate(bₖ,qₖ))
 
 # There are some objects in `Gridap` that are nothing but a lazy array plus
 # some metadata. Another example could be an array of arrays of points like `q`.
@@ -339,7 +341,10 @@ grad = Gridap.Fields.Valued(Gridap.Fields.PhysGrad())
 # We can now evaluate both the CellBasis and the array of physical shape functions,
 # and check we get the same.
 
-@test evaluate(∇ϕₖ,qₖ) == evaluate(∇(bₖ),qₖ) == evaluate(∇(dv),qₖ)
+#@test evaluate(∇ϕₖ,qₖ) == evaluate(∇(bₖ),qₖ) == evaluate(∇(dv),qₖ)
+
+@test evaluate(∇ϕₖ,qₖ) == evaluate(∇(dv),qₖ)
+
 
 # ## A low-level definition of the FE function
 

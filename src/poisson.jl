@@ -73,11 +73,11 @@ writevtk(model,"model")
 # 
 #  Once we have a discretization of the computational domain, the next step is to generate a discrete approximation of the finite element spaces $V_0$ and $U_g$ (i.e. the test and trial FE spaces) of the problem. To do so, first, we are going to build a discretization of $V_0$ as the standard Conforming Lagrangian FE space (with zero boundary conditions) associated with the discretization of the computational domain. The approximation of the FE space $V_0$ is built as follows:
 
-V0 = TestFESpace(
-  reffe=:Lagrangian, order=1, valuetype=Float64,
-  conformity=:H1, model=model, dirichlet_tags="sides")
+order = 1
+reffe = ReferenceFE(:Lagrangian,Float64,order)
+V0 = TestFESpace(model,reffe;conformity=:H1,dirichlet_tags="sides")
 
-# Here, we have used the `TestFESpace` constructor, which constructs a particular FE space (to be used as a test space) from a set of options described as key-word arguments. The with the options `reffe=:Lagrangian`, `order=1`, and  `valuetype=Float64`, we define the local interpolation at the reference FE element. In this case, we select a scalar-valued, first order, Lagrangian interpolation. In particular, the value of the shape functions will be represented with  64-bit floating point numbers. With the key-word argument `conformity` we define the regularity of the interpolation at the boundaries of the cells in the mesh. Here, we use `conformity=:H1`, which means that the resulting interpolation space is a subset of $H^1(\Omega)$ (i.e., continuous shape functions). On the other hand, with the key-word argument `model`, we select the discrete model on top of which we want to construct the FE space. Finally, we pass the identifiers of the Dirichlet boundary via the `dirichlet_tags` argument. In this case, we mark as Dirichlet all objects of the discrete model identified with the `"sides"` tag. Since this is a test space, the corresponding shape functions vanishes at the Dirichlet boundary.
+# Here, we have used the `TestFESpace` constructor, which constructs a particular FE space (to be used as a test space) from a set of options described as positional and key-word arguments. The first positional argument is the model on top of which we want to build the space. The second positional argument contains information about the type of FE interpolation (the reference FE in this case). With `ReferenceFE(:Lagrangian,Float64,order)` We select a scalar-valued Lagrangian reference FE of order 1, where the value of the shape functions will be represented with  64-bit floating point numbers. With the key-word argument `conformity` we define the regularity of the interpolation at the boundaries of the cells in the mesh. Here, we use `conformity=:H1`, which means that the resulting interpolation space is a subset of $H^1(\Omega)$ (i.e., continuous shape functions). On the other hand, we pass the identifiers of the Dirichlet boundary via the `dirichlet_tags` argument. In this case, we mark as Dirichlet all objects of the discrete model identified with the `"sides"` tag. Since this is a test space, the corresponding shape functions vanishes at the Dirichlet boundary.
 # 
 # Once the space $V_0$ is discretized in the code, we proceed with the approximation of the trial space $U_g$.
 
@@ -89,46 +89,40 @@ Ug = TrialFESpace(V0,g)
 # 
 # ## Numerical integration
 # 
-# Once we have built the interpolation spaces, the next step is to set up the machinery to perform the integrals in the weak form numerically. Here, we need to compute integrals on the interior of the domain $\Omega$ and on the Neumann boundary $\Gamma_{\rm N}$. In both cases, we need two main ingredients. We need to define an integration mesh (i.e. a triangulation of the integration domain), plus a Gauss-like quadrature in each of the cells in the triangulation. In Gridap, integration meshes are represented by types inheriting from the abstract type `Triangulation`. For integrating on the domain $\Omega$, we build the following triangulation and quadrature:
+# Once we have built the interpolation spaces, the next step is to set up the machinery to perform the integrals in the weak form numerically. Here, we need to compute integrals on the interior of the domain $\Omega$ and on the Neumann boundary $\Gamma_{\rm N}$. In both cases, we need two main ingredients. We need to define an integration mesh (i.e. a triangulation of the integration domain), plus a Gauss-like quadrature in each of the cells in the triangulation. In Gridap, integration meshes are represented by types inheriting from the abstract type `Triangulation`. For integrating on the domain $\Omega$, we build the following triangulation and the corresponding Lebesgue measure, which will allow to write down integrals in a syntax similar to the usual mathematical notation.
 
-trian = Triangulation(model)
 degree = 2
-quad = CellQuadrature(trian,degree)
+Ω = Triangulation(model)
+dΩ = LebesgueMeasure(Ω,degree)
 
-# Here, we build a triangulation from the cells of the model and define a quadrature of degree  2 in the cells of this triangulation. This is enough for integrating the corresponding terms of the weak form exactly for an interpolation of order 1.
+# Here, we build a triangulation from the cells of the model and build (an approximation of) the Lebesgue measure using a quadrature rule of degree 2 in the cells of this triangulation. This is enough for integrating the corresponding terms of the weak form exactly for an interpolation of order 1.
 # 
-# On the other hand, we need a special type of triangulation, represented by the type	 `BoundaryTriangulation`, to integrate on the boundary. Essentially, a  `BoundaryTriangulation` is a particular type of `Triangulation` that is aware of which cells in the model are touched by faces on the boundary. We build an instance of this type from the discrete model and the names used to identify the Neumann boundary as follows:
+# On the other hand, we need a special type of triangulation, represented by the type `BoundaryTriangulation`, to integrate on the boundary. Essentially, a `BoundaryTriangulation` is a particular type of `Triangulation` that is aware of which cells in the model are touched by faces on the boundary. We build an instance of this type from the discrete model and the names used to identify the Neumann boundary as follows:
 
 neumanntags = ["circle", "triangle", "square"]
-btrian = BoundaryTriangulation(model,neumanntags)
-bquad = CellQuadrature(btrian,degree)
+Γ = BoundaryTriangulation(model,neumanntags)
+dΓ = LebesgueMeasure(Γ,degree)
 
 # In addition, we have created a quadrature of degree 2 on top of the cells in the triangulation for the Neumann boundary.
 # 
 # ## Weak form
 # 
-# With all the ingredients presented so far, we are ready to define the weak form. This is done by means of types inheriting from the abstract type `FETerm`. In this tutorial, we will use the sub-types `AffineFETerm` and `FESource`. An `AffineFETerm` is a term that contributes both to the system matrix and the right-hand-side vector, whereas a `FESource` only contributes to the right hand side vector. Here, we use an `AffineFETerm` to represent all the terms in the weak form that are integrated over the interior of the domain $\Omega$.
+# With all the ingredients presented so far, we are ready to define the weak form. This is done by defining to functions representing the bi-linear and linear forms:
 
 f(x) = 1.0
-a(u,v) = ∇(v)⊙∇(u)
-b_Ω(v) = v*f
-t_Ω = AffineFETerm(a,b_Ω,trian,quad)
-
-# In the first argument of the `AffineFETerm` constructor, we pass a function that represents the integrand of the bilinear form $a(\cdot,\cdot)$. The second argument is a function that represents the integrand of the part of the linear form $b(\cdot)$ that is integrated over the domain $\Omega$. The third argument is the `Triangulation` on which we want to perform the integration (in that case the integration mesh for $\Omega$), and the last argument is the `CellQuadrature` needed to perform the integration numerically. Since the contribution of the Neumann boundary condition is integrated over a different domain, it cannot be included in the previous `AffineFETerm`. To account for it, we use a `FESource`:
-
 h(x) = 3.0
-b_Γ(v) = v*h
-t_Γ = FESource(b_Γ,btrian,bquad)
+a(u,v) = ∫( ∇(v)⋅∇(u) )*dΩ
+b(v) = ∫( v*f )*dΩ + ∫( v*h )*dΓ
 
-# In the first argument of the `FESource` constructor, we pass a function representing the integrand of the Neumann boundary condition. In the two last arguments we pass the triangulation and quadrature for the Neumann boundary.
-# 
+# Note that by using the integral function `∫`, the Lebesgue measures `dΩ`, `dΓ`, and the gradient function `∇`, the weak form is written with an obvious relation with the corresponding mathematical notation.
+
 #  ## FE Problem
 #
 #  At this point, we can built the FE problem that, once solved, will provide the numerical solution we are looking for. A FE problem is represented in Gridap by types inheriting from the abstract type `FEOperator` (both for linear and nonlinear cases). Since we want to solve a linear problem, we use the concrete type `AffineFEOperator`, i.e., a problem represented by a matrix and a right hand side vector.
 
-op = AffineFEOperator(Ug,V0,t_Ω,t_Γ)
+op = AffineFEOperator(a,b,Ug,V0)
 
-# Note that the `AffineFEOperator` object representing our FE problem is built from the test and trial FE spaces `V0` and `Ug`, and the objects `t_Ω` and `t_Γ` representing the weak form.
+# Note that the `AffineFEOperator` object representing our FE problem is built from the function `a` and `b` representing the weak form and test and trial FE spaces `V0` and `Ug`. 
 # 
 #  ## Solver phase
 # 
@@ -143,7 +137,7 @@ uh = solve(solver,op)
 
 # The `solve` function returns the computed numerical solution `uh`. This object is an instance of `FEFunction`, the type used to represent a function in a FE space. We can inspect the result by writing it into a `vtk` file:
 
-writevtk(trian,"results",cellfields=["uh"=>uh])
+writevtk(Ω,"results",cellfields=["uh"=>uh])
 
 #  which will generate a file named `results.vtu` having a nodal field named `"uh"` containing the solution of our problem (see next figure). 
 #

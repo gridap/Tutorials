@@ -100,7 +100,7 @@ dΩ = LebesgueMeasure(Ω,degree)
 # On the other hand, we need a special type of triangulation, represented by the type `BoundaryTriangulation`, to integrate on the boundary. Essentially, a `BoundaryTriangulation` is a particular type of `Triangulation` that is aware of which cells in the model are touched by faces on the boundary. We build an instance of this type from the discrete model and the names used to identify the Neumann boundary as follows:
 
 neumanntags = ["circle", "triangle", "square"]
-Γ = BoundaryTriangulation(model,neumanntags)
+Γ = BoundaryTriangulation(model,tags=neumanntags)
 dΓ = LebesgueMeasure(Γ,degree)
 
 # In addition, we have created a quadrature of degree 2 on top of the cells in the triangulation for the Neumann boundary.

@@ -61,9 +61,10 @@ writevtk(model,"model")
 
 order = 1
 
-V0 = TestFESpace(
-  reffe=:Lagrangian, order=order, valuetype=VectorValue{3,Float64},
-  conformity=:H1, model=model, dirichlet_tags=["surface_1","surface_2"],
+reffe = ReferenceFE(:Lagrangian,VectorValue{3,Float64},order)
+V0 = TestFESpace(model,reffe;
+  conformity=:H1,
+  dirichlet_tags=["surface_1","surface_2"],
   dirichlet_masks=[(true,false,false), (true,true,true)])
 
 # As in previous tutorial, we construct a continuous Lagrangian interpolation of order 1. The vector-valued interpolation is selected via the option `valuetype=VectorValue{3,Float64}`, where we use the type `VectorValue{3,Float64}`, which is the way Gridap represents vectors of three `Float64` components. We mark as Dirichlet the objects identified with the tags `"surface_1"` and `"surface_2"` using the `dirichlet_tags` argument. Finally, we chose which components of the displacement are actually constrained on the Dirichlet boundary via the `dirichlet_masks` argument. Note that we constrain only the first component on the boundary $\Gamma_{\rm B}$ (identified as `"surface_1"`), whereas we constrain all components on $\Gamma_{\rm G}$ (identified as `"surface_2"`).
@@ -81,37 +82,43 @@ U = TrialFESpace(V0,[g1,g2])
 # 
 # ## Constitutive law
 # 
-# Once the FE spaces are defined, the next step is to define the weak form.  In this example, the construction of the weak form requires more work than in previous tutorial since we need to account for the constitutive law that relates strain and stress. In this case, the integrand of the bilinear form of the problem is written in the code as follows:
+# Once the FE spaces are defined, the next step is to define the weak form.  In this example, the construction of the weak form requires more work than in previous tutorial since we need to account for the constitutive law that relates strain and stress.  The symmetric gradient operator is represented by the function `ε` provided by Gridap (also available as `symmetric_gradient`). However, function `σ` representing the stress tensor is not predefined in the library and it has to be defined ad-hoc by the user, namely
 
-a(u,v) = ε(v) ⊙ σ(ε(u))
-
-# The symmetric gradient operator is represented by the function `ε` provided by Gridap (also available as `symmetric_gradient`). However, function `σ` representing the stress tensor is not predefined in the library and it has to be defined ad-hoc by the user. The way function `σ` and other types of constitutive laws are defined  in Gridap is by using the supplied macro `@law`:
-
-using LinearAlgebra: tr
 const E = 70.0e9
 const ν = 0.33
 const λ = (E*ν)/((1+ν)*(1-2*ν))
 const μ = E/(2*(1+ν))
-@law σ(ε) = λ*tr(ε)*one(ε) + 2*μ*ε
+σ(ε) = λ*tr(ε)*one(ε) + 2*μ*ε
 
-# The macro `@law` is placed before a function definition.  The arguments of the function annotated with the `@law` macro represent the values of different quantities at a generic integration point. In this example, the argument represents the strain tensor, from which the stress tensor is to be computed using the Lamé operator. Note that the implementation of function `σ` is very close to its mathematical definition. Under the hood, the `@law` macro adds an extra method to the annotated function. The newly generated method can be used as `σ(ε(u))` in the definition of a bilinear form (as done above), or as `σ(ε(uh))`, in order to compute the stress tensor associated with a `FEFunction` object  `uh`.
-# 
+# Function `σ` takes a strain tensor `ε`(one can interpret this strain as the strain at an arbitrary integration point) and computes the associated stress tensor using the Lamé operator.  Note that the implementation of function `σ` is very close to its mathematical definition.
+#
+#  ## Weak form
+#
+#  As seen in previous tutorials, in order to define the week form we need to build the integration mesh and the corresponding measure
+
+degree = 2*order
+Ω = Triangulation(model)
+dΩ = LebesgueMeasure(Ω,degree)
+
+#  From these objects and the constitutive law previously defined, we can write the weak form as follows
+
+a(u,v) = ∫( ε(v) ⊙ σ∘ε(u) )*dΩ
+l(v) = 0
+
+# Note that we have composed function `σ` with the strain field `ε(u)` in order to compute the stress field associated with the trial function `u`. The linear form is simply `l(v) = 0` since there are not external forces in this example.
+#
 # ## Solution of the FE problem
 # 
-# The remaining steps for solving the FE problem are essentially the same as in previous tutorial.  We build the triangulation and quadrature for integrating in the volume, we define the terms in the weak form, and we define the FE problem. Finally, we solve it.
+# The remaining steps for solving the FE problem are essentially the same as in previous tutorial.  
 
-trian = Triangulation(model)
-degree = 2*order
-quad = CellQuadrature(trian,degree)
-t_Ω = LinearFETerm(a,trian,quad)
-op = AffineFEOperator(U,V0,t_Ω)
+op = AffineFEOperator(a,l,U,V0)
 uh = solve(op)
 
-# Note that in the construction of the `AffineFEOperator` we have used a `LinearFETerm` instead of an `AffineFETerm` as it was done in previous tutorial. The `LinearFETerm` is a particular implementation of `FETerm`, which only leads to contributions to the system matrix (and not to the right hand side vector). This is what we need here since the body forces are zero. Note also that we do not have explicitly constructed a `LinearFESolver`. If a `LinearFESolver` is not passed to the `solve` function, a default solver is created and used internally.
+# Note that we do not have explicitly constructed a `LinearFESolver` in order to solve the FE problem. If a `LinearFESolver` is not passed to the `solve` function, a default solver (LU factorization) is created and used internally.
 # 
 # Finally, we write the results to a file. Note that we also include the strain and stress tensors into the results file.
 
-writevtk(trian,"results",cellfields=["uh"=>uh,"epsi"=>ε(uh),"sigma"=>σ(ε(uh))])
+writevtk(Ω,"results",cellfields=["uh"=>uh,"epsi"=>ε(uh),"sigma"=>σ∘ε(uh)])
 
 # It can be clearly observed (see next figure) that the surface  $\Gamma_{\rm B}$ is pulled in $x_1$-direction and that the solid deforms accordingly.
 # 
@@ -156,7 +163,7 @@ const (λ_steel,μ_steel) = lame_parameters(E_steel,ν_steel)
 
 # Then, we define the function containing the constitutive law:
 
-@law function σ_bimat(ε,tag)
+function σ_bimat(ε,tag)
   if tag == alu_tag
     return λ_alu*tr(ε)*one(ε) + 2*μ_alu*ε
   else
@@ -168,20 +175,19 @@ end
 #
 # Since we have constructed a new constitutive law, we need to re-define the bilinear form of the problem:
 
-a(u,v) = ε(v) ⊙ σ_bimat(ε(u),tags) 
+a(u,v) = ∫( ε(v) ⊙ σ_bimat∘(ε(u),tags) )*dΩ
 
 # In previous line, pay attention in the usage of the new constitutive law `σ_bimat`. Note that we have passed the vector `tags` containing the material identifiers in the last argument of the function`.
 #
 # At this point, we can build the FE problem again and solve it
 
-t_Ω = LinearFETerm(a,trian,quad)
-op = AffineFEOperator(U,V0,t_Ω)
+op = AffineFEOperator(a,l,U,V0)
 uh = solve(op)
 
 # Once the solution is computed, we can store the results in a file for visualization. Note that, we are including the stress tensor in the file (computed with the bi-material law).
 
-writevtk(trian,"results_bimat",cellfields=
-  ["uh"=>uh,"epsi"=>ε(uh),"sigma"=>σ_bimat(ε(uh),tags)])
+writevtk(Ω,"results_bimat",cellfields=
+  ["uh"=>uh,"epsi"=>ε(uh),"sigma"=>σ_bimat∘(ε(uh),tags)])
 
 
 #  Tutorial done!

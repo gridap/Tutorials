@@ -7,7 +7,7 @@
 |:------------ |
 | [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://gridap.github.io/Tutorials/stable) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://gridap.github.io/Tutorials/dev)  |
 |**Build Status** |
-| [![Build Status](https://travis-ci.com/gridap/Tutorials.svg?branch=master)](https://travis-ci.com/gridap/Tutorials) |
+| [![Build Status](https://github.com/gridap/Tutorials/workflows/CI/badge.svg?branch=master)](https://github.com/gridap/Tutorials/actions?query=workflow%3ACI) |
 | **Community** |
 | [![Join the chat at https://gitter.im/Gridap-jl/community](https://badges.gitter.im/Gridap-jl/community.svg)](https://gitter.im/Gridap-jl/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) |
 | **Citation** |

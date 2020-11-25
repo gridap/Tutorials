@@ -14,7 +14,7 @@ const E = 3.0e10 # Pa
 const ν = 0.3 # dim-less
 const λ = (E*ν)/((1+ν)*(1-2*ν))
 const μ = E/(2*(1+ν))
-@law σe(ε) = λ*tr(ε)*one(ε) + 2*μ*ε # Pa
+σe(ε) = λ*tr(ε)*one(ε) + 2*μ*ε # Pa
 τ(ε) = sqrt(ε ⊙ σe(ε)) # Pa^(1/2)
 
 # Damage
@@ -31,7 +31,7 @@ function q(r)
 end
 
 # Update of the state variables
-@law function update(ε_in,r_in,d_in)
+function new_state(r_in,d_in,ε_in)
   τ_in = τ(ε_in)
   if τ_in <= r_in
     r_out = r_in
@@ -47,25 +47,18 @@ end
 
 # Constitutive law and its linearization
 
-@law function σ(ε_in,r_in,d_in)
-
-  _, _, d_out = update(ε_in,r_in,d_in)
-
+function σ(ε_in,r_in,d_in)
+  _, _, d_out = new_state(r_in,d_in,ε_in)
   (1-d_out)*σe(ε_in)
-
 end
 
-@law function dσ(dε_in,ε_in,state)
-
+function dσ(dε_in,ε_in,state)
   damaged, r_out, d_out = state
-
   if ! damaged
     return (1-d_out)*σe(dε_in)
-
   else
     c_inc = ((q(r_out) - H*r_out)*(σe(ε_in) ⊙ dε_in))/(r_out^3)
     return (1-d_out)*σe(dε_in) - c_inc*σe(ε_in)
-
   end
 end
 
@@ -74,18 +67,12 @@ const b_max = VectorValue(0.0,0.0,-(9.81*2.5e3))
 
 # ## L2 projection
 # form Gauss points to a Lagrangian piece-wise discontinuous space
-function project(q,trian,quad,order)
-
-  a(u,v) = u*v
-  l(v) = v*q
-  t_Ω = AffineFETerm(a,l,trian,quad)
-
-  V = TestFESpace(
-    reffe=:Lagrangian, valuetype=Float64, order=order,
-    triangulation=trian, conformity=:L2)
-
-  U = TrialFESpace(V)
-  op = AffineFEOperator(U,V,t_Ω)
+function project(q,model,dΩ,order)
+  reffe = ReferenceFE(:Lagrangian,Float64,order)
+  V = FESpace(model,reffe,conformity=:L2)
+  a(u,v) = ∫( u*v )*dΩ
+  l(v) = ∫( v*q )*dΩ
+  op = AffineFEOperator(a,l,V,V)
   qh = solve(op)
   qh
 end
@@ -105,57 +92,46 @@ function main(;n,nsteps)
 
   order = 1
 
-  V = TestFESpace(
-    reffe=:Lagrangian, valuetype=VectorValue{3,Float64}, order=order,
-    model=model,
-    labels = labeling,
-    dirichlet_tags=["supports"])
-
+  reffe = ReferenceFE(:Lagrangian,VectorValue{3,Float64},order)
+  V = TestFESpace(model,reffe,labels=labeling,dirichlet_tags=["supports"])
   U = TrialFESpace(V)
 
-  trian = Triangulation(model)
   degree = 2*order
-  quad = CellQuadrature(trian,degree)
+  Ω = Triangulation(model)
+  dΩ = LebesgueMeasure(Ω,degree)
 
-  r = CellField(r_0,trian,quad)
-  d = CellField(0.0,trian,quad)
+  r = CellState(r_0,dΩ)
+  d = CellState(0.0,dΩ)
 
   nls = NLSolver(show_trace=true, method=:newton)
   solver = FESolver(nls)
 
-  function step(uh_in,factor)
-
+  function step(uh_in,factor,cache)
     b = factor*b_max
-    res(u,v) = ( ε(v) ⊙ σ(ε(u),r,d) ) - v⋅b
-    function jac(u,du,v)
-      state = update(ε(u),r,d)
-      ε(v) ⊙ dσ(ε(du),ε(u),state)
-    end
-    t_Ω = FETerm(res,jac,trian,quad)
-    op = FEOperator(U,V,t_Ω)
-
-    uh_out, = solve!(uh_in,solver,op)
-
-    update_state_variables!(update,quad,ε(uh_out),r,d)
-
-    uh_out
+    res(u,v) = ∫(  ε(v) ⊙ (σ∘(ε(u),r,d))  - v⋅b )*dΩ
+    jac(u,du,v) = ∫(  ε(v) ⊙ (dσ∘(ε(du),ε(u),new_state∘(r,d,ε(u))))  )*dΩ
+    op = FEOperator(res,jac,U,V)
+    uh_out, cache = solve!(uh_in,solver,op,cache)
+    update_state!(new_state,r,d,ε(uh_out))
+    uh_out, cache
   end
 
   factors = collect(1:nsteps)*(1/nsteps)
   uh = zero(V)
+  cache = nothing
 
   for (istep,factor) in enumerate(factors)
 
     println("\n+++ Solving for load factor $factor in step $istep of $nsteps +++\n")
 
-    uh = step(uh,factor)
-    dh = project(d,trian,quad,order)
-    rh = project(r,trian,quad,order)
+    uh,cache = step(uh,factor,cache)
+    dh = project(d,model,dΩ,order)
+    rh = project(r,model,dΩ,order)
 
     writevtk(
-      trian,"results_$(lpad(istep,3,'0'))",
+      Ω,"results_$(lpad(istep,3,'0'))",
       cellfields=["uh"=>uh,"epsi"=>ε(uh),"damage"=>dh,
-                  "threshold"=>rh,"sigma_elast"=>σe(ε(uh))])
+                  "threshold"=>rh,"sigma_elast"=>σe∘ε(uh)])
 
   end
 

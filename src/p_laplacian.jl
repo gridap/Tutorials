@@ -71,10 +71,8 @@ add_tag_from_tags!(labels,"dirig",
 # 
 # Now, we can build the FE space by using the newly defined boundary tags.
 
-V0 = TestFESpace(
-  reffe=:Lagrangian, order=1, valuetype=Float64,
-  conformity=:H1, model=model, labels=labels,
-  dirichlet_tags=["diri0", "dirig"])
+reffe = ReferenceFE(:Lagrangian,Float64,1)
+V0 = TestFESpace(model,reffe,conformity=:H1,labels=labels,dirichlet_tags=["diri0", "dirig"])
 
 # The construction of this space is essentially the same as in the first tutorial (we build a continuous scalar-valued Lagrangian interpolation of first order). However, we also pass here the `labels` object (that contains the newly created boundary tags). From this FE space, we define the trial FE spaces
 
@@ -83,38 +81,35 @@ Ug = TrialFESpace(V0,[0,g])
 
 # ## Nonlinear FE problem
 # 
-# At this point, we are ready to build the nonlinear FE problem. To this end, we need to define the weak residual and also its corresponding Jacobian. This is done following a similar procedure to the one considered in previous tutorials to define the bilinear and linear forms associated with linear FE problems. In this case, instead of an `AffineFETerm` (which is for linear problems), we use a `FETerm` which accounts for the non-linear case. An instance of `FETerm` is constructed by providing the integrands of the weak residual and its Jacobian (in a similar way an `AffineFETerm` is constructed from the integrands of the bilinear and linear forms). 
+# At this point, we are ready to build the nonlinear FE problem. To this end, we need to define the weak residual and also its corresponding Jacobian. This is done following a similar procedure to the one considered in previous tutorials to define the bilinear and linear forms associated with linear FE problems. We first need to define the usual objects for numerical integration:
+
+degree=2
+Ω = Triangulation(model)
+dΩ = LebesgueMeasure(Ω,degree)
+
 # 
-# On the one hand, the integrand of the weak residual is built as follows
+# On the one hand, the weak residual is built as follows
 
 using LinearAlgebra: norm
 const p = 3
-@law flux(∇u) = norm(∇u)^(p-2) * ∇u
+flux(∇u) = norm(∇u)^(p-2) * ∇u
 f(x) = 1
-res(u,v) = ∇(v)⊙flux(∇(u)) - v*f
+res(u,v) = ∫( ∇(v)⊙(flux∘∇(u)) - v*f )*dΩ
 
 # Function `res` is the one representing the integrand of the weak residual $[r(u)](v)$. The first argument of function `res` stands for the function $u\in U_g$, where the residual is evaluated, and the second argument stands for a generic test function $v\in V_0$. Note that we have used the macro `@law` to construct the "constitutive  law" that relates the nonlinear flux with the gradient of the solution.
 # 
-# On the other hand,  we implement a function `jac` representing the integrand of the Jacobian
+# On the other hand,  we (optionally) implement a function `jac` representing the Jacobian.
+dflux(∇du,∇u) = (p-2)*norm(∇u)^(p-4)*(∇u⊙∇du)*∇u+norm(∇u)^(p-2)*∇du
+jac(u,du,v) = ∫( ∇(v)⊙(dflux∘(∇(du),∇(u))) )*dΩ
 
-@law dflux(∇du,∇u) =
-  (p-2)*norm(∇u)^(p-4)*(∇u ⊙ ∇du)*∇u + norm(∇u)^(p-2) * ∇du
-jac(u,du,v) = ∇(v)⊙dflux(∇(du),∇(u))
+# The first argument of function `jac` stands for function $u\in U_g$, where the Jacobian is evaluated. The second argument is a test function $v\in V_0$, and the third argument represents an arbitrary direction $\delta u \in V_0$. 
+#
+# We finally construct the nonlinear FE problem
 
-# The first argument of function `jac` stands for function $u\in U_g$, where the Jacobian is evaluated. The second argument is a test function $v\in V_0$, and the third argument represents an arbitrary direction $\delta u \in V_0$. Note that we have also used the macro `@law` to define the linearization of the nonlinear flux. 
-# 
-# With these functions, we build the `FETerm` as follows:
+op = FEOperator(res,jac,Ug,V0)
 
-trian = Triangulation(model)
-degree=2
-quad = CellQuadrature(trian,degree)
-t_Ω = FETerm(res,jac,trian,quad)
+# Here, we have constructed an instance of `FEOperator`, which is the type that represents a general nonlinear FE problem in Gridap. The constructor takes the functions representing the weak residual and Jacobian, and the test and trial spaces. If only the function for the residual is provided, the Jacobian is computed internally with automatic differentiation.
 
-# We build the `FETerm` by passing in the first and second arguments the functions that represent the integrands of the residual and Jacobian respectively. The other two arguments, are the triangulation and quadrature used to perform the integrals numerically. From this `FETerm` object, we finally construct the nonlinear FE problem
-
-op = FEOperator(Ug,V0,t_Ω)
-
-# Here, we have constructed an instance of `FEOperator`, which is the type that represents a general nonlinear FE problem in Gridap. The constructor takes the test and trial spaces, and the `FETerms` objects describing the corresponding weak form (in this case only a single term).
 # 
 # ## Nonlinear solver phase
 # 
@@ -139,7 +134,7 @@ uh, = solve!(uh0,solver,op)
 
 # We finish this tutorial by writing the computed solution for visualization (see next figure).
 
-writevtk(trian,"results",cellfields=["uh"=>uh])
+writevtk(Ω,"results",cellfields=["uh"=>uh])
 
 # ![](../assets/p_laplacian/sol-plap.png)
 # 

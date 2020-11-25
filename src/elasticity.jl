@@ -102,7 +102,7 @@ dΩ = LebesgueMeasure(Ω,degree)
 
 #  From these objects and the constitutive law previously defined, we can write the weak form as follows
 
-a(u,v) = ∫( ε(v) ⊙ σ∘ε(u) )*dΩ
+a(u,v) = ∫( ε(v) ⊙ (σ∘ε(u)) )*dΩ
 l(v) = 0
 
 # Note that we have composed function `σ` with the strain field `ε(u)` in order to compute the stress field associated with the trial function `u`. The linear form is simply `l(v) = 0` since there are not external forces in this example.
@@ -175,7 +175,7 @@ end
 #
 # Since we have constructed a new constitutive law, we need to re-define the bilinear form of the problem:
 
-a(u,v) = ∫( ε(v) ⊙ σ_bimat∘(ε(u),tags) )*dΩ
+a(u,v) = ∫( ε(v) ⊙ (σ_bimat∘(ε(u),tags)) )*dΩ
 
 # In previous line, pay attention in the usage of the new constitutive law `σ_bimat`. Note that we have passed the vector `tags` containing the material identifiers in the last argument of the function`.
 #

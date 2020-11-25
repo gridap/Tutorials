@@ -177,8 +177,8 @@ const μ_f = 0.01
 # ```
 
 # Before creating the FE spaces, we first need to define the discrete model of each of the sub-domains, which are constructed restricting the global discrete model to the corresponding part. This is done by calling the `DiscreteModel` function with the desired geometrical part label, i.e. `"solid"` and `"fluid"`, respectively.
-model_solid = DiscreteModel(model,"solid")
-model_fluid = DiscreteModel(model,"fluid")
+model_solid = DiscreteModel(model,tags="solid")
+model_fluid = DiscreteModel(model,tags="fluid")
 
 # In what follows we will assume a second-order veloticty interpolation, i.e. $k=2$
 k = 2
@@ -189,18 +189,16 @@ reffeₚ = ReferenceFE(:Lagrangian,Float64,k-1)
 
 # Having set up all the ingredients, we can create the different FE spaces for the test functions. For the velocity FE spaces we call the `TestFESpace` function with the corresponding discrete model, using the velocity reference FE `reffeᵤ` and conformity `:H1`. Note that we assign different Dirichlet boundary labels for the two different parts, generating the variational spaces with homogeneous Dirichlet boundary conditions, $V_{\rm F,0}$ and $V_{\rm S,0}$ .
 Vf = TestFESpace(
-  #model_fluid,  # Uncommenting this line doesn't work in new version
-  model,
-    reffeᵤ,
-    conformity=:H1,
-    dirichlet_tags=["inlet", "noSlip", "cylinder"])
+  model_fluid,
+  reffeᵤ,
+  conformity=:H1,
+  dirichlet_tags=["inlet", "noSlip", "cylinder"])
 
 Vs = TestFESpace(
-  #model_solid, # Uncommenting this line doesn't work in new version
-  model,
-    reffeᵤ,
-    conformity=:H1,
-    dirichlet_tags=["fixed"])
+  model_solid,
+  reffeᵤ,
+  conformity=:H1,
+  dirichlet_tags=["fixed"])
 
 # For the pressure test FE space, we use the fluid discrete model, the pressure reference FE `reffeₚ` and `:C0` conformity.
 Qf = TestFESpace(

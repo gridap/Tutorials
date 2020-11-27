@@ -288,14 +288,12 @@ t_Γfs(χ,q,w,n) = q.⁺*n.⁺ - χ*n.⁺⋅(σ_dev_f∘ε(w.⁺))
 a_fs((us,uf,p),(vs,vf,q)) = ∫( α*(jump_Γ(vf,vs)⋅jump_Γ(uf,us)) + jump_Γ(vf,vs)⋅t_Γfs(1,p,uf,n_Γfs) + t_Γfs(χ,q,vf,n_Γfs)⋅jump_Γ(uf,us) )*dΓ_fs
 
 # From the interface triangulation we can obtain the interface elements length, $h$, and the penalty parameter, $\alpha=\gamma\frac{\mu_f}{h}$, used in the Nitsche's terms.
-# using Gridap.Arrays
-# using LinearAlgebra: norm
-# xe = get_cell_coordinates(T)
-# he = lazy_map(x->norm(x[2]-x[1]),xe)
 using Gridap.CellData
 dim = num_cell_dims(T_Γfs)
-h_Γfs = get_cell_measure(T_Γfs.⁺).^(1/dim)
-α = lazy_map(h->γ*μ_f/h,h_Γfs)
+h_Γfs_on_T = get_cell_measure(T_Γfs.⁺).^(1/dim)
+h_Γfs_on_Γfs⁺ = lazy_map(Reindex(get_cell_measure(T_Γfs.⁺).^(1/dim)),T_Γfs.⁺.glue.face_to_cell)
+α⁺ = lazy_map(h->γ*μ_f/h,h_Γfs_on_Γfs⁺)
+α = CellField(α⁺,T_Γfs)
 
 # - $l_s(\mathbf{v}^h_{\rm s})$ is the linear form associated with the solid counterpart, defined as
 # ```math
@@ -359,11 +357,6 @@ writevtk(T,"trian", cellfields=["uhs" => uhs, "uhf" => uhf, "ph" => ph])
 # ![](../assets/fsi/Global_solution.png)
 
 # However, we can also restrict the fields to the active part by calling the function `restrict` with the field along with the respective active triangulation.
-# uhs_solid = restrict(uhs, T_s)
-# uhf_fluid = restrict(uhf, T_f)
-# ph_fluid = restrict(ph, T_f)
-#writevtk(T_s,"trian_solid",cellfields=["uhs"=>uhs_solid])
-#writevtk(T_f,"trian_fluid",cellfields=["ph"=>ph_fluid,"uhf"=>uhf_fluid])
 writevtk(T_s,"trian_solid",cellfields=["uhs"=>uhs])
 writevtk(T_f,"trian_fluid",cellfields=["ph"=>ph,"uhf"=>uhf])
 # ![](../assets/fsi/Local_solution.png)
@@ -375,9 +368,6 @@ writevtk(T_f,"trian_fluid",cellfields=["ph"=>ph,"uhf"=>uhf])
 T_ΓS = BoundaryTriangulation(model,tags=["cylinder","interface"])
 dΓₛ = LebesgueMeasure(T_ΓS,bdegree)
 n_ΓS = get_normal_vector(T_ΓS)
-# uh_ΓS = restrict(uhf_fluid,T_ΓS)
-# ph_ΓS = restrict(ph_fluid,T_ΓS)
-#FD, FL = sum( ∫( (n_ΓS⋅σ_dev_f(ε(uh_ΓS))) - ph_ΓS*n_ΓS )*dΓₛ )
 FD, FL = sum( ∫( (n_ΓS⋅σ_dev_f(ε(uhf))) - ph*n_ΓS )*dΓₛ )
 println("Drag force: ", FD)
 println("Lift force: ", FL)

@@ -123,11 +123,11 @@ conv(u,∇u) = Re*(∇u')⋅u
 dconv(du,∇du,u,∇u) = conv(u,∇du)+conv(du,∇u)
 
 # The bilinear form reads
-a((u,p),(v,q)) = ∫( ∇(v)⊙∇(u) - (∇⋅v)*p + q*(∇⋅u) )*dΩ
+a((u,p),(v,q)) = ∫( ∇(v)⊙∇(u) - (∇⋅v)*p + q*(∇⋅u) )dΩ
 
 # The nonlinear term and its Jacobian are given by
-c(u,v) = ∫( v⊙(conv∘(u,∇(u))) )*dΩ
-dc(u,du,v) = ∫( v⊙(dconv∘(du,∇(du),u,∇(u))) )*dΩ
+c(u,v) = ∫( v⊙(conv∘(u,∇(u))) )dΩ
+dc(u,du,v) = ∫( v⊙(dconv∘(du,∇(du),u,∇(u))) )dΩ
 
 # Finally, the Navier-Stokes weak form residual and Jacobian can be defined as
 res((u,p),(v,q)) = a((u,p),(v,q)) + c(u,v)

@@ -43,8 +43,8 @@ dΩ = LebesgueMeasure(Ωₕ,degree)
 
 # Define bilinear and linear form
 f = VectorValue(0.0,0.0)
-a((u,p),(v,q)) = ∫( ∇(v)⊙∇(u) - (∇⋅v)*p + q*(∇⋅u) )*dΩ
-l((v,q)) = ∫( v⋅f )*dΩ
+a((u,p),(v,q)) = ∫( ∇(v)⊙∇(u) - (∇⋅v)*p + q*(∇⋅u) )dΩ
+l((v,q)) = ∫( v⋅f )dΩ
 
 # Build affine FE operator
 op = AffineFEOperator(a,l,X,Y)

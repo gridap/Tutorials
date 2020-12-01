@@ -138,8 +138,11 @@ du = get_cell_shapefuns_trial(Uₕ)
 ## PENDING
 # is_test(dv) # true
 ##
+Gridap.FESpaces.BasisStyle(dv) == Gridap.FESpaces.TestBasis() # true
+
 # is_trial(du) # true
 ## PENDING
+Gridap.FESpaces.BasisStyle(du) == Gridap.FESpaces.TrialBasis() #true
 
 # ## The geometrical model
 
@@ -359,18 +362,21 @@ bₖ = Gridap.FESpaces.FEBasis(ϕrₖ,Tₕ,Gridap.FESpaces.TrialBasis(),Referenc
 ∇ϕrₖ = Fill(∇ϕr,num_cells(Tₕ))
 ∇ϕₖ  = lazy_map(Broadcasting(push_∇),∇ϕrₖ,ξₖ)
 
+∇ϕrᵀ  = Broadcasting(∇)(transpose(ϕr))
+∇ϕrₖᵀ = Fill(∇ϕrᵀ,num_cells(Tₕ))
+∇ϕₖᵀ  = lazy_map(Broadcasting(push_∇),∇ϕrₖᵀ,ξₖ)
 #
 lazy_map(evaluate,∇ϕₖ,qₖ)
 # PENDING
 # @test evaluate(∇ϕₖ,qₖ) == evaluate(∇(ϕₖ),qₖ)
-@test evaluate(∇ϕₖ,qₖ) == evaluate(get_cell_datA(∇(dv)),qₖ)
+@test lazy_map(evaluate,∇ϕₖ,qₖ) == lazy_map(evaluate,get_cell_data(∇(dv)),qₖ)
 
 # We can now evaluate both the CellBasis and the array of physical shape functions,
 # and check we get the same.
 
 #@test evaluate(∇ϕₖ,qₖ) == evaluate(∇(bₖ),qₖ) == evaluate(∇(dv),qₖ)
 
-@test evaluate(∇ϕₖ,qₖ) == evaluate(∇(dv),qₖ)
+#@test evaluate(∇ϕₖ,qₖ) == evaluate(∇(dv),qₖ)
 
 
 # ## A low-level definition of the FE function
@@ -502,7 +508,7 @@ assemble_vector!(b,assem,rs)
 # After computing the residual, we use similar ideas for the Jacobian.
 # The process is the same as above, so it does not require more explanations
 
-int = lazy_map(Broadcasting(Operation(⋅)),∇ϕₖ,∇ϕₖ)
+int = lazy_map(Broadcasting(Operation(⋅)),∇ϕₖ,∇ϕₖᵀ)
 @test all(collect(lazy_map(evaluate,int,qₖ)) .== collect(lazy_map(evaluate,get_cell_data(∇(du)⋅∇(dv)),qₖ)))
 
 intq = lazy_map(evaluate,int,qₖ)
@@ -512,7 +518,7 @@ iwq = lazy_map(IntegrationMap(),intq,Qₕ.cell_weight,Jq)
 jac = integrate(∇(du)⋅∇(dv),Qₕ)
 @test collect(iwq) == collect(jac)
 
-rs = ([jac],[cellids],[cellids])
+rs = ([iwq],[cellids],[cellids])
 A = allocate_matrix(assem,rs)
 A = assemble_matrix!(A,assem,rs)
 
@@ -524,4 +530,4 @@ ufₕ = FEFunction(Uₕ,uf)
 
 #
 
-@test sum(integrate((u-ufₕ)*(u-ufₕ),Tₕ,Qₕ)) <= 10^-8
+@test sum(integrate((u-ufₕ)*(u-ufₕ),Qₕ)) <= 10^-8

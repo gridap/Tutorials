@@ -60,8 +60,16 @@ model = CartesianDiscreteModel(pmin,pmax,partition,map=stretching)
 u(x) = x[1] # Analytical solution (for Dirichlet data)
 
 T = Float64; order = 1
-Vₕ = FESpace(model=model,valuetype=T,reffe=:Lagrangian,order=order,
-             conformity=:H1,dirichlet_tags="boundary")
+pol = Polytope(Fill(HEX_AXIS,D)...)
+reffe = LagrangianRefFE(T,pol,order)
+
+# BEG BEFORE
+# Vₕ = FESpace(model=model,valuetype=T,reffe=:Lagrangian,order=order,
+#              conformity=:H1,dirichlet_tags="boundary")
+# EN BEFORE
+Vₕ = FESpace(model,reffe;conformity=:H1,dirichlet_tags="boundary")
+
+
 Uₕ = TrialFESpace(Vₕ,u)
 
 # We also want to extract the triangulation of the model and obtain the quadrature.
@@ -73,8 +81,11 @@ Qₕ = CellQuadrature(Tₕ,2*order)
 # `Gridap`) in the parametric space in which finite element spaces are usually
 # defined (and always integrated) and their corresponding weights.
 
-qₖ = get_coordinates(Qₕ)
-wₖ = get_weights(Qₕ)
+## PENDING
+# P1. qₖ = get_coordinates(Qₕ)
+# P2. wₖ = get_weights(Qₕ)
+qₖ = get_cell_data(get_cell_points(Qₕ))
+## PENDING
 
 # ## Exploring FE functions in `Gridap`
 
@@ -86,7 +97,7 @@ uₕ = FEFunction(Uₕ,rand(num_free_dofs(Uₕ)))
 # We can extract the array that at each cell of the mesh returns a `Field`,
 # the FE function restricted to that cell
 
-uₖ = get_array(uₕ)
+uₖ = get_cell_data(uₕ)
 
 # An essential part of `Gridap` is the concept of `Field`. It provides an
 # abstract representation of a physical field of scalar (e.g., a `Float64`),
@@ -101,11 +112,11 @@ uₖ = get_array(uₕ)
 # We can also extract the global indices of the DOFs in each cell, the well-known
 # local-to-global map in FE methods.
 
-σₖ = get_cell_dofs(Uₕ)
+σₖ = get_cell_dof_ids(Uₕ)
 
 # Finally, we can extract the vector of values.
 
-Uₖ = get_cell_values(uₕ)
+Uₖ = get_cell_dof_values(uₕ)
 
 # Take a look at the type of array
 # it is. In Gridap we put negative labels to fixed DOFs and positive to free DOFs,
@@ -117,18 +128,18 @@ Uₖ = get_cell_values(uₕ)
 # We can also extract an array that provides at each cell the finite element
 # basis in the physical space, which are again fields.
 
-dv = get_cell_basis(Vₕ)
-du = get_cell_basis(Uₕ)
+dv = get_cell_shapefuns(Vₕ)
+du = get_cell_shapefuns_trial(Uₕ)
 
 # We note that these bases differ from the fact that the first one is of
 # test type and the second one of trial type (in the Galerkin method). This information
 # is consumed in different parts of the code.
 
-is_test(dv) # true
-
+## PENDING
+# is_test(dv) # true
 ##
-
-is_trial(du) # true
+# is_trial(du) # true
+## PENDING
 
 # ## The geometrical model
 
@@ -193,7 +204,9 @@ reffe_g = LagrangianRefFE(Float64,pol,1)
 # lazy array of arrays of `Point`, i.e., the coordinates of the nodes per
 # each cell.
 
-Xₖ = LocalToGlobalArray(ctn,X)
+# OLD Xₖ = LocalToGlobalArray(ctn,X)
+
+Xₖ = lazy_map(Broadcasting(Reindex(X)),ctn)
 
 #
 
@@ -209,18 +222,19 @@ Xₖ = LocalToGlobalArray(ctn,X)
 # Next, we can compute the geometrical map as the combination of these shape
 # functions in the parametric space with the node coordinates (at each cell)
 
-lc = Gridap.Fields.LinComValued()
-lcₖ = Fill(lc,num_cells(model))
-ψₖ = apply(lcₖ,ϕrgₖ,Xₖ)
+#
+# OLD lc = Gridap.Fields.LinComValued()
+# OLD lcₖ = Fill(lc,num_cells(model))
+# OLD ψₖ = apply(lcₖ,ϕrgₖ,Xₖ)
 
 # Note that since we use the same kernel for all cells, we don't need to build the array of kernels
 # `lcₖ`, we can simply write
 
-ψₖ = apply(lc,ϕrgₖ,Xₖ)
+ψₖ = lazy_map(linear_combination,Xₖ,ϕrgₖ)
 
 #
 
-@test evaluate(ψₖ,qₖ) == evaluate(ξₖ,qₖ) # check
+@test lazy_map(evaluate,ψₖ,qₖ) == lazy_map(evaluate,ξₖ,qₖ) # check
 
 # We have re-computed (in a low-level way) the geometrical map. First, we have
 # created a (constant) array with the kernel `LinComValued`. We have internally
@@ -249,19 +263,24 @@ lcₖ = Fill(lc,num_cells(model))
 # The gradient in the parametric space can be computed as a gradient of the
 # global array defined before, or taking the gradient and filling the array
 
-∇ϕrgₖ = Fill(∇(ϕrg),num_cells(model))
+∇ϕrg  = Broadcasting(∇)(ϕrg) # = evaluate(Broadcasting(∇),ϕrg) = broadcast(∇,ϕrg)
+∇ϕrgₖ = Fill(∇ϕrg,num_cells(model))
+
+#
+lazy_map(evaluate,∇ϕrgₖ,qₖ)
+# PENDING
+#@test lazy_map(evaluate,∇ϕrgₖ,qₖ) == evaluate(∇(ϕrgₖ),qₖ)
 
 #
 
-@test evaluate(∇ϕrgₖ,qₖ) == evaluate(∇(ϕrgₖ),qₖ)
-
+#J = apply(lc,∇ϕrgₖ,Xₖ)
+J = lazy_map(linear_combination,Xₖ,∇ϕrgₖ)
+# Why evaluate(Broadcasting(∇)(ξₖ),qₖ) fails?
 #
-
-J = apply(lc,∇ϕrgₖ,Xₖ)
-
 #
-
-@test all(evaluate(J,qₖ) .≈ evaluate(∇(ξₖ),qₖ))
+evaluate(lazy_map,evaluate,J,qₖ)
+# PENDING Why evaluate(lazy_map(∇,ξₖ),qₖ) not working?
+# @test all(evaluate(J,qₖ) .≈ evaluate(∇(ξₖ),qₖ))
 
 # ## A low-level definition of FE space bases
 
@@ -280,10 +299,13 @@ reffe = LagrangianRefFE(T,pol,order)
 # and then we apply it to the basis in the parametric space and
 # the geometrical map
 
-map = Gridap.Fields.AddMap()
-ϕₖ = apply(map,ϕrₖ,ξₖ)
+# TRIGGERS ERRORS (PENDING)
+ϕₖ = lazy_map(Broadcasting(∘),ϕrₖ,lazy_map(inverse_map,ξₖ))
 
-@test ϕₖ === attachmap(ϕrₖ,ξₖ)
+# PENDING
+# P1. map = Gridap.Fields.AddMap()
+# P2. ϕₖ = apply(map,ϕrₖ,ξₖ)
+# P3. @test ϕₖ === attachmap(ϕrₖ,ξₖ)
 
 # Again, the result is an `AppliedArray` that provides a `Field` at each cell.
 
@@ -304,13 +326,12 @@ map = Gridap.Fields.AddMap()
 # FE space, the most common case, false means FEs with DOFs defined in the physical
 # space).
 
-
-#bₖ = GenericCellBasis(Val{false}(),ϕₖ,ξₖ,Val{true}())
+bₖ = Gridap.FESpaces.FEBasis(ϕrₖ,Tₕ,Gridap.FESpaces.TrialBasis(),ReferenceDomain())
 
 # We can check that the basis we have created return the same values as the
 # one obtained with high-level APIs
 
-#@test collect(evaluate(dv,qₖ)) == collect(evaluate(bₖ,qₖ))
+@test lazy_map(evaluate,get_cell_data(dv),qₖ) == lazy_map(evaluate,get_cell_data(bₖ),qₖ)
 
 # There are some objects in `Gridap` that are nothing but a lazy array plus
 # some metadata. Another example could be an array of arrays of points like `q`.
@@ -330,13 +351,19 @@ map = Gridap.Fields.AddMap()
 # that is needed for the computation of derivatives in the physical space
 # but we have merged all the operations in the PhysGrad() kernel.
 
-grad = Gridap.Fields.Valued(Gridap.Fields.PhysGrad())
-∇ϕrₖ = Fill(Gridap.Fields.FieldGrad(ϕr),num_cells(Tₕ))
-∇ϕₖ = apply(grad,∇ϕrₖ,J)
+# grad = Gridap.Fields.Valued(Gridap.Fields.PhysGrad())
+# ∇ϕrₖ = Fill(Gridap.Fields.FieldGrad(ϕr),num_cells(Tₕ))
+# ∇ϕₖ = apply(grad,∇ϕrₖ,J)
+
+∇ϕr  = Broadcasting(∇)(ϕr)
+∇ϕrₖ = Fill(∇ϕr,num_cells(Tₕ))
+∇ϕₖ  = lazy_map(Broadcasting(push_∇),∇ϕrₖ,ξₖ)
 
 #
-
-@test evaluate(∇ϕₖ,qₖ) == evaluate(∇(ϕₖ),qₖ)
+lazy_map(evaluate,∇ϕₖ,qₖ)
+# PENDING
+# @test evaluate(∇ϕₖ,qₖ) == evaluate(∇(ϕₖ),qₖ)
+@test evaluate(∇ϕₖ,qₖ) == evaluate(get_cell_datA(∇(dv)),qₖ)
 
 # We can now evaluate both the CellBasis and the array of physical shape functions,
 # and check we get the same.
@@ -360,26 +387,34 @@ grad = Gridap.Fields.Valued(Gridap.Fields.PhysGrad())
 # and applied array with all these ingredients. As above, it is a lazy array
 # that will return the shape functions at each cell in the physical space
 
-lc = Gridap.Fields.LinComValued()
-uₖ = apply(lc,ϕₖ,Uₖ)
+uₖ_own = lazy_map(linear_combination,Uₖ,ϕrₖ)
 
-# We can check that we get the same results as uₕ
+# PENDING: I cannot use ϕₖ in the line right above
+# lc = Gridap.Fields.LinComValued()
+# uₖ = apply(lc,ϕₖ,Uₖ)
 
-@test evaluate(uₖ,qₖ) == evaluate(uₕ,qₖ)
+# We can check that we get the same results as with uₖ
+
+@test lazy_map(evaluate,uₖ_own,qₖ) == lazy_map(evaluate,uₖ,qₖ)
 
 # Now, since we can apply the gradient over this array
 
-gradient(uₖ)
+# PENDING
+# gradient(uₖ)
 
 # or compute it using low-level methods, as a linear combination
 # of ∇(ϕₖ) instead of ϕₖ
+∇uₖ_own = lazy_map(linear_combination,Uₖ,∇ϕₖ)
 
-∇uₖ = apply(lc,∇ϕₖ,Uₖ)
-aux = ∇(uₖ)
+# PENDING
+# aux = ∇(uₖ)
+
+∇uₖ = get_cell_data(∇(uₕ))
+
 
 # We can check we get the expected result
 
-@test evaluate(∇uₖ,qₖ) == evaluate(aux,qₖ)
+@test all(lazy_map(evaluate,∇uₖ,qₖ) .≈ lazy_map(evaluate,∇uₖ_own,qₖ))
 
 # ## A low-level implementation of the residual integration and assembly
 
@@ -388,33 +423,36 @@ aux = ∇(uₖ)
 # Let us consider now the integration of (bi)linear forms. The idea is to
 # compute first the following residual for our random function uₕ
 
-intg = ∇(uₕ)⋅∇(dv)
+intg = get_cell_data(∇(uₕ)⋅∇(dv))
 
 # but we are going to do it using low-level methods.
 
 # First, we create an array that for each cell returns the dot operator
 
-dotop = Gridap.Fields.FieldBinOp(dot)
-dotopv = Gridap.Fields.Valued(dotop)
-Iₖ = apply(dotopv,∇uₖ,∇ϕₖ)
+# dotop = Gridap.Fields.FieldBinOp(dot)
+# dotopv = Gridap.Fields.Valued(dotop)
+# Iₖ = apply(⋅,∇uₖ,∇ϕₖ)
+
+Iₖ = lazy_map(Broadcasting(Operation(⋅)),∇uₖ,∇ϕₖ)
+
 # Next we consider a lazy `AppliedArray` that applies the `dot_ₖ` array of
 # operations (binary operator) over the gradient of the FE function and
 # the gradient of the FE basis in the physical space
 
-@test evaluate(intg,qₖ) == evaluate(Iₖ,qₖ)
+@test lazy_map(evaluate,intg,qₖ) == lazy_map(evaluate,Iₖ,qₖ)
 
 # Now, we can finally compute the cell-wise residual array, which using
 # the high-level `integrate` function is
 
-res = integrate(∇(uₕ)⋅∇(dv),Tₕ,Qₕ)
+res = integrate(∇(uₕ)⋅∇(dv),Qₕ)
 
 # In a low-level, what we do is to apply (create a `AppliedArray`)
 # the `IntKernel` over the integrand evaluated at the integration
 # points, the weights, and the Jacobian evaluated at the integration points
 
-Jq = evaluate(J,qₖ)
-intq = evaluate(Iₖ,qₖ)
-iwq = apply(Gridap.Fields.IntKernel(),intq,wₖ,Jq)
+Jq = lazy_map(evaluate,J,qₖ)
+intq = lazy_map(evaluate,Iₖ,qₖ)
+iwq = lazy_map(IntegrationMap(),intq,Qₕ.cell_weight,Jq)
 
 @test all(res .≈ iwq)
 
@@ -428,12 +466,14 @@ collect(iwq)
 # [anonymous function](https://docs.julialang.org/en/v1/manual/functions/#man-anonymous-functions-1)
 # with the bilinear form, triangulation and quadrature
 
-blf(u,v) = ∇(u)⋅∇(v)
-term = LinearFETerm(blf,Tₕ,Qₕ)
+#blf(u,v) = ∇(u)⋅∇(v)
+#term = LinearFETerm(blf,Tₕ,Qₕ)
+# cellvals = get_cell_residual(term,uₕ,dv)
+
+cellvals = ∫( ∇(dv)⋅∇(uₕ) )*Qₕ
+
 
 # and check that we get the same residual as the one defined above
-
-cellvals = get_cell_residual(term,uₕ,dv)
 @test cellvals == iwq
 
 # ## Assembling a residual
@@ -462,17 +502,17 @@ assemble_vector!(b,assem,rs)
 # After computing the residual, we use similar ideas for the Jacobian.
 # The process is the same as above, so it does not require more explanations
 
-int = apply(dotopv,∇(ϕₖ),∇(ϕₖ))
-@test all(collect(evaluate(int,qₖ)) .== collect(evaluate(∇(du)⋅∇(dv),qₖ)))
+int = lazy_map(Broadcasting(Operation(⋅)),∇ϕₖ,∇ϕₖ)
+@test all(collect(lazy_map(evaluate,int,qₖ)) .== collect(lazy_map(evaluate,get_cell_data(∇(du)⋅∇(dv)),qₖ)))
 
-intq = evaluate(int,qₖ)
-Jq = evaluate(J,qₖ)
-iwq = apply(Gridap.Fields.IntKernel(),intq,wₖ,Jq)
+intq = lazy_map(evaluate,int,qₖ)
+Jq = lazy_map(evaluate,J,qₖ)
+iwq = lazy_map(IntegrationMap(),intq,Qₕ.cell_weight,Jq)
 
-jac = integrate(int,Tₕ,Qₕ)
+jac = integrate(∇(du)⋅∇(dv),Qₕ)
 @test collect(iwq) == collect(jac)
 
-rs = ([iwq],[cellids],[cellids])
+rs = ([jac],[cellids],[cellids])
 A = allocate_matrix(assem,rs)
 A = assemble_matrix!(A,assem,rs)
 

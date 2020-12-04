@@ -1,21 +1,30 @@
-# Disclaimer: This tutorial is about a low-level definition of finite element
-# methods. It would be nice to have two (or three) previous tutorials, about
-# `Field`, the lazy array machinery related to `AppliedArray` for _numbers_,
-# and the combination of both to create lazy arrays that involve fields. This
-# is work in progress.
+# --- TO RE-THINK ---
+# Disclaimer: This tutorial is about a low-level definition of Finite Element (FE)
+# methods. It would be convenient to have two (or three) previous tutorials, about
+# the three data type hierarchies rooted at `Map`, `Field`, and `CellDatum`,
+# the details underlying the `lazy_map` generic function, and the related
+# `LazyArray`, and the combination of these to create lazy mathematical expressions
+# that involve fields. This is work in progress.
+# --- TO RE-THINK ---
 
 # This tutorial is advanced and you only need to go through this if you want
-# to know the internals of `Gridap` and what it is doing under the hood.
+# to know the internals of `Gridap` and what it does under the hood.
 # Even though you will likely want to use the high-level APIs in `Gridap`,
 # this tutorial will (hopefully) help if you want to become a `Gridap` developer,
 # not just a user. We also consider that this tutorial shows how powerful and
 # expressive the `Gridap` kernel is, and how mastering it you can implement new
-# algorithms not been provided by the library.
+# algorithms not currently provided by the library.
 
-# Let us start including `Gridap` and some of its packages, to have access to
-# a rich set of not so high-level methods
-# Note that the module `Gridap` provides the high-level API, whereas the sub-modules
-# like `Gridap.FESpaces` provide access to the different parts of the low-level API.
+# It is highly recommended (if not essential) that the tutorial is followed together with a Julia
+# debugger, e.g., the one which comes with the Visual Studio Code (VSCode) extension
+# for the Julia programming language. Some of the observations that come along with
+# the code snippet are quite subtle/technical and may require a deeper exploration
+# of the underlying code using a debugger.
+
+# Let us start including `Gridap` and some of its submodules, to have access to
+# a rich set of not so high-level methods. Note that the module `Gridap` provides
+# the high-level API, whereas the submodules like `Gridap.FESpaces` provide access to
+# the different parts of the low-level API.
 
 using Gridap
 using Gridap.FESpaces
@@ -27,26 +36,25 @@ using Gridap.CellData
 using FillArrays
 using Test
 
-# We first create the geometry model and FE spaces using the
-# high-level interface. In this tutorial, we are not going to describe the
-# most of the geometrical machinery in detail, only what is relevant for the
-# discussion. To simplify the analysis of the outputs,
-# you can consider a 2D mesh, i.e., `D=2` (everything below works for any dim without
-# any extra complication). In order to make things slightly more interesting,
-# e.g., having non-constant Jacobians, we have considered a mesh that is
+# We first create the geometry model and FE spaces using the high-level API.
+# In this tutorial, we are not going to describe the geometrical machinery in detail,
+# only what is relevant for the discussion. To simplify the analysis of the outputs,
+# you can consider a 2D mesh, i.e., `D=2` (everything below works for any spatial dimension
+# without any extra complication). In order to make things slightly more interesting,
+# i.e., having non-constant Jacobians, we have considered a mesh that is
 # a stretching of an equal-sized structured mesh.
 
-L = 2 # Domain length
-D = 2 # dim
-n = 4 # parts per dim
+L = 2 # Domain length in each space dimension
+D = 2 # Number of spatial dimensions
+n = 4 # Partition (i.e., number of cells per space dimension)
 
 function stretching(x::Point)
-m = zeros(length(x)) # zero(mutable(x))
-m[1] = x[1]^2
-for i in 2:D
- m[i] = x[i]
-end
-Point(m)
+   m = zeros(length(x))
+   m[1] = x[1]^2
+   for i in 2:D
+     m[i] = x[i]
+   end
+   Point(m)
 end
 
 pmin = Point(Fill(0,D))
@@ -54,22 +62,31 @@ pmax = Point(Fill(L,D))
 partition = Tuple(Fill(n,D))
 model = CartesianDiscreteModel(pmin,pmax,partition,map=stretching)
 
-# Now, we define the finite element (FE) spaces (Lagrangian, scalar, H1-conforming, i.e.
-# continuous). We are going to extract from these FE spaces some information to
+# The next step is to build the global FE space of functions from which we are
+# going to extract the unknown function of the differential problem at hand. This
+# tutorial explores the Galerkin discretization of the scalar Poisson equation.
+# Thus, we need to build a H1-conforming global FE space. This can be achieved using $C^0$
+# continuous functions made of piece(cell)-wise polynomials. This is precisely the purpose
+# of the following lines of code.
 
-u(x) = x[1] # Analytical solution (for Dirichlet data)
+# First, we build a scalar-valued (`T = Float64`) Lagrangian reference FE of order `order`
+# atop a reference n-cube of dimension `D`. To this end, we first need to create a `Polytope`
+# using an array of dimension `D` with the parameter `HEX_AXIS`, which encodes the reference
+# representation of the cells in the mesh. Then, we create the Lagrangian reference FE using the
+# reference geometry just created in the previous step. It is not the purpose of this tutorial to
+# describe the (key) abstract concept of `ReferenceFE` in Gridap.
 
 T = Float64; order = 1
 pol = Polytope(Fill(HEX_AXIS,D)...)
 reffe = LagrangianRefFE(T,pol,order)
 
-# BEG BEFORE
-# Vₕ = FESpace(model=model,valuetype=T,reffe=:Lagrangian,order=order,
-#              conformity=:H1,dirichlet_tags="boundary")
-# EN BEFORE
+# Second, we build the test (Vₕ) and trial (Uₕ) global finite element (FE) spaces
+# out of `model` and `reffe`. At this point we also specify the notion of conformity
+# that we are willing to satisfy, i.e., H1-conformity.
+
 Vₕ = FESpace(model,reffe;conformity=:H1,dirichlet_tags="boundary")
 
-
+u(x) = x[1]            # Analytical solution (for Dirichlet data)
 Uₕ = TrialFESpace(Vₕ,u)
 
 # We also want to extract the triangulation of the model and obtain the quadrature.

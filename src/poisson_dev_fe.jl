@@ -185,7 +185,7 @@ X = get_node_coordinates(Tₕ)
 
 # You can also extract a cell-wise array that provides the node indices per cell
 
-ctn = get_cell_nodes(Tₕ)
+ctn = get_cell_node_ids(Tₕ)
 
 # or the cell-wise nodal coordinates, combining the previous two arrays
 
@@ -514,7 +514,7 @@ assem = SparseMatrixAssembler(Uₕ,Vₕ)
 # If we had additional terms, we would have more entries in the array.
 # You can take a look at the `SparseMatrixAssembler` struct.
 
-cellids = get_cell_id(Tₕ) # == identity_vector(num_cells(trian))
+cellids = get_cell_to_bgcell(Tₕ) # == identity_vector(num_cells(trian))
 
 rs = ([iwq],[cellids])
 b = allocate_vector(assem,rs)

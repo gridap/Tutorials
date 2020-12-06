@@ -135,7 +135,7 @@ Gridap.FESpaces.DomainStyle(Qₕ) == Gridap.FESpaces.PhysicalDomain()
 # If we evaluate the two expressions above, we can see that the `DomainStyle` trait of Qₕ is
 # `ReferenceDomain`. This means that the evaluation points of the quadrature rules within Qₕ
 # are expressed in the parametric space of the reference domain of the cells. We note that, while
-# finite elements are usually defined in this parametric space (this is indeed standard practice
+# finite elements may not be defined in this parametric space (it is though standard practice
 # with Lagrangian FEs, and other FEs, because of performance reasons), finite element functions are
 # always integrated in such a parametric space.
 
@@ -154,7 +154,7 @@ Qₕ_cell_point = get_cell_points(Qₕ)
 
 # `CellPoint` (just as `CellQuadrature`) is a subtype of `CellDatum` as well
 
-isa(Qₕ_cell_point, CellDatum)
+@test isa(Qₕ_cell_point, CellDatum)
 
 # and thus we can ask for the value of its `DomainStyle` trait, and get an array of quantities out
 # of it using the `get_cell_data` generic function
@@ -173,17 +173,116 @@ qₖ = get_cell_data(Qₕ_cell_point)
 # below), a `CellField`, as it being a subtype of `CellDatum`, might be understood as a
 # collection of `Field`s (or arrays made out them) per each triangulation cell. Unlike a plain
 # array of `Field`s, a `CellField` is associated to triangulation, and it holds the required
-# metadata in order to perform the transformations among parametric spaces when taking
+# metadata in order to perform, e.g., the transformations among parametric spaces when taking
 # a differential operator out of it (e.g., the pull back of the gradients). For example, a global
-# finite element function, or the collection of shape basis functions for each cell are examples
-# of `CellField` objects.
+# finite element function, or the collection of shape basis functions in the local FE space of
+# each cell are examples of `CellField` objects.
 
-## Exploring our first `CellField` object and its evaluation
+## Exploring our first `CellField` objects and its evaluation
 
+# Let us work with our first `CellField` objects. In particular, let us extract out of the global
+# test space, Vₕ, and trial space, Uₕ, a collection of local test and trial finite element
+# shape basis functions, respectively.
 
+dv = get_cell_shapefuns(Vₕ)
+du = get_cell_shapefuns_trial(Uₕ)
 
+# The objects returned are of `FEBasis` type, one of the subtypes of `CellField`.
+# Apart from `DomainStyle`, `FEBasis` objects also have an additional trait, `BasisStyle`,
+# which specifies wether the cell-local shape basis functions are either of test or
+# trial type (in the Galerkin method). This information is consumed in different parts of
+# the code.
 
+@test Gridap.FESpaces.BasisStyle(dv) == Gridap.FESpaces.TestBasis()
+@test Gridap.FESpaces.BasisStyle(du) == Gridap.FESpaces.TrialBasis()
 
+# As expected, `dv` is made out of test shape functions, and `du`, of trial shape functions.
+# We can also confirm that both `dv` and `du` are `CellField` and `CellDatum` objects (i.e.,
+# recall that `FEBasis` is a subtype of `CellField`, and the latter is a subtype of
+# `CellDatum`).
+
+@test isa(dv,CellField) && isa(dv,CellDatum)
+@test isa(du,CellField) && isa(du,CellDatum)
+
+# Thus, one may check the value of their `DomainStyle` trait.
+
+@test Gridap.FESpaces.DomainStyle(dv) == Gridap.FESpaces.ReferenceDomain()
+@test Gridap.FESpaces.DomainStyle(du) == Gridap.FESpaces.ReferenceDomain()
+
+# We can see that the `DomainStyle` of both `FEBasis` objects is `ReferenceDomain`.
+# In the case of `CellField` objects, this specifies that the point coordinates on which
+# we evaluate the cell-local shape basis functions should be provided in the parametric
+# space of the reference cell. However, the output from evaluation, as usual in finite elements
+# defined parametrically, is the cell-local shape function in the physical domain evaluated at
+# the corresponding mapped point.
+
+# Recall from above that `CellField` objects are designed to be evaluated at `CellPoint`
+# objects, and that we extracted a `CellPoint` object, `Qₕ_cell_point`, out of a `CellQuadrature`,
+# of `ReferenceDomain` trait `DomainStyle`. [SHOULD WE MENTION HERE ANYTHING RELATED TO THE
+# `change_domain` FEATURE AND WHY IT CAN BE USEFUL?] Thus, we can evaluate `dv` and `du` at the
+# quadrature rule evaluation points, on all cells, straight away as:
+
+dv_at_Qₕ = evaluate(dv,Qₕ_cell_point)
+du_at_Qₕ = evaluate(du,Qₕ_cell_point)
+
+# There are a pair of worth noting observations on the result of the previous two instructions.
+# First, both `dv_at_Qₕ` and `du_at_Qₕ` are arrays of type `Fill`, thus they provide the same entry
+# for whatever index we provide.
+
+dv_at_Qₕ[rand(1:num_cells(Tₕ))]
+du_at_Qₕ[rand(1:num_cells(Tₕ))]
+
+# This (same entry) is justified by: (1) the local shape functions
+# are evaluated at the same set of points in the reference cell parametric space for
+# all cells (i.e., the quadrature rule points), and (2) the
+# shape functions in physical space have the same values in all cells at the corresponding mapped
+# points in physical space. At this point, the reader may want to observe which objects result from
+# the evaluation of, e.g., `dv_at_Qₕ`, at a different set points for each cell (e.g. by building
+# its own array of arrays of `Points`).
+
+# Going back to our example, any entry of `dv_at_Qₕ` is a rank-2 array of size 4x4 that provides in # position `[i,j]` the i-th test shape function at the j-th quadrature rule evaluation point.
+# On the other hand, any entry of `du_at_Qₕ` is a rank-3 array of size `4x1x4` that provides in
+# position `[i,1,j]` the i-th trial shape function at the j-th quadrature point. The reader might
+# be wondering why the rank of these two arrays are different. The rationale is that, by means of
+# a broadcasted `*` operation of these two arrays, we can get a 4x4x4 array where the `[i,j,k]`
+# entry stores the product of the i-th test and j-th trial functions, both evaluated at the k-th
+# quadrature point. If we sum over the $k$-index, we get the usual cell-local matrix that
+# we assemble into the global matrix in order to get a mass matrix (neglecting the strong
+# imposition of Dirichlet boundary conditions). For those readers more used to traditional
+# finite element codes, the broadcast followed by the sum over k, is equivalent
+# to the following triple for-nested loop:
+
+#   M[:,:]=0.0
+#   Loop over quadrature points k
+#     Loop over shape test functions i
+#       Loop over shape trial functions j
+#            M[i,j]+=shape_test[i,k]*shape_trial[i,k]
+
+# Using Julia built-in support for broadcasting, we can vectorize the full operation, and get much
+# higher performance.
+
+# The highest-level possible way of performing the aforementioned broadcasted `*` is by building
+# a "new" `CellField` instance by multiplying the two `FEBasis` objects, and then evaluating the
+# resulting object at the points in `Qₕ_cell_point`. This is something common in `Gridap`. One can
+# create new `CellField` objects out of exsting ones, e.g., by performing operations among them, or
+# by applying a differential operator, such as the gradient.
+
+dv_mult_du = du*dv
+dv_mult_du_at_Qₕ = evaluate(dv_mult_du,Qₕ_cell_point)
+
+# We can check that any entry of the resulting `Fill` array is the `4x4x4` array resulting from the
+# broadcasted `*` of the two aforementioned arrays. In order to do so, we can use the so-called
+# `Broadcasting(*)` `Gridap` `Map`. This `Map`, when applied to arrays of numbers, essentially
+# translates into the built-in Julia broadcast (check that below!). However, as we will see along
+# the tutorial, such a `Map` can also be applied to, e.g., (cell) arrays of `Field`s (arrays of
+# `Field`s, resp.) to build new (cell) arrays of `Fields` (arrays of `Field`s, resp.). This becomes
+# extremely useful to build and evaluate discrete variational forms.
+
+m=Broadcasting(*)
+A=evaluate(m,dv_at_Qₕ[rand(1:num_cells(Tₕ))],du_at_Qₕ[rand(1:num_cells(Tₕ))])
+B=broadcast(*,dv_at_Qₕ[rand(1:num_cells(Tₕ))],du_at_Qₕ[rand(1:num_cells(Tₕ))])
+@test any(A .≈ B)
+@test any(A .≈ dv_mult_du_at_Qₕ[rand(1:num_cells(Tₕ))])
 
 # ## Exploring FE functions in `Gridap`
 
@@ -233,14 +332,7 @@ du = get_cell_shapefuns_trial(Uₕ)
 # test type and the second one of trial type (in the Galerkin method). This information
 # is consumed in different parts of the code.
 
-## PENDING
-# is_test(dv) # true
-##
-Gridap.FESpaces.BasisStyle(dv) == Gridap.FESpaces.TestBasis() # true
 
-# is_trial(du) # true
-## PENDING
-Gridap.FESpaces.BasisStyle(du) == Gridap.FESpaces.TrialBasis() #true
 
 # ## The geometrical model
 

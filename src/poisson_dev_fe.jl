@@ -65,7 +65,7 @@ model = CartesianDiscreteModel(pmin,pmax,partition,map=stretching)
 # The next step is to build the global FE space of functions from which we are
 # going to extract the unknown function of the differential problem at hand. This
 # tutorial explores the Galerkin discretization of the scalar Poisson equation.
-# Thus, we need to build a H1-conforming global FE space. This can be achieved using $C^0$
+# Thus, we need to build H1-conforming global FE spaces. This can be achieved using $C^0$
 # continuous functions made of piece(cell)-wise polynomials. This is precisely the purpose
 # of the following lines of code.
 
@@ -76,33 +76,114 @@ model = CartesianDiscreteModel(pmin,pmax,partition,map=stretching)
 # reference geometry just created in the previous step. It is not the purpose of this tutorial to
 # describe the (key) abstract concept of `ReferenceFE` in Gridap.
 
-T = Float64; order = 1
+T = Float64
+order = 1
 pol = Polytope(Fill(HEX_AXIS,D)...)
 reffe = LagrangianRefFE(T,pol,order)
 
 # Second, we build the test (Vₕ) and trial (Uₕ) global finite element (FE) spaces
 # out of `model` and `reffe`. At this point we also specify the notion of conformity
-# that we are willing to satisfy, i.e., H1-conformity.
+# that we are willing to satisfy, i.e., H1-conformity, and the region of the domain
+# in which we want to (strongly) impose Dirichlet boundary conditions, the whole
+# boundary of the box in this case.
 
 Vₕ = FESpace(model,reffe;conformity=:H1,dirichlet_tags="boundary")
 
 u(x) = x[1]            # Analytical solution (for Dirichlet data)
 Uₕ = TrialFESpace(Vₕ,u)
 
-# We also want to extract the triangulation of the model and obtain the quadrature.
-
+# We also want to extract the triangulation of the model and obtain a quadrature.
 Tₕ = Triangulation(model)
 Qₕ = CellQuadrature(Tₕ,2*order)
 
-# A quadrature provides an array (cells) of arrays of points (`Point` in
-# `Gridap`) in the parametric space in which finite element spaces are usually
-# defined (and always integrated) and their corresponding weights.
+# Qₕ is an instance of type `CellQuadrature`, a subtype of the `CellDatum` abstract
+# data type.
 
-## PENDING
-# P1. qₖ = get_coordinates(Qₕ)
-# P2. wₖ = get_weights(Qₕ)
-qₖ = get_cell_data(get_cell_points(Qₕ))
-## PENDING
+isa(Qₕ,CellDatum)
+subtypes(CellDatum)
+
+# `CellDatum` is the root of one out of three main type hierarchies in Gridap
+# (along with the ones rooted at the abstract types `Map` and `Field`) on which the
+# the evaluation of variational methods in finite-dimensional spaces is grounded on.
+# Any developer of Gridap should familiarize with these three hierachies to some extent.
+# Along this tutorial we will give some insight on the rationale underlying these, with
+# some examples, but more effort in the form of self-research is expected
+# from the reader as well.
+
+# Conceptually, an instance of a `CellDatum` represents a collection of quantities
+# (e.g., points in a reference system, or scalar-, vector- or tensor-valued
+# fields, or arrays made of these), once per each cell of a triangulation. Using the
+# `get_cell_data` generic function one can extract an array with such quantities. For example, in
+# the case of Qₕ, we get an array of quadrature rules for numerical integration.
+
+Qₕ_cell_data = get_cell_data(Qₕ)
+@test length(Qₕ_cell_data) == num_cells(Tₕ)
+
+# In this case we get the same quadrature rule in all cells (note that the returned array is of
+# type `Fill`). Gridap also supports different quadrature rules to be used in different
+# cells. Exploring such feature is out of scope of the present tutorial.
+
+# Any `CellDatum` has a trait, the so-called `DomainStyle` trait. This information
+# is consumed by `Gridap` in different parts of the code. It specifies whether
+# the quantities in it are either expressed in the reference (`ReferenceDomain`) or the physical
+# (`PhysicalDomain`) domain. We can indeed check the `DomainStyle` of a `CellDatum` using the
+# `DomainStyle` generic function:
+
+Gridap.FESpaces.DomainStyle(Qₕ) == Gridap.FESpaces.ReferenceDomain()
+Gridap.FESpaces.DomainStyle(Qₕ) == Gridap.FESpaces.PhysicalDomain()
+
+# If we evaluate the two expressions above, we can see that the `DomainStyle` trait of Qₕ is
+# `ReferenceDomain`. This means that the evaluation points of the quadrature rules within Qₕ
+# are expressed in the parametric space of the reference domain of the cells. We note that, while
+# finite elements are usually defined in this parametric space (this is indeed standard practice
+# with Lagrangian FEs, and other FEs, because of performance reasons), finite element functions are
+# always integrated in such a parametric space.
+
+# Using the array of quadrature rules `Qₕ_cell_data`, we can access to any of its entries.
+# The object retrieved provides an array of points (`Point` data type in `Gridap`) in the
+# cell's reference parametric space $[0,1]^d$ and their corresponding weights.
+
+q = Qₕ_cell_data[rand(1:num_cells(Tₕ))]
+p = get_coordinates(q)
+w = get_weights(q)
+
+# However, there is a more convenient way (for reasons made clear along the tutorial) to work
+# with the evaluation points of quadratules rules in `Gridap`. Namely, using the `get_cell_points` # function we can extract a `CellPoint` object out of a `CellQuadrature`.
+
+Qₕ_cell_point = get_cell_points(Qₕ)
+
+# `CellPoint` (just as `CellQuadrature`) is a subtype of `CellDatum` as well
+
+isa(Qₕ_cell_point, CellDatum)
+
+# and thus we can ask for the value of its `DomainStyle` trait, and get an array of quantities out
+# of it using the `get_cell_data` generic function
+
+@test Gridap.FESpaces.DomainStyle(Qₕ_cell_point) == Gridap.FESpaces.ReferenceDomain()
+qₖ = get_cell_data(Qₕ_cell_point)
+
+# Not surprisingly, the `DomainStyle` trait of the `CellPoint` object is `ReferenceDomain`, and we # get a (cell) array with an array of `Point`s per each cell out of a `CellPoint`. As seen in
+# the sequel, `CellPoint`s are relevant objects because they are the ones that one can use
+# in order to evaluate the so-called `CellField` objects on the set of points of a `CellPoint`.
+
+# `CellField` is an abstract type rooted at a hierarchy that plays a cornerstone role in the
+# implementation of the finite element method in `Gridap`. At this point, the reader should keep
+# in mind that the finite element method works with global spaces of functions which are defined
+# piece-wise on each cell of the triangulation. In a nutshell (more in the sections
+# below), a `CellField`, as it being a subtype of `CellDatum`, might be understood as a
+# collection of `Field`s (or arrays made out them) per each triangulation cell. Unlike a plain
+# array of `Field`s, a `CellField` is associated to triangulation, and it holds the required
+# metadata in order to perform the transformations among parametric spaces when taking
+# a differential operator out of it (e.g., the pull back of the gradients). For example, a global
+# finite element function, or the collection of shape basis functions for each cell are examples
+# of `CellField` objects.
+
+## Exploring our first `CellField` object and its evaluation
+
+
+
+
+
 
 # ## Exploring FE functions in `Gridap`
 

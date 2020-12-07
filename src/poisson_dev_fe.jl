@@ -264,7 +264,7 @@ du_at_Qₕ[rand(1:num_cells(Tₕ))]
 # The highest-level possible way of performing the aforementioned broadcasted `*` is by building
 # a "new" `CellField` instance by multiplying the two `FEBasis` objects, and then evaluating the
 # resulting object at the points in `Qₕ_cell_point`. This is something common in `Gridap`. One can
-# create new `CellField` objects out of exsting ones, e.g., by performing operations among them, or
+# create new `CellField` objects out of existing ones, e.g., by performing operations among them, or
 # by applying a differential operator, such as the gradient.
 
 dv_mult_du = du*dv
@@ -283,6 +283,106 @@ A=evaluate(m,dv_at_Qₕ[rand(1:num_cells(Tₕ))],du_at_Qₕ[rand(1:num_cells(T�
 B=broadcast(*,dv_at_Qₕ[rand(1:num_cells(Tₕ))],du_at_Qₕ[rand(1:num_cells(Tₕ))])
 @test any(A .≈ B)
 @test any(A .≈ dv_mult_du_at_Qₕ[rand(1:num_cells(Tₕ))])
+
+# Recall from above that `CellField` objects are also `CellDatum` objects. Thus, one can
+# use the `get_cell_data` generic function to extract, in an array, the collection of
+# quantities, one per each cell of the triangulation, out of them. As one may expect,
+# in the case of our `FEBasis` objects `dv` and `du` at hand, `get_cell_data` returns
+# a (cell) array of arrays of `Field` objects, i.e., the cell-local shape basis functions:
+
+dv_array = get_cell_data(dv)
+du_array = get_cell_data(du)
+
+@test isa(dv_array,AbstractVector{<:AbstractVector{<:Field}})
+@test isa(du_array,AbstractVector{<:AbstractArray{<:Field,2}})
+@test length(dv_array) == num_cells(Tₕ)
+@test length(du_array) == num_cells(Tₕ)
+
+# As expected, both `dv_array` and `du_array` are (*conceptually*) vectors (i.e, rank-1 arrays)
+# with as many entries as cells. The particular type of each vector differs, though, i.e.,
+# `Fill` and `LazyArray`, resp. (We will come back to `LazyArray`s below,
+# as they play a fundamental role in the way in which the finite element method is implemented
+# in `Gridap`.) For each cell, we have arrays of `Field` objects. Recall from above that `Map` and # `Field` (with `Field` a subtype of `Map`), and `CellDatum` and `CellField` (with `CellField` a
+# subtype of `CellDatum`) and the associated type hierarchies, are fundamental in `Gridap` for the # implementation of variational methods in finite-dimensional spaces. `Field` conceptually
+# represents a physical (scalar, vector, or tensor) field. `Field` objects can be evaluated at
+# single `Point` objects (or at an array of them in one shot), and they return scalars
+# (i.e., a sub-type of Julia `Number`), `VectorValue`, or `TensorValue` objects (or an array of
+# them, resp.)
+
+# In order to evaluate a `Field` object at a `Point` object, or at an array of `Points`, we can use
+# the `evaluate` generic function. For example, the following statement
+
+ϕ₃ = dv_array[1][3]
+evaluate(ϕ₃,[Point(0,0),Point(1,0),Point(0,1),Point(1,1)])
+
+# evaluates the 3rd test shape function of the local space of the first cell at the 4
+# vertices of the cell (recall from above that, for the implementation of Lagrangian finite
+# elements being used in this tutorial, shape functions are though to be evaluated at point
+# coordinates expressed in the parametric space of the reference cell).
+# As expected, ϕ₃ evaluates to one at the 3rd vertex of the cell, and
+# to zero at the rest of vertices, as ϕ₃ is the shape function associated to the
+# Lagrangian node/dof located at the 3rd vertex. We can also evaluate all shape functions of
+# the local space of the first cell (i.e., an array of `Field`s) at once at an array of `Points`
+
+ϕ = dv_array[1]
+evaluate(ϕ,[Point(0,0),Point(1,0),Point(0,1),Point(1,1)])
+
+# As expected, we get the Identity matrix, as the shape functions of the local space have,
+# by definition, the Kronecker delta property.
+
+# However, and here comes one of the main take-aways of this tutorial, in `Gridap`,
+# (cell-wise) arrays of `Fields` (or arrays of `Fields`) are definitely NOT conceived to
+# be evaluated following the approach that we used in the previous examples, i.e.,
+# by manually extracting the `Field` (array of `Field`s) corresponding to a cell,
+# and then evaluating it (them) at a given set of `Point`s. Instead, one uses the `lazy_map`
+# generic function, which combined with the `evaluate` function, represents the operation
+# of walking over all cells, and evaluating the fields, cell by cell, as a whole. This is
+# illustrated in the following piece of code:
+
+dv_array_at_qₖ = lazy_map(evaluate,dv_array,qₖ)
+du_array_at_qₖ = lazy_map(evaluate,du_array,qₖ)
+
+# We note that the results of these two expressions are equivalent to the ones of `evaluate(dv,
+# Qₕ_cell_point)` and `evaluate(du,Qₕ_cell_point)`, resp. (check it!) In fact, these latter
+# two expressions translate under the hood into the calls to `lazy_map` above. These calls to
+# `lazy_map` return an array of the same length of the input arrays, with their i-th entry
+# conceptually defined, e.g., as `evaluate(du_array[i],qₖ[i])` in the case of the second array.
+# To be "conceptually defined as" does not mean that they are actually computed as
+# `evaluate(du_array[i],qₖ[i])`. Indeed they don't, it would not be high performant.
+
+# You might be now wondering which is the main point behind `lazy_map`.
+# `lazy_map` turns to be cornerstone in `Gridap`. (At this point, we may execute `methods
+# (lazy_map)` to observe that a large amount of programming logic is devoted to it.)
+# Let us try to answer it more abstractly now. However, this will be revisited along the tutorial
+# with additional examples.
+
+# 1. To keep memory demands at low levels,
+#    `lazy_map` NEVER returns an array that stores the result at all cells at once.
+#    In the two examples above, this is achieved using `Fill` arrays. However, this is
+#    only possible in very particular scenarios (see discussion above) . In more general cases,
+#    the result of `lazy_map` is not equivalent in all cells. In such cases,
+#    `lazy_map` returns a `LazyArray`, which is another
+#    essential component of `Gridap`. In a nutshell, a  `LazyArray` is an
+#    array that applies entry-wise arrays of operations over array(s). These operations are
+#    only computed when accessing the corresponding index, thus the name lazy.
+#    Besides, the entries of these are computed in an efficient way, using a set of mechanisms
+#    that will be illustrated below with examples.
+#
+# 2. Apart from `Function` objects, such as `evaluate`, `lazy_map` can also be
+#    combined with `Map`s. For example, `Broadcasting(*)` presented above.
+#    As there are `Map`s that can be applied to `Field`s (or arrays of `Fields`) to build new
+#    `Field`s (or arrays of `Fields`), the recursive application of `lazy_map` let us build
+#    complex operation trees among `Field`s as the ones required for the implementation of
+#    variational forms. While building these trees, by virtue of Julia support
+#    for multiple type dispatching, there are plenty of opportunities for
+#    optimization by changing the order in which the operations are performed. These optimizations
+#    typically come in the form of a significant saving of FLOPs, by exploiting the particular
+#    properties of the `Field`s at hand, or into higher
+#    granularity for vectorized array operations
+#    when the expressions are actually evaluated.
+#    Indeed, the arrays that one usually obtains from `lazy_map` are not the trivial
+#    `LazyArray`s that one would expect from a naive combination of the arguments to `lazy_map`.
+#
 
 # ## Exploring FE functions in `Gridap`
 

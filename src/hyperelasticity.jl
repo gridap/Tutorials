@@ -2,7 +2,7 @@
 #
 #     This tutorial is under construction, but the code below is already functional.
 #
-# 
+#
 # ## Problem statement
 
 using Gridap
@@ -57,7 +57,7 @@ add_tag_from_tags!(labels,"diri_1",[2,4,8])
 # Setup integration
 degree = 2
 Ω = Triangulation(model)
-dΩ = LebesgueMeasure(Ω,degree)
+dΩ = Measure(Ω,degree)
 
 # Weak form
 
@@ -89,13 +89,13 @@ function run(x0,disp_x,step,nsteps,cache)
 
   #FE problem
   op = FEOperator(res,jac,U,V)
-  
+
   println("\n+++ Solving for disp_x $disp_x in step $step of $nsteps +++\n")
-  
+
   uh = FEFunction(U,x0)
 
   uh, cache = solve!(uh,solver,op,cache)
-  
+
   writevtk(Ω,"results_$(lpad(step,3,'0'))",cellfields=["uh"=>uh,"sigma"=>σ∘∇(uh)])
 
   return get_free_values(uh), cache
@@ -107,7 +107,7 @@ function runs()
  disp_max = 0.75
  disp_inc = 0.02
  nsteps = ceil(Int,abs(disp_max)/disp_inc)
- 
+
  x0 = zeros(Float64,num_free_dofs(V))
 
  cache = nothing
@@ -125,8 +125,7 @@ runs()
 # ![](../assets/hyperelasticity/neo_hook_2d.png)
 #
 # ##  Extension to 3D
-# 
+#
 # Extending this tutorial to the 3D case is straightforward. It is leaved as an exercise.
 #
 # ![](../assets/hyperelasticity/neo_hook_3d.png)
-

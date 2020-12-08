@@ -39,7 +39,7 @@ X = MultiFieldFESpace([U,P])
 # Define triangulation and integration measure
 degree = order
 Ωₕ = Triangulation(model)
-dΩ = LebesgueMeasure(Ωₕ,degree)
+dΩ = Measure(Ωₕ,degree)
 
 # Define bilinear and linear form
 f = VectorValue(0.0,0.0)

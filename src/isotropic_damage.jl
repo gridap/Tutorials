@@ -98,7 +98,7 @@ function main(;n,nsteps)
 
   degree = 2*order
   Ω = Triangulation(model)
-  dΩ = LebesgueMeasure(Ω,degree)
+  dΩ = Measure(Ω,degree)
 
   r = CellState(r_0,dΩ)
   d = CellState(0.0,dΩ)
@@ -144,4 +144,3 @@ main(n=6,nsteps=20)
 
 # Animation of the load history using for `main(n=8,nsteps=30)`
 # ![](../assets/isotropic_damage/damage.gif)
-

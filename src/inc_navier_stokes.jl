@@ -111,7 +111,7 @@ X = MultiFieldFESpace([U, P])
 
 degree = order
 Ωₕ = Triangulation(model)
-dΩ = LebesgueMeasure(Ωₕ,degree)
+dΩ = Measure(Ωₕ,degree)
 
 
 # ## Nonlinear weak form

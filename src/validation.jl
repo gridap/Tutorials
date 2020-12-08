@@ -93,7 +93,7 @@ U = TrialFESpace(V0,u)
 
 degree = 2
 Ω = Triangulation(model)
-dΩ = LebesgueMeasure(Ω,degree)
+dΩ = Measure(Ω,degree)
 
 a(u,v) = ∫( ∇(v)⊙∇(u) )*dΩ
 b(v) = ∫( v*f )*dΩ
@@ -166,16 +166,16 @@ function run(n,order)
   reffe = ReferenceFE(:Lagrangian,Float64,order)
   V0 = TestFESpace(model,reffe,conformity=:H1,dirichlet_tags="boundary")
   U = TrialFESpace(V0,u)
-  
+
   degree = 2
   Ω = Triangulation(model)
-  dΩ = LebesgueMeasure(Ω,degree)
-  
+  dΩ = Measure(Ω,degree)
+
   a(u,v) = ∫( ∇(v)⊙∇(u) )*dΩ
   b(v) = ∫( v*f )*dΩ
-  
+
   op = AffineFEOperator(a,b,U,V0)
-  
+
   uh = solve(op)
 
   e = u - uh

@@ -1,16 +1,16 @@
 # In this tutorial, we will learn
-# 
+#
 #  - How to approximate vector-valued problems
 #  - How to solve problems with complex constitutive laws
 #  - How to impose Dirichlet boundary conditions only in selected components
 #  - How to impose Dirichlet boundary conditions described by more than one function
-# 
+#
 # ## Problem statement
-# 
+#
 # In this tutorial, we detail how to solve a linear elasticity problem defined on the 3D domain depicted in next figure.
-# 
+#
 # ![](../assets/elasticity/solid.png)
-# 
+#
 # We impose the following boundary conditions. All components of the displacement vector  are constrained to zero on the surface $\Gamma_{\rm G}$, which is marked in green in the figure. On the other hand, the first component of the displacement vector is prescribed to the value $\delta\doteq 5$mm on the surface $\Gamma_{\rm B}$, which is marked in blue. No body or surface forces are included in this example. Formally, the PDE to solve is
 #
 # ```math
@@ -23,25 +23,25 @@
 # \end{aligned}
 # \right.
 # ```
-# 
+#
 # The variable $u$ stands for the unknown displacement vector, the vector $n$ is the unit outward normal to the Neumann boundary $\Gamma_{\rm N}\doteq\partial\Omega\setminus\left(\Gamma_{\rm B}\cup\Gamma_{\rm G}\right)$ and $\sigma(u)$ is the stress tensor defined as
 # ```math
 # \sigma(u) \doteq \lambda\ {\rm tr}(\varepsilon(u)) \ I +2 \mu \  \varepsilon(u),
 # ```
 # where $I$ is the 2nd order identity tensor, and $\lambda$ and $\mu$ are the *Lamé parameters* of the material. The operator $\varepsilon(u)\doteq\frac{1}{2}\left(\nabla u + (\nabla u)^t \right)$ is the symmetric gradient operator (i.e., the strain tensor). Here, we consider material parameters corresponding to aluminum with Young's modulus $E=70\cdot 10^9$ Pa and Poisson's ratio $\nu=0.33$. From these values, the Lamé parameters are obtained as $\lambda = (E\nu)/((1+\nu)(1-2\nu))$ and $\mu=E/(2(1+\nu))$.
-# 
-# 
+#
+#
 # ## Numerical scheme
-# 
+#
 # As in previous tutorial, we use a conventional Galerkin FE method with conforming Lagrangian FE spaces. For this formulation, the weak form is: find $u\in U$ such that $ a(u,v) = 0 $ for all $v\in V_0$, where $U$ is the subset of functions in $V\doteq[H^1(\Omega)]^3$ that fulfill the Dirichlet boundary conditions of the problem, whereas $V_0$ are functions in $V$ fulfilling $v=0$ on $\Gamma_{\rm G}$ and $v_1=0$ on $\Gamma_{\rm B}$. The bilinear form of the problem is
 # ```math
 # a(u,v)\doteq \int_{\Omega} \varepsilon(v) : \sigma(u) \ {\rm d}\Omega.
 # ```
-# 
+#
 # The main differences with respect to previous tutorial is that we need to deal with a vector-valued problem, we need to impose different prescribed values on the Dirichlet boundary, and the integrand of the bilinear form $a(\cdot,\cdot)$ is more complex as it involves the symmetric gradient operator and the stress tensor. However, the implementation of this numerical scheme is still done in a user-friendly way since all these features can be easily accounted for with the abstractions in the library.
-# 
+#
 # ## Discrete model
-# 
+#
 # We start by loading the discrete model from a file
 
 using Gridap
@@ -52,11 +52,11 @@ model = DiscreteModelFromFile("../models/solid.json")
 writevtk(model,"model")
 
 # and open the resulting files with Paraview. The boundaries $\Gamma_{\rm B}$ and $\Gamma_{\rm G}$ are identified  with the names `"surface_1"` and `"surface_2"` respectively.  For instance, if you visualize the faces of the model and color them by the field `"surface_2"` (see next figure), you will see that only the faces on $\Gamma_{\rm G}$ have a value different from zero.
-# 
+#
 # ![](../assets/elasticity/solid-surf2.png)
-# 
+#
 # ## Vector-valued FE space
-# 
+#
 # The next step is the construction of the FE space. Here, we need to build a vector-valued FE space, which is done as follows:
 
 order = 1
@@ -68,7 +68,7 @@ V0 = TestFESpace(model,reffe;
   dirichlet_masks=[(true,false,false), (true,true,true)])
 
 # As in previous tutorial, we construct a continuous Lagrangian interpolation of order 1. The vector-valued interpolation is selected via the option `valuetype=VectorValue{3,Float64}`, where we use the type `VectorValue{3,Float64}`, which is the way Gridap represents vectors of three `Float64` components. We mark as Dirichlet the objects identified with the tags `"surface_1"` and `"surface_2"` using the `dirichlet_tags` argument. Finally, we chose which components of the displacement are actually constrained on the Dirichlet boundary via the `dirichlet_masks` argument. Note that we constrain only the first component on the boundary $\Gamma_{\rm B}$ (identified as `"surface_1"`), whereas we constrain all components on $\Gamma_{\rm G}$ (identified as `"surface_2"`).
-# 
+#
 # The construction of the trial space is slightly different in this case. The Dirichlet boundary conditions are described with two different functions, one for boundary $\Gamma_{\rm B}$ and another one for $\Gamma_{\rm G}$. These functions can be defined as
 
 g1(x) = VectorValue(0.005,0.0,0.0)
@@ -79,9 +79,9 @@ g2(x) = VectorValue(0.0,0.0,0.0)
 U = TrialFESpace(V0,[g1,g2])
 
 # Note that the functions `g1` and `g2` are passed to the `TrialFESpace` constructor in the same order as the boundary identifiers are passed previously in the `dirichlet_tags` argument of the `TestFESpace` constructor.
-# 
+#
 # ## Constitutive law
-# 
+#
 # Once the FE spaces are defined, the next step is to define the weak form.  In this example, the construction of the weak form requires more work than in previous tutorial since we need to account for the constitutive law that relates strain and stress.  The symmetric gradient operator is represented by the function `ε` provided by Gridap (also available as `symmetric_gradient`). However, function `σ` representing the stress tensor is not predefined in the library and it has to be defined ad-hoc by the user, namely
 
 const E = 70.0e9
@@ -98,7 +98,7 @@ const μ = E/(2*(1+ν))
 
 degree = 2*order
 Ω = Triangulation(model)
-dΩ = LebesgueMeasure(Ω,degree)
+dΩ = Measure(Ω,degree)
 
 #  From these objects and the constitutive law previously defined, we can write the weak form as follows
 
@@ -108,20 +108,20 @@ l(v) = 0
 # Note that we have composed function `σ` with the strain field `ε(u)` in order to compute the stress field associated with the trial function `u`. The linear form is simply `l(v) = 0` since there are not external forces in this example.
 #
 # ## Solution of the FE problem
-# 
-# The remaining steps for solving the FE problem are essentially the same as in previous tutorial.  
+#
+# The remaining steps for solving the FE problem are essentially the same as in previous tutorial.
 
 op = AffineFEOperator(a,l,U,V0)
 uh = solve(op)
 
 # Note that we do not have explicitly constructed a `LinearFESolver` in order to solve the FE problem. If a `LinearFESolver` is not passed to the `solve` function, a default solver (LU factorization) is created and used internally.
-# 
+#
 # Finally, we write the results to a file. Note that we also include the strain and stress tensors into the results file.
 
 writevtk(Ω,"results",cellfields=["uh"=>uh,"epsi"=>ε(uh),"sigma"=>σ∘ε(uh)])
 
 # It can be clearly observed (see next figure) that the surface  $\Gamma_{\rm B}$ is pulled in $x_1$-direction and that the solid deforms accordingly.
-# 
+#
 # ![](../assets/elasticity/disp_ux_40.png)
 
 # ## Multi-material problems
@@ -191,5 +191,3 @@ writevtk(Ω,"results_bimat",cellfields=
 
 
 #  Tutorial done!
-
-

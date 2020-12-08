@@ -246,10 +246,10 @@ du_at_Qₕ[rand(1:num_cells(Tₕ))]
 # be wondering why the rank of these two arrays are different. The rationale is that, by means of
 # a broadcasted `*` operation of these two arrays, we can get a 4x4x4 array where the `[i,j,k]`
 # entry stores the product of the i-th test and j-th trial functions, both evaluated at the k-th
-# quadrature point. If we sum over the $k$-index, we obtain the necessary data to compute the cell-local
+# quadrature point. If we sum over the $k$-index, we obtain part of the data required to compute
+# the cell-local
 # matrix that
-# we assemble into the global matrix in order to get a mass matrix (neglecting the strong
-# imposition of Dirichlet boundary conditions). For those readers more used to traditional
+# we assemble into the global matrix in order to get a mass matrix. For those readers more used to traditional
 # finite element codes, the broadcast followed by the sum over k, provides the data required
 # in order to implement the following triple standard for-nested loop:
 
@@ -258,7 +258,7 @@ du_at_Qₕ[rand(1:num_cells(Tₕ))]
 #     detJ_wk=det(J)*w[k]
 #     Loop over shape test functions i
 #       Loop over shape trial functions j
-#            M[i,j]+=shape_test[i,k]*shape_trial[i,k]*detJ_wk
+#            M[i,j]+=shape_test[i,k]*shape_trial[j,k]*detJ_wk
 
 # where det(K) represents the determinant of the reference-physical mapping of the current cell,
 # and w[k] the quadrature rule weight corresponding to the k-th evaluation point.
@@ -383,7 +383,8 @@ du_array_at_qₖ = lazy_map(evaluate,du_array,qₖ)
 #    typically come in the form of a significant saving of FLOPs, by exploiting the particular
 #    properties of the `Field`s at hand, or into higher
 #    granularity for vectorized array operations
-#    when the expressions are actually evaluated.
+#    when the expressions are actually evaluated
+#    [IS THIS SECOND STATEMENT TRUE? CAN WE PUT AN EXAMPLE?].
 #    Indeed, the arrays that one usually obtains from `lazy_map` are not the trivial
 #    `LazyArray`s that one would expect from a naive combination of the arguments to `lazy_map`.
 #
@@ -584,7 +585,7 @@ smart_sum(manual_uₕ_array_at_qₖ) # Execute once before to neglect JIT-compil
         end
       end
 
-# we can observe that the array returned by `Gridap` can be summed in significantly less time, using significanly less allocations. [WHY THE SECOND PIECE OF CODE REQUIRES A NUMBER OF ALLOCATIONS THAT GROWS WITH THE NUMBER OF CELLS? I CAN UNDERSTAND THAT THE CACHE ARRAY of `manual_uₕ_array_at_qₖ` REQUIRES MORE MEMORY IN ABSOLUTE TERMS, BUT I AM NOT ABLE TO SEE WHY IT GROWS WITH THE NUMBER OF CELLS!!!!]
+# we can observe that the array returned by `Gridap` can be summed in significantly less time, using significanly less allocations. [WHY THE SECOND PIECE OF CODE REQUIRES A NUMBER OF ALLOCATIONS THAT GROWS WITH THE NUMBER OF CELLS? I CAN UNDERSTAND THAT THE CACHE ARRAY of `manual_uₕ_array_at_qₖ` REQUIRES MORE MEMORY IN ABSOLUTE TERMS, BUT I AM NOT ABLE TO SEE WHY IT GROWS WITH THE NUMBER OF CELLS!!!! ANY HINT?]
 
 # Let us try to answer the question now qualitatively. In order to do so, we can take a look at the full names of the types of both `LazyArray`s. `LazyArray`s have four type parameters, referred to as `G`, `T`, `N`, and `F`. `G` is the type of the array with the entry-wise operations (e.g., a `Function` object, a `Map` or a `Field`) to be applied, `T` is the type of the elements of the array, and `N` its rank. Finally, `F` is a `Tuple` with the types of the arrays to which the operations are applied in order to obtain the entries of the `LazyArray`. We can use the following function to pretty-print the `LazyArray` data type name in a more human-friendly way, while taking into account that types in `F` may be in turn `LazyArray`s recursively:
 
@@ -609,24 +610,28 @@ print_lazy_array_type_parameters("",typeof(manual_uₕ_array_at_qₖ))
 # 1. `uₕ_array_at_qₖ` is a `LazyArray` whose entries are defined as the result of applying a `Fill` array of `LinearCombinationMap{Colon}` `Map`s (G) to a `LazyArray` (F[1]) and a `Fill` array (F[2]). The first array provides the FE function dof values restricted to each cell, and the second the local basis shape functions evaluated at the quadrature points. As the shape functions in physical space have the same values in all cells at the corresponding mapped points in physical space, there is no need to re-evaluate them at each cell, we can evaluate them only once. And this is what the second `Fill` array stores as its unique entry, i.e., a matrix M[i,j] defined as the value of the j-th `Field` (i.e., shape function) evaluated at the i-th `Point`. *This is indeed the main optimization that `lazy_map` applies compared to our manual construction of `uₕ_array_at_qₖ`.* It worths noting that, if `v` denotes the linear combination coefficients, and `M` the matrix resulting from the evaluation of an array of `Fields` at a set of `Points`, with M[i,j] being the value of the j-th `Field` evaluated at the i-th point, the evaluation of `LinearCombinationMap{Colon}` at `v` and `M` returns a vector `w` with w[i] defined as w[i]=sum_k v[k]*M[i,k], i.e., the FE function evaluated at the i-th point. `uₕ_array_at_qₖ` handles the cache of `LinearCombinationMap{Colon}` (which holds internal storage for `w`) and that of the first `LazyArray` (F[1]), so that when it retrieves the dof values `v` of a given cell, and then applies `LinearCombinationMap{Colon}` to `v` and `M`, it does not have to allocate any temporary working arrays, but re-uses the ones stored in the different caches.
 # 2. `manual_uₕ_array_at_qₖ` is also a `LazyArray`, but structured rather differently to `uₕ_array_at_qₖ`. In particular, its entries are defined as the result of applying a plain array of `LinearCombinationField`s (G) to a `Fill` array of `Point`s (F[1]) that holds the coordinates of the quadrature rule evaluation points in the parametric space of the reference cell (wich are equivalent for all cells, thus the `Fill` array). The evaluation of a `LinearCombinationField` on a set of `Point`s ultimately depends on `LinearCombinationMap`. As seen in the previous point, the evaluation of this `Map` requires a vector `v` and a matrix `M`. `v` was built in-situ when building each `LinearCombinationField`, and stored within these instances. However, in contrast to `uₕ_array_at_qₖ`, `M` is not part of `manual_uₕ_array_at_qₖ`, and thus it has to be (re-)computed each time that we evaluate a new `LinearCombinationField` instance on a set of points. This is the main source of difference on the computation times observed. By eagerly constructing our array of `LinearCombinationField`s instead of deferring it until (lazy) evaluation via `lazy_map`, we lost optimization opportunities. We stress that `manual_uₕ_array_at_qₖ` also handles the cache of `LinearCombinationField` (that in turn handles the one of `LinearCombinationMap`), so that we do not need to allocate `M` at each cell, we re-use the space within the cache of `LinearCombinationField`.
 
-# We can also extract the global indices of the DOFs in each cell, the well-known
-# local-to-global map in FE methods.
+# To conclude the section, we expect the reader to be convinced of the negative consequences in performance that an eager (early) evaluation of the entries of the array returned by a `lazy_map` call can have in performance. The leitmotif of `Gridap` is *laziness*. When building new arrays of `Field`s (or arrays of `Field`s), out of existing ones, or when evaluating them at a set of `Point`s, ALWAYS use `lazy_map` (as far as you have a good reason for not using it). This may expand across several recursion levels when building complex operation trees among arrays of `Field`s. The more we defer the actual computation of the entries of `LazyArray`s, the more optimizations will be available at the `Gridap`'s disposal by re-arranging the order of operations via exploitation of the particular properties of the arrays at hand. And this is indeed what we are going to do in the rest of the tutorial, namely calling `lazy_map` to build new cell arrays out of existing ones, to end in a lazy cell array whose entries are the cell matrices and cell vectors contributions to the global linear system.
+
+# Let us, e.g., build Uₖ manually using this idea. First, we extract out of uₕ and Uₕ two arrays with the free and fixed (due to strong Dirichlet boundary conditions) dof values of uₕ
+
+uₕ_free_dof_values = get_free_values(uₕ)
+uₕ_dirichlet_dof_values = get_dirichlet_values(Uₕ)
+
+# So far these are plain arrays, nothing is lazy. Then we extract of ouf Uₕ the global indices of the DOFs in each cell, the well-known local-to-global map in FE methods.
 
 σₖ = get_cell_dof_ids(Uₕ)
 
-# Finally, we can extract the vector of values.
+# Finally, we call lazy_map to build a `LazyArray`, whose entries, when computed, contain the global FE function dofs restricted to each cell.
 
+m = Broadcasting(PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values))
+manual_Uₖ = lazy_map(m,σₖ)
 
+# `PosNegReindex` is a `Map` that is built out of two vectors, and it is provided with array indices. When it is provided with a positive index, it returns the entry corresponding to the index of the first vector, and when it is provided with a negative index, it returns the entry corresponding to the flipped sign index of the second vector. You can check this with the expressions
 
-# Take a look at the type of array
-# it is. In Gridap we put negative labels to fixed DOFs and positive to free DOFs,
-# thus we use an array that combines σₖ with the two arrays of free and fixed values
-# accessing the right one depending on the index. But everything is lazy, only
-# computed when accessing the array. Laziness and quasi-immutability are leitmotifs in
-# Gridap.
+@test evaluate(PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values),3) == uₕ_free_dof_values[3]
+@test evaluate(PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values),-7) == uₕ_dirichlet_dof_values[7]
 
-
-
+# The Broadcasting(op) `Map` let us, in this particular example, broadcasts `PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values)` to an array a global dof ids, to obtain the corresponding dof values. As regular, Broadcasting(op) provices a cache with the work array required to stores the result that `LazyArray` uses to reduce the number of allocations while computing its entries just-in-time. Please note that in `Gridap` we put negative labels to fixed DOFs and positive to free DOFs in σₖ, thus we use an array that combines σₖ with the two arrays of free and fixed values accessing the right one depending on the index. But everything is lazy, only computed when accessing the array. As mentioned multiple times laziness and quasi-immutability are leitmotifs in Gridap.
 
 # ## The geometrical model
 

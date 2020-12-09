@@ -62,7 +62,7 @@ Qₕ = CellQuadrature(Tₕ,2*order)
 isa(Qₕ,CellDatum)
 subtypes(CellDatum)
 
-# `CellDatum` is the root of one out of three main type hierarchies in Gridap (along with the ones rooted at the abstract types `Map` and `Field`) on which the the evaluation of variational methods in finite-dimensional spaces is grounded on. Any developer of Gridap should familiarize with these three hierachies to some extent. Along this tutorial we will give some insight on the rationale underlying these, with some examples, but more effort in the form of self-research is expected from the reader as well.
+# `CellDatum` is the root of one out of three main type hierarchies in Gridap (along with the ones rooted at the abstract types `Map` and `Field`) on which the the evaluation of variational methods in finite-dimensional spaces is grounded on. Any developer of Gridap should familiarize with these three hierarchies to some extent. Along this tutorial we will give some insight on the rationale underlying these, with some examples, but more effort in the form of self-research is expected from the reader as well.
 
 # Conceptually, an instance of a `CellDatum` represents a collection of quantities (e.g., points in a reference system, or scalar-, vector- or tensor-valued fields, or arrays made of these), once per each cell of a triangulation. Using the `get_cell_data` generic function one can extract an array with such quantities. For example, in the case of Qₕ, we get an array of quadrature rules for numerical integration.
 
@@ -84,7 +84,7 @@ q = Qₕ_cell_data[rand(1:num_cells(Tₕ))]
 p = get_coordinates(q)
 w = get_weights(q)
 
-# However, there is a more convenient way (for reasons made clear along the tutorial) to work with the evaluation points of quadratules rules in `Gridap`. Namely, using the `get_cell_points` function we can extract a `CellPoint` object out of a `CellQuadrature`.
+# However, there is a more convenient way (for reasons made clear along the tutorial) to work with the evaluation points of quadratures rules in `Gridap`. Namely, using the `get_cell_points` function we can extract a `CellPoint` object out of a `CellQuadrature`.
 
 Qₕ_cell_point = get_cell_points(Qₕ)
 
@@ -108,7 +108,7 @@ qₖ = get_cell_data(Qₕ_cell_point)
 dv = get_cell_shapefuns(Vₕ)
 du = get_cell_shapefuns_trial(Uₕ)
 
-# The objects returned are of `FEBasis` type, one of the subtypes of `CellField`. Apart from `DomainStyle`, `FEBasis` objects also have an additional trait, `BasisStyle`, which specifies wether the cell-local shape basis functions are either of test or trial type (in the Galerkin method). This information is consumed in different parts of the code.
+# The objects returned are of `FEBasis` type, one of the subtypes of `CellField`. Apart from `DomainStyle`, `FEBasis` objects also have an additional trait, `BasisStyle`, which specifies whether the cell-local shape basis functions are either of test or trial type (in the Galerkin method). This information is consumed in different parts of the code.
 
 @test Gridap.FESpaces.BasisStyle(dv) == Gridap.FESpaces.TestBasis()
 @test Gridap.FESpaces.BasisStyle(du) == Gridap.FESpaces.TrialBasis()
@@ -226,7 +226,7 @@ uₕ_at_Qₕ = evaluate(uₕ,Qₕ_cell_point)
 
 # This makes sense as a finite element function restricted to a cell is, in general, different in each cell, i.e., it evaluates to different values at the quadrature rule evaluation points. In other words, the `Fill` array optimization that was performed for the evaluation of the cell-wise local shape functions `dv` and `du` does not apply here, and a `LazyArray` has to be used instead.
 
-# Alhough it is hard to understand the full concrete type name of `uₕ_at_Qₕ` at this time
+# Although it is hard to understand the full concrete type name of `uₕ_at_Qₕ` at this time
 
 print(typeof(uₕ_at_Qₕ))
 
@@ -300,7 +300,7 @@ uₕ_array_at_qₖ = lazy_map(evaluate,uₕ_array,qₖ)
 
 @test typeof(uₕ_array_at_qₖ) == typeof(uₕ_at_Qₕ)
 
-# Therefore, why `Gridap` does not build `manual_uₕ_array_at_qₖ`? what's wrong with it? Let us first try to answer this quantitatively. Let us assume that we want to sum all entries of a `LazyArray`. In the case of `LazyArray`s of arrays, this operation is only well-defined if the size of the arrays of all antries matches. This is the case of the `uₕ_array_at_qₖ` and `manual_uₕ_array_at_qₖ` arrays, as we have the same quadrature rule at all cells. We can write this function following the `Gridap` internals' way.
+# Therefore, why `Gridap` does not build `manual_uₕ_array_at_qₖ`? what's wrong with it? Let us first try to answer this quantitatively. Let us assume that we want to sum all entries of a `LazyArray`. In the case of `LazyArray`s of arrays, this operation is only well-defined if the size of the arrays of all entries matches. This is the case of the `uₕ_array_at_qₖ` and `manual_uₕ_array_at_qₖ` arrays, as we have the same quadrature rule at all cells. We can write this function following the `Gridap` internals' way.
 
 function smart_sum(a::LazyArray)
   cache=array_cache(a)             # Create cache out of a
@@ -314,7 +314,7 @@ function smart_sum(a::LazyArray)
   sum
 end
 
-# The function uses the so-called "cache" of a `LazyArray`. In a nutshell, this cache can be thought as a place-holder of work arrays that can be re-used among different evaluations of the entries of the `LazyArray` (e.g., the work array in which the result of the computation of an entry of the array is stored.) This way, the code is more performant, as the cache avoids that these work arrays are created repeteadly when traversing the `LazyArray` and computing its entries. It turns out that `LazyArray`s are not the only objects in `Gridap` that (can) work with caches. `Map` and `Field` objects also provide caches for reusing temporary storage among their repeated evaluation on different arguments of the same types. (For the eager reader, the cache can be obtained out of a `Map`/`Field` with the `return_cache` abstract method; see also `return_type`, `return_value`, and `evaluate!` functions of the abstract API of `Map`s). When a `LazyArray` is created out of objects that in turn rely on caches (e.g., a `LazyArray` with entries defined as the entry-wise application of a `Map` to two `LazyArrays`), the caches of the latter objects are also handled by the former object, so that this scheme naturally accommodates top-down recursion, as per-required in the evaluation of complex operation trees among arrays of `Field`s, and their evaluation at a set of `Point`s. We warn the reader this is a quite complex mechanism. The reader is encouraged to follow with a debugger, step by step, the execution of the `smart_sum` function with the `LazyArray`s built above in order to gain some familiarity with this mechanism.
+# The function uses the so-called "cache" of a `LazyArray`. In a nutshell, this cache can be thought as a place-holder of work arrays that can be re-used among different evaluations of the entries of the `LazyArray` (e.g., the work array in which the result of the computation of an entry of the array is stored.) This way, the code is more performant, as the cache avoids that these work arrays are created repeatedly when traversing the `LazyArray` and computing its entries. It turns out that `LazyArray`s are not the only objects in `Gridap` that (can) work with caches. `Map` and `Field` objects also provide caches for reusing temporary storage among their repeated evaluation on different arguments of the same types. (For the eager reader, the cache can be obtained out of a `Map`/`Field` with the `return_cache` abstract method; see also `return_type`, `return_value`, and `evaluate!` functions of the abstract API of `Map`s). When a `LazyArray` is created out of objects that in turn rely on caches (e.g., a `LazyArray` with entries defined as the entry-wise application of a `Map` to two `LazyArrays`), the caches of the latter objects are also handled by the former object, so that this scheme naturally accommodates top-down recursion, as per-required in the evaluation of complex operation trees among arrays of `Field`s, and their evaluation at a set of `Point`s. We warn the reader this is a quite complex mechanism. The reader is encouraged to follow with a debugger, step by step, the execution of the `smart_sum` function with the `LazyArray`s built above in order to gain some familiarity with this mechanism.
 
 # If we @time the `smart_sum` function with `uₕ_array_at_qₖ` and `manual_uₕ_array_at_qₖ`
 
@@ -331,7 +331,7 @@ smart_sum(manual_uₕ_array_at_qₖ) # Execute once before to neglect JIT-compil
         end
       end
 
-# we can observe that the array returned by `Gridap` can be summed in significantly less time, using significanly less allocations. [WHY THE SECOND PIECE OF CODE REQUIRES A NUMBER OF ALLOCATIONS THAT GROWS WITH THE NUMBER OF CELLS? I CAN UNDERSTAND THAT THE CACHE ARRAY of `manual_uₕ_array_at_qₖ` REQUIRES MORE MEMORY IN ABSOLUTE TERMS, BUT I AM NOT ABLE TO SEE WHY IT GROWS WITH THE NUMBER OF CELLS!!!! ANY HINT?]
+# we can observe that the array returned by `Gridap` can be summed in significantly less time, using significantly less allocations. [WHY THE SECOND PIECE OF CODE REQUIRES A NUMBER OF ALLOCATIONS THAT GROWS WITH THE NUMBER OF CELLS? I CAN UNDERSTAND THAT THE CACHE ARRAY of `manual_uₕ_array_at_qₖ` REQUIRES MORE MEMORY IN ABSOLUTE TERMS, BUT I AM NOT ABLE TO SEE WHY IT GROWS WITH THE NUMBER OF CELLS!!!! ANY HINT?]
 
 # Let us try to answer the question now qualitatively. In order to do so, we can take a look at the full names of the types of both `LazyArray`s. `LazyArray`s have four type parameters, referred to as `G`, `T`, `N`, and `F`. `G` is the type of the array with the entry-wise operations (e.g., a `Function` object, a `Map` or a `Field`) to be applied, `T` is the type of the elements of the array, and `N` its rank. Finally, `F` is a `Tuple` with the types of the arrays to which the operations are applied in order to obtain the entries of the `LazyArray`. We can use the following function to pretty-print the `LazyArray` data type name in a more human-friendly way, while taking into account that types in `F` may be in turn `LazyArray`s recursively:
 
@@ -356,7 +356,7 @@ print_lazy_array_type_parameters("",typeof(manual_uₕ_array_at_qₖ))
 
 # 1. `uₕ_array_at_qₖ` is a `LazyArray` whose entries are defined as the result of applying a `Fill` array of `LinearCombinationMap{Colon}` `Map`s (G) to a `LazyArray` (F[1]) and a `Fill` array (F[2]). The first array provides the FE function DOF values restricted to each cell, and the second the local basis shape functions evaluated at the quadrature points. As the shape functions in physical space have the same values in all cells at the corresponding mapped points in physical space, there is no need to re-evaluate them at each cell, we can evaluate them only once. And this is what the second `Fill` array stores as its unique entry, i.e., a matrix M[i,j] defined as the value of the j-th `Field` (i.e., shape function) evaluated at the i-th `Point`. *This is indeed the main optimization that `lazy_map` applies compared to our manual construction of `uₕ_array_at_qₖ`.* It worths noting that, if `v` denotes the linear combination coefficients, and `M` the matrix resulting from the evaluation of an array of `Fields` at a set of `Points`, with M[i,j] being the value of the j-th `Field` evaluated at the i-th point, the evaluation of `LinearCombinationMap{Colon}` at `v` and `M` returns a vector `w` with w[i] defined as w[i]=sum_k v[k]*M[i,k], i.e., the FE function evaluated at the i-th point. `uₕ_array_at_qₖ` handles the cache of `LinearCombinationMap{Colon}` (which holds internal storage for `w`) and that of the first `LazyArray` (F[1]), so that when it retrieves the DOF values `v` of a given cell, and then applies `LinearCombinationMap{Colon}` to `v` and `M`, it does not have to allocate any temporary working arrays, but re-uses the ones stored in the different caches.
 
-# 2. `manual_uₕ_array_at_qₖ` is also a `LazyArray`, but structured rather differently to `uₕ_array_at_qₖ`. In particular, its entries are defined as the result of applying a plain array of `LinearCombinationField`s (G) to a `Fill` array of `Point`s (F[1]) that holds the coordinates of the quadrature rule evaluation points in the parametric space of the reference cell (wich are equivalent for all cells, thus the `Fill` array). The evaluation of a `LinearCombinationField` on a set of `Point`s ultimately depends on `LinearCombinationMap`. As seen in the previous point, the evaluation of this `Map` requires a vector `v` and a matrix `M`. `v` was built in-situ when building each `LinearCombinationField`, and stored within these instances. However, in contrast to `uₕ_array_at_qₖ`, `M` is not part of `manual_uₕ_array_at_qₖ`, and thus it has to be (re-)computed each time that we evaluate a new `LinearCombinationField` instance on a set of points. This is the main source of difference on the computation times observed. By eagerly constructing our array of `LinearCombinationField`s instead of deferring it until (lazy) evaluation via `lazy_map`, we lost optimization opportunities. We stress that `manual_uₕ_array_at_qₖ` also handles the cache of `LinearCombinationField` (that in turn handles the one of `LinearCombinationMap`), so that we do not need to allocate `M` at each cell, we re-use the space within the cache of `LinearCombinationField`.
+# 2. `manual_uₕ_array_at_qₖ` is also a `LazyArray`, but structured rather differently to `uₕ_array_at_qₖ`. In particular, its entries are defined as the result of applying a plain array of `LinearCombinationField`s (G) to a `Fill` array of `Point`s (F[1]) that holds the coordinates of the quadrature rule evaluation points in the parametric space of the reference cell (which are equivalent for all cells, thus the `Fill` array). The evaluation of a `LinearCombinationField` on a set of `Point`s ultimately depends on `LinearCombinationMap`. As seen in the previous point, the evaluation of this `Map` requires a vector `v` and a matrix `M`. `v` was built in-situ when building each `LinearCombinationField`, and stored within these instances. However, in contrast to `uₕ_array_at_qₖ`, `M` is not part of `manual_uₕ_array_at_qₖ`, and thus it has to be (re-)computed each time that we evaluate a new `LinearCombinationField` instance on a set of points. This is the main source of difference on the computation times observed. By eagerly constructing our array of `LinearCombinationField`s instead of deferring it until (lazy) evaluation via `lazy_map`, we lost optimization opportunities. We stress that `manual_uₕ_array_at_qₖ` also handles the cache of `LinearCombinationField` (that in turn handles the one of `LinearCombinationMap`), so that we do not need to allocate `M` at each cell, we re-use the space within the cache of `LinearCombinationField`.
 
 # To conclude the section, we expect the reader to be convinced of the negative consequences in performance that an eager (early) evaluation of the entries of the array returned by a `lazy_map` call can have in performance. The leitmotif of `Gridap` is *laziness*. When building new arrays of `Field`s (or arrays of `Field`s), out of existing ones, or when evaluating them at a set of `Point`s, ALWAYS use `lazy_map` (as far as you have a good reason for not using it). This may expand across several recursion levels when building complex operation trees among arrays of `Field`s. The more we defer the actual computation of the entries of `LazyArray`s, the more optimizations will be available at the `Gridap`'s disposal by re-arranging the order of operations via exploitation of the particular properties of the arrays at hand. And this is indeed what we are going to do in the rest of the tutorial, namely calling `lazy_map` to build new cell arrays out of existing ones, to end in a lazy cell array whose entries are the cell matrices and cell vectors contributions to the global linear system.
 
@@ -452,12 +452,12 @@ J = lazy_map(linear_combination,Xₖ,∇ϕrgₖ)
 
 lazy_map(Broadcasting(∇),ψₖ)
 
-# As mentioned above, those two approches are equivalent
+# As mentioned above, those two approaches are equivalent
 
 @test typeof(J) == typeof(lazy_map(Broadcasting(∇),ψₖ))
 @test lazy_map(evaluate,J,qₖ) == lazy_map(evaluate,lazy_map(Broadcasting(∇),ψₖ),qₖ)
 
-# [SHOULD WE MENTION ANYTHING RELATED TO THE FACT THAT GRIDAP ACTUALLY RETURNS THE TRANSPOSE OF JACOBIAN OF THE MAPPING? AND JUSTIFY WHY? (This is achieved in `LinearCombinationMap` via outer product and flipping the order of the arguments (gradient shape function,point) insted of (point, gradient shape function)]
+# [SHOULD WE MENTION ANYTHING RELATED TO THE FACT THAT GRIDAP ACTUALLY RETURNS THE TRANSPOSE OF JACOBIAN OF THE MAPPING? AND JUSTIFY WHY? (This is achieved in `LinearCombinationMap` via outer product and flipping the order of the arguments (gradient shape function,point) instead of (point, gradient shape function)]
 
 # ## Computing the gradients of the trial and test FE space bases
 
@@ -476,7 +476,7 @@ grad_du = ∇(du)
 grad_dv_array = get_cell_data(grad_dv)
 grad_du_array = get_cell_data(grad_du)
 
-# The resulting `LazyArray`s encode the so-called pull back transformation of the gradients. We need this transformation in order to compute the gradients in physical space. The gradients in physical space are indeed the ones that we need to integrate in the finite element method, not the reference ones, even if we always evalute the integrals in the parametric space of the reference cell. We can also check that the `DomainStyle` trait of `grad_dv` and `grad_du` is `ReferenceDomain`
+# The resulting `LazyArray`s encode the so-called pull back transformation of the gradients. We need this transformation in order to compute the gradients in physical space. The gradients in physical space are indeed the ones that we need to integrate in the finite element method, not the reference ones, even if we always evaluate the integrals in the parametric space of the reference cell. We can also check that the `DomainStyle` trait of `grad_dv` and `grad_du` is `ReferenceDomain`
 
 @test Gridap.FESpaces.DomainStyle(grad_dv) == Gridap.FESpaces.ReferenceDomain()
 @test Gridap.FESpaces.DomainStyle(grad_du) == Gridap.FESpaces.ReferenceDomain()

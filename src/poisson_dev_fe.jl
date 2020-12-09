@@ -196,7 +196,7 @@ du_array_at_qₖ = lazy_map(evaluate,du_array,qₖ)
 
 # 1. To keep memory demands at low levels,    `lazy_map` NEVER returns an array that stores the result at all cells at once.    In the two examples above, this is achieved using `Fill` arrays. However, this is    only possible in very particular scenarios (see discussion above) . In more general cases,    the array resulting from `lazy_map` does not have the same entry in all cells. In such cases,    `lazy_map` returns a `LazyArray`, which is another    essential component of `Gridap`. In a nutshell, a  `LazyArray` is an    array that applies, entry-wise, arrays of operations over array(s). These operations are    only computed when accessing the corresponding index, thus the name lazy.    Besides, the entries of these are computed in an efficient way, using a set of mechanisms    that will be illustrated below with examples.
 
-# 2. Apart from `Function` objects, such as `evaluate`, `lazy_map` can also be    combined with other objects, e.g., `Map`s. For example, `Broadcasting(*)` presented above.    As there are `Map`s that can be applied to `Field`s (or arrays of `Fields`) to build new    `Field`s (or arrays of `Fields`), the recursive application of `lazy_map` let us build    complex operation trees among arrays of `Field`s as the ones required for the implementation of    variational forms. While building these trees, by virtue of Julia support    for multiple type dispatching, there are plenty of opportunities for    optimization by changing the order in which the operations are performed. These optimizations    typically come in the form of a significant saving of FLOPs, by exploiting the particular    properties of the `Field`s at hand, or into higher    granularity for vectorized array operations    when the expressions are actually evaluated    [IS THIS SECOND STATEMENT TRUE? CAN WE PUT AN EXAMPLE?].    Indeed, the arrays that one usually obtains from `lazy_map` are not the trivial    `LazyArray`s that one would expect from a naive combination of the arguments to `lazy_map`
+# 2. Apart from `Function` objects, such as `evaluate`, `lazy_map` can also be    combined with other objects, e.g., `Map`s. For example, `Broadcasting(*)` presented above.    As there are `Map`s that can be applied to `Field`s (or arrays of `Fields`) to build new    `Field`s (or arrays of `Fields`), the recursive application of `lazy_map` let us build    complex operation trees among arrays of `Field`s as the ones required for the implementation of    variational forms. While building these trees, by virtue of Julia support    for multiple type dispatching, there are plenty of opportunities for    optimization by changing the order in which the operations are performed. These optimizations typically come in the form of a significant saving of FLOPs, by exploiting the particular    properties of the `Field`s at hand, or into higher    granularity for vectorized array operations    when the expressions are actually evaluated    [IS THIS SECOND STATEMENT TRUE? CAN WE PUT AN EXAMPLE?].    Indeed, the arrays that one usually obtains from `lazy_map` are not the trivial    `LazyArray`s that one would expect from a naive combination of the arguments to `lazy_map`
 
 # ## Exploring another type of `CellField` objects, FE functions
 
@@ -457,139 +457,62 @@ lazy_map(Broadcasting(∇),ψₖ)
 @test typeof(J) == typeof(lazy_map(Broadcasting(∇),ψₖ))
 @test lazy_map(evaluate,J,qₖ) == lazy_map(evaluate,lazy_map(Broadcasting(∇),ψₖ),qₖ)
 
-# [SHOULD WE MENTION ANYTHING RELATED TO THE FACT THAT GRIDAP ACTUALLY RETURNS THE TRANSPOSE OF JACOBIAN OF THE MAPPING? (This is achieved in `LinearCombinationMap` via outer product and flipping the order of the arguments (gradient shape function,point) insted of (point, gradient shape function)]
+# [SHOULD WE MENTION ANYTHING RELATED TO THE FACT THAT GRIDAP ACTUALLY RETURNS THE TRANSPOSE OF JACOBIAN OF THE MAPPING? AND JUSTIFY WHY? (This is achieved in `LinearCombinationMap` via outer product and flipping the order of the arguments (gradient shape function,point) insted of (point, gradient shape function)]
 
-# ## A low-level definition of FE space bases
+# ## Computing the gradients of the trial and test FE space bases
 
-# We proceed as before, creating the reference FE, the reference basis, and the corresponding `Fill` array.
+# Another salient feature of Gridap is that we can directly take the gradient of finite element bases. (In general, of any `CellField` object.) In the following code snippet, we do so for `dv` and `du`
 
-pol = Polytope(Fill(HEX_AXIS,D)...)
-reffe = LagrangianRefFE(T,pol,order)
+grad_dv = ∇(dv)
+grad_du = ∇(du)
 
-ϕr = get_shapefuns(reffe)
-ϕrₖ = Fill(ϕr,num_cells(model))
+# The result of this operation when applied to a `FEBasis` object is a new `FEBasis` object.
 
-# As stated in FE theory, we can now define the shape functions in the physical
-# space, which are conceptually defined as $ϕ(x) = ϕr_k∘ξ_K^{-1}(x)$.
+@test isa(grad_dv, Gridap.FESpaces.FEBasis)
+@test isa(grad_du, Gridap.FESpaces.FEBasis)
 
-# [TRIGGERS ERRORS, PENDING!!!]
-ϕₖ = lazy_map(Broadcasting(∘),ϕrₖ,lazy_map(inverse_map,ξₖ))
+# We can also extract an array of arrays of `Fields`, as we have done before with `FEBasis` objects.
 
-# Again, the result is a `LazyArray` that provides an array of `Field`s at each cell. We can build the same cell array of array of `Field`s using the `change_domain` function applied to a `CellField` object, i.e., `dv`
+grad_dv_array = get_cell_data(grad_dv)
+grad_du_array = get_cell_data(grad_du)
 
-dv_physical = change_domain(vd,PhysicalDomain())
+# The resulting `LazyArray`s encode the so-called pull back transformation of the gradients. We need this transformation in order to compute the gradients in physical space. The gradients in physical space are indeed the ones that we need to integrate in the finite element method, not the reference ones, even if we always evalute the integrals in the parametric space of the reference cell. We can also check that the `DomainStyle` trait of `grad_dv` and `grad_du` is `ReferenceDomain`
 
+@test Gridap.FESpaces.DomainStyle(grad_dv) == Gridap.FESpaces.ReferenceDomain()
+@test Gridap.FESpaces.DomainStyle(grad_du) == Gridap.FESpaces.ReferenceDomain()
 
+# This should not come as a surprise, as this is indeed the nature of the pull back transformation of the gradients. We provide `Point`s in the parametric space of the reference cell, and we get back the gradients in physical space evaluated at the mapped `Point`s in physical space.
 
-# We note that when using ref FEs in the parametric space, the points in which
-# we will evaluate the function are also in the parametric space (quadrature in
-# $[0,1]^D$). Thus, the geometrical map is not really needed for this evaluation.
-# However, it is essential
-# when computing its gradient, later on. There is another path in Gridap, which
-# defines reference FEs in the physical space, but it won't be considered here.
+# We can manually build `grad_dv_array` and `grad_du_array` as follows
 
-# Even though this is not essential for this tutorial, we note that we can
-# create a cell basis, a `GenericCellBasis` struct, which represents our
-# shape functions. It takes ϕₖ (the shape functions), the cell map ξₖ and some metadata,
-# namely
-# the trial style (the first argument, true means it is a trial FE space, test FE space otherwise
-# in the Galerkin method parlance),
-# the reference trait (the last Val{true}, true means FEs define in the reference
-# FE space, the most common case, false means FEs with DOFs defined in the physical
-# space).
+∇ϕr                  = Broadcasting(∇)(ϕr)
+∇ϕrₖ                 = Fill(∇ϕr,num_cells(Tₕ))
+manual_grad_dv_array = lazy_map(Broadcasting(push_∇),∇ϕrₖ,ξₖ)
 
-bₖ = Gridap.FESpaces.FEBasis(ϕrₖ,Tₕ,Gridap.FESpaces.TrialBasis(),ReferenceDomain())
+∇ϕrᵀ                 = Broadcasting(∇)(transpose(ϕr))
+∇ϕrₖᵀ                = Fill(∇ϕrᵀ,num_cells(Tₕ))
+manual_grad_du_array = lazy_map(Broadcasting(push_∇),∇ϕrₖᵀ,ξₖ)
 
-# We can check that the basis we have created return the same values as the
-# one obtained with high-level APIs
+# We note the use of the `Broadcasting(push_∇)` `Map` at the last step. For Lagrangian FE spaces, this `Map` represents the pull back of the gradients. This transformation requires the gradients of the shape functions in the reference space, and the (gradient of the) geometrical map. The last step, e.g., the construction of `manual_dv_array`, actually translates into the combination of the following calls to `lazy_map` to build the final transformation:
 
-@test lazy_map(evaluate,get_cell_data(dv),qₖ) == lazy_map(evaluate,get_cell_data(bₖ),qₖ)
+# Build array of `Field`s with the Jacobian transposed at each cell
+Jt     = lazy_map(Broadcasting(∇),ξₖ)
 
-# There are some objects in `Gridap` that are nothing but a lazy array plus
-# some metadata. Another example could be an array of arrays of points like `q`.
-# `q` points are in the reference space. You could consider creating `CellPoints`
-# with a trait that tells you whether these points are in the parametric or
-# physical space, and use dispatching based on that. E.g., if you have a reference
-# FE in the reference space, you can easily evaluate in the parametric space,
-# but you should map the points to the physical space first with `ξₖ` when
-# dealing with FEs in the physical space.
+# Build array of `Field`s with the inverse of the Jacobian transposed at each cell
+inv_Jt = lazy_map(Operation(inv),Jt)
 
-# Another salient feature of Gridap is that for these finite element bases,
-# we can readily compute the gradient as ∇(ϕₖ), which internally is implemented
-# as a lazy array as follows
+# Build array of arrays of `Field`s defined as the the broadcasted single contraction of the Jacobian inverse transposed and the gradients of the shape functions in the reference space
+low_level_manual_gradient_dv_array = lazy_map(Broadcasting(Operation(⋅)),inv_Jt,∇ϕrₖ)
 
-# The computation of the gradient of FE shape functions in the physical space
-# would require to create a Kernel with the inv() to create the inv(J)
-# that is needed for the computation of derivatives in the physical space
-# but we have merged all the operations in the PhysGrad() kernel.
+# As always, we check that all arrays built are are equivalent
 
-# grad = Gridap.Fields.Valued(Gridap.Fields.PhysGrad())
-# ∇ϕrₖ = Fill(Gridap.Fields.FieldGrad(ϕr),num_cells(Tₕ))
-# ∇ϕₖ = apply(grad,∇ϕrₖ,J)
+@test typeof(grad_dv_array) == typeof(manual_grad_dv_array)
+@test lazy_map(evaluate,grad_dv_array,qₖ) == lazy_map(evaluate,manual_grad_dv_array,qₖ)
+@test lazy_map(evaluate,grad_dv_array,qₖ) ==
+         lazy_map(evaluate,low_level_manual_gradient_dv_array,qₖ)
+@test lazy_map(evaluate,grad_dv_array,qₖ) == evaluate(grad_dv,Qₕ_cell_point)
 
-∇ϕr  = Broadcasting(∇)(ϕr)
-∇ϕrₖ = Fill(∇ϕr,num_cells(Tₕ))
-∇ϕₖ  = lazy_map(Broadcasting(push_∇),∇ϕrₖ,ξₖ)
-
-∇ϕrᵀ  = Broadcasting(∇)(transpose(ϕr))
-∇ϕrₖᵀ = Fill(∇ϕrᵀ,num_cells(Tₕ))
-∇ϕₖᵀ  = lazy_map(Broadcasting(push_∇),∇ϕrₖᵀ,ξₖ)
-#
-lazy_map(evaluate,∇ϕₖ,qₖ)
-# PENDING
-# @test evaluate(∇ϕₖ,qₖ) == evaluate(∇(ϕₖ),qₖ)
-@test lazy_map(evaluate,∇ϕₖ,qₖ) == lazy_map(evaluate,get_cell_data(∇(dv)),qₖ)
-
-# We can now evaluate both the CellBasis and the array of physical shape functions,
-# and check we get the same.
-
-#@test evaluate(∇ϕₖ,qₖ) == evaluate(∇(bₖ),qₖ) == evaluate(∇(dv),qₖ)
-
-#@test evaluate(∇ϕₖ,qₖ) == evaluate(∇(dv),qₖ)
-
-
-# ## A low-level definition of the FE function
-
-# Let us explore this FE function.
-# Now, let us create uₖ from scratch, in order to understand how
-# Gridap works internally, and why we say that Gridap design strongly relies on
-# lazy (evaluation of) arrays.
-
-# In fact, we can create uₖ by our own with the ingredients we already have. uₖ is an
-# array that linearly combines the basis ϕₖ and the DOF values Uₖ at each cell.
-# The kernel that does this in Gridap is `LinComValued()`. So, we create a
-# this kernel and create
-# and applied array with all these ingredients. As above, it is a lazy array
-# that will return the shape functions at each cell in the physical space
-
-uₖ_own = lazy_map(linear_combination,Uₖ,ϕrₖ)
-
-# PENDING: I cannot use ϕₖ in the line right above
-# lc = Gridap.Fields.LinComValued()
-# uₖ = apply(lc,ϕₖ,Uₖ)
-
-# We can check that we get the same results as with uₖ
-
-@test lazy_map(evaluate,uₖ_own,qₖ) == lazy_map(evaluate,uₖ,qₖ)
-
-# Now, since we can apply the gradient over this array
-
-# PENDING
-# gradient(uₖ)
-
-# or compute it using low-level methods, as a linear combination
-# of ∇(ϕₖ) instead of ϕₖ
-∇uₖ_own = lazy_map(linear_combination,Uₖ,∇ϕₖ)
-
-# PENDING
-# aux = ∇(uₖ)
-
-∇uₖ = get_cell_data(∇(uₕ))
-
-
-# We can check we get the expected result
-
-@test all(lazy_map(evaluate,∇uₖ,qₖ) .≈ lazy_map(evaluate,∇uₖ_own,qₖ))
+# With the lessons learned so far in this section, it is left as an exercise to the reader to manually build the array that `get_cell_data` returns when we call it with the `CellField` object resulting from taking the gradient of uₕ as an argument, i.e., `get_cell_data(∇(uₕ))`.
 
 # ## A low-level implementation of the residual integration and assembly
 
@@ -598,7 +521,7 @@ uₖ_own = lazy_map(linear_combination,Uₖ,ϕrₖ)
 # Let us consider now the integration of (bi)linear forms. The idea is to
 # compute first the following residual for our random function uₕ
 
-intg = get_cell_data(∇(uₕ)⋅∇(dv))
+intg = ∇(uₕ)⋅∇(dv))
 
 # but we are going to do it using low-level methods.
 

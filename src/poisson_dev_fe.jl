@@ -374,12 +374,12 @@ uₕ_dirichlet_dof_values = get_dirichlet_values(Uₕ)
 m = Broadcasting(PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values))
 manual_Uₖ = lazy_map(m,σₖ)
 
-# `PosNegReindex` is a `Map` that is built out of two vectors. We evaluate it at indices of array entries. When we give it a positive index, it returns the entry of the first vector corresponding to this index, and when give it a negative index, it returns the entry of the second vector corresponding to the flipped-sign index. We can check this with the following expressions
+# `PosNegReindex` is a `Map` that is built out of two vectors. We evaluate it at indices of array entries. When we give it a positive index, it returns the entry of the first vector corresponding to this index, and when we give it a negative index, it returns the entry of the second vector corresponding to the flipped-sign index. We can check this with the following expressions
 
 @test evaluate(PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values),3) == uₕ_free_dof_values[3]
 @test evaluate(PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values),-7) == uₕ_dirichlet_dof_values[7]
 
-# The Broadcasting(op) `Map` let us, in this particular example, broadcast the `PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values)` `Map` to an array a global DOF ids, to obtain the corresponding cell DOF values. As regular, Broadcasting(op) provides a cache with the work array required to store its result. `LazyArray` uses this cache to reduce the number of allocations while computing its entries just-in-time. Please note that in `Gridap` we put negative labels to fixed  DOFs and positive to free  DOFs in σₖ, thus we use an array that combines σₖ with the two arrays of free and fixed DOF values accessing the right one depending on the index. But everything is lazy, only computed when accessing the array. As mentioned multiple times laziness and quasi-immutability are leitmotifs in Gridap.
+# The Broadcasting(op) `Map` let us, in this particular example, broadcast the `PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values)` `Map` to an array a global DOF ids, to obtain the corresponding cell DOF values. As regular, `Broadcasting(op)` provides a cache with the work array required to store its result. `LazyArray` uses this cache to reduce the number of allocations while computing its entries just-in-time. Please note that in `Gridap` we put negative labels to fixed  DOFs and positive to free  DOFs in σₖ, thus we use an array that combines σₖ with the two arrays of free and fixed DOF values accessing the right one depending on the index. But everything is lazy, only computed when accessing the array. As mentioned multiple times laziness and quasi-immutability are leitmotifs in Gridap.
 
 # ## The geometrical model
 
@@ -387,24 +387,18 @@ manual_Uₖ = lazy_map(m,σₖ)
 
 ξₖ = get_cell_map(Tₕ)
 
-# [ WHY CELL MAP IS NOT A `CellField` object? ]
-The cell map takes at each cell points in the parametric space and returns the
-mapped points in the physical space. Even though this space does not need a global
-definition (nothing has to be solved here), it is continuous across interior faces.
+# [ WHY CELL MAP IS NOT A `CellField` OBJECT? ]
+# The cell map takes at each cell points in the parametric space and returns the mapped points in the physical space. Even though this space does not need a global definition (nothing has to be solved here), it is continuous across interior faces.
 
-# This cell_map is an `AppliedArray`, one of the essential types in `Gridap`,
-which will be introduced in more detail below. At each cell, it provides the
-`Field` that maps parametric cells to physical cells.
+# As usual, this cell_map is a `LazyArray`. At each cell, it provides the `Field` that maps `Point`s in the parametric space of the reference cell to `Point`s in physical space.
 
-# The node coordinates can be extracted from the triangulation, returning a
-global array of `Point`. You can see that such array is stored using Cartesian
-indices instead of linear indices. It is more natural for Cartesian meshes.
+# The node coordinates can be extracted from the triangulation, returning a global array of `Point`s. You can see that such array is stored using Cartesian indices instead of linear indices. It is more natural for Cartesian meshes.
 
 X = get_node_coordinates(Tₕ)
 
 # You can also extract a cell-wise array that provides the node indices per cell
 
-ctn = get_cell_node_ids(Tₕ)
+cell_node_ids = get_cell_node_ids(Tₕ)
 
 # or the cell-wise nodal coordinates, combining the previous two arrays
 
@@ -412,119 +406,62 @@ _Xₖ = get_cell_coordinates(Tₕ)
 
 # ## A low-level definition of the cell map
 
-# Now, let us create the geometrical map almost from scratch, in order to
-# get familiarised with the `Gridap` internals.
-# First, we start with the reference topology of the representation that we
-# will use for the geometry. In this example, we consider that the geometry
-# is represented with a bilinear map, and we use a scalar-valued FE space to
-# combine the nodal coordinate values which is a Lagrangian first order space.
-# To this end, we first need to create a Polytope using an array of dimension D
-# with the parameter HEX_AXIS. This represents an n-cube of dimension D. Then,
-# this is used to create the scalar first order Lagrangian reference FE.
-# It is not the purpose of this tutorial to describe the `ReferenceFE` in Gridap.
+# Now, let us create the geometrical map almost from scratch, using the concepts that we have learned so far. In this example, we consider that the geometry is represented with a bilinear map, and we thus use a first-order, scalar-valued FE space to represent the nodal coordinate values. To this end, as we did before with the global space of FE functions, we first need to create a Polytope using an array of dimension `D` with the parameter `HEX_AXIS`. Then, this is used to create the scalar first order Lagrangian reference FE.
 
 pol = Polytope(Fill(HEX_AXIS,D)...)
 reffe_g = LagrangianRefFE(Float64,pol,1)
 
-# Next, we extract the basis of shape functions for this Reference FE, which is
-# a set of fields, as many as shape functions. We note that these fields have
-# as domain the parametric space $[0,1]^D$. Thus, they can readily be evaluated for
-# points in the parametric space.
+# Next, we extract the basis of shape functions out of this Reference FE, which is a set of `Field`s, as many as shape functions. We note that these `Field`s have as domain the parametric space $[0,1]^D$. Thus, they can readily be evaluated for points in the parametric space.
 
 ϕrg = get_shapefuns(reffe_g)
 
-# Now, we create a global cell array that has the same reference FE basis for all
-# cells. We can do this efficiently with `FillArrays` package and its `Fill` method, it
-# only stores the value once and returns it for whatever index.
+# Now, we create a global cell array that has the same reference FE basis for all cells.
 
-ϕrgₖ = Fill(ϕrg,num_cells(model))
+ϕrgₖ = Fill(ϕrg,num_cells(Tₕ))
 
-# We can use the following `LocalToGlobalArray` in `Gridap` that returns a
-# lazy array of arrays of `Point`, i.e., the coordinates of the nodes per
-# each cell.
+# Next, we use `lazy_map` to build a `LazyArray` that provides the coordinates of the nodes of each cell in physical space. To this end, we use the `Broadcasting(Reindex(X))` and apply it to `cell_node_ids`.
 
-# OLD Xₖ = LocalToGlobalArray(ctn,X)
+Xₖ = lazy_map(Broadcasting(Reindex(X)),cell_node_ids)
 
-Xₖ = lazy_map(Broadcasting(Reindex(X)),ctn)
+# `Reindex` is a `Map` that is built out of a single vector, `X` in this case. We evaluate it at indices of array entries, and it just returns the entry of the vector from which it is built corresponding to this index. We can check this with the following expressions:
 
-#
+@test evaluate(Reindex(X),3) == X[3]
+
+# If we combine `Broadcasting` and `Reindex`, then we can evaluate efficiently the `Reindex` `Map` at arrays of node ids, i.e., at each of the entries of `cell_node_ids`. `lazy_map` is used for reasons hopefully clear at this point (low memory consumption, efficient computation of the entries via caches, further opportunities for optimizations when combined with other `lazy_map` calls, etc.).
+# Finally, we can check that `Xₖ` is equivalent to the array returned by `Gridap`, i.e, `_Xₖ`
 
 @test Xₖ == _Xₖ == get_cell_coordinates(Tₕ) # check
 
-# Even though inline evaluations in your code editor
-# (or if you just call the @show method) are showing the full matrix, don't get
-# confused. This is because this method is evaluating the array at all indices and
-# collecting and printing the result. In practical runs, this array, as many other in
-# `Gridap`, is lazy. We only compute its entries for a given index on demand, by
-# accessing to the pointer array `lcn` and extract the values in `X`.
-
-# Next, we can compute the geometrical map as the combination of these shape
-# functions in the parametric space with the node coordinates (at each cell)
-
-#
-# OLD lc = Gridap.Fields.LinComValued()
-# OLD lcₖ = Fill(lc,num_cells(model))
-# OLD ψₖ = apply(lcₖ,ϕrgₖ,Xₖ)
-
-# Note that since we use the same kernel for all cells, we don't need to build the array of kernels
-# `lcₖ`, we can simply write
+# Next, we can compute the geometrical map as the linear combination of these shape functions in the parametric space with the node coordinates (at each cell)
 
 ψₖ = lazy_map(linear_combination,Xₖ,ϕrgₖ)
 
-#
+# This is the mathematical definition of the geometrical map in FEs! (see above for a description of the `linear_combination` generic function). As expected, the FE map that we have built manually is equivalent to the one internally built by `Gridap`.
 
 @test lazy_map(evaluate,ψₖ,qₖ) == lazy_map(evaluate,ξₖ,qₖ) # check
 
-# We have re-computed (in a low-level way) the geometrical map. First, we have
-# created a (constant) array with the kernel `LinComValued`. We have internally
-# defined many different `Kernel`s in `Gridap`, which act on `Field`s. The one here
-# takes the reference FE basis functions and linearly combines them using the
-# nodal coordinates in the physical space (which are `VectorValued`). This is the
-# mathematical definition of the geometrical map in FEs!
+# It is good to stress (if it was not fully grasped yet) that `lazy_map(k,a,b)` is semantically (conceptually) equivalent to `map((ai,bi)->evaluate(k,ai,bi),a,b)` but, among others, with a lazy result instead of a plain Julia array.
 
-# At this point, let us define what `apply` is doing. It creates an `AppliedArray`,
-# which is one of the essential components of `Gridap`. An `AppliedArray` is a
-# lazy array that applies arrays of kernels (operations) over array(s). These operations are
-# only computed when accessing the corresponding index, thus lazy. This way,
-# we are implementing expression trees of arrays. On top of this, these arrays
-# can be arrays of `Field`, as `ϕrgₖ` above. These lazy arrays are implemented
-# in an efficient way, creating a cache for the result of evaluating it a a given
-# index. This way, the code is performant, and does not involve allocations when
-# traversing these arrays. It is probably a good time to take a look at `AppliedArray`
-# and the abstract API of `Kernel` in `Gridap`.
+# Following the same ideas, we can compute the Jacobian of the geometrical map (cell-wise). The Jacobian of the transformation is simply its gradient. The gradient in the parametric space can be  built using two equivalent approaches. On the one hand, we can apply the `Broadcasting(∇)` `Map` to the array of `Fields` with the local shape basis functions (i.e., `ϕrg`). This results in an array of `Field`s with the gradients, (Recall that `Map`s can be applied to array of `Field`s in order to get new array of `Field`s) that we use to build a `Fill` array with the result. Finally, we build the lazy array with the cell-wise Jacobians of the map as the linear combination of the node coordinates and the gradients of the local cell shape basis functions:
 
-# It is good to mention that `apply(k,a,b)`` is equivalent to
-# map((ai,bi)->apply_kernel(k,ai,bi),a,b) but with a lazy result instead of a
-# plain Julia array.
-
-# With this, we can compute the Jacobian (cell-wise).
-# The Jacobian of the transformation is simply its gradient.
-# The gradient in the parametric space can be computed as a gradient of the
-# global array defined before, or taking the gradient and filling the array
-
-∇ϕrg  = Broadcasting(∇)(ϕrg) # = evaluate(Broadcasting(∇),ϕrg) = broadcast(∇,ϕrg)
+∇ϕrg  = Broadcasting(∇)(ϕrg)
 ∇ϕrgₖ = Fill(∇ϕrg,num_cells(model))
-
-#
-lazy_map(evaluate,∇ϕrgₖ,qₖ)
-# PENDING
-#@test lazy_map(evaluate,∇ϕrgₖ,qₖ) == evaluate(∇(ϕrgₖ),qₖ)
-
-#
-
-#J = apply(lc,∇ϕrgₖ,Xₖ)
 J = lazy_map(linear_combination,Xₖ,∇ϕrgₖ)
-# Why evaluate(Broadcasting(∇)(ξₖ),qₖ) fails?
-#
-#
-evaluate(lazy_map,evaluate,J,qₖ)
-# PENDING Why evaluate(lazy_map(∇,ξₖ),qₖ) not working?
-# @test all(evaluate(J,qₖ) .≈ evaluate(∇(ξₖ),qₖ))
+
+# We note that `lazy_map` is not required in the first expression, as we are not actually working with cell arrays. On the other hand, using `lazy_map`, we can apply `Broadcasting(∇)` to the cell array of `Field`s with the geometrical map.
+
+lazy_map(Broadcasting(∇),ψₖ)
+
+# As mentioned above, those two approches are equivalent
+
+@test typeof(J) == typeof(lazy_map(Broadcasting(∇),ψₖ))
+@test lazy_map(evaluate,J,qₖ) == lazy_map(evaluate,lazy_map(Broadcasting(∇),ψₖ),qₖ)
+
+# [SHOULD WE MENTION ANYTHING RELATED TO THE FACT THAT GRIDAP ACTUALLY RETURNS THE TRANSPOSE OF JACOBIAN OF THE MAPPING? (This is achieved in `LinearCombinationMap` via outer product and flipping the order of the arguments (gradient shape function,point) insted of (point, gradient shape function)]
 
 # ## A low-level definition of FE space bases
 
-# We proceed as before, creating the reference FE, the reference basis, and the
-# corresponding constant array.
+# We proceed as before, creating the reference FE, the reference basis, and the corresponding `Fill` array.
 
 pol = Polytope(Fill(HEX_AXIS,D)...)
 reffe = LagrangianRefFE(T,pol,order)
@@ -533,20 +470,16 @@ reffe = LagrangianRefFE(T,pol,order)
 ϕrₖ = Fill(ϕr,num_cells(model))
 
 # As stated in FE theory, we can now define the shape functions in the physical
-# space, which are conceptually $ϕ(x) = ϕr_K(X)∘ξ_K^{-1}(x)$. We provide a kernel
-# for this, `AddMap`. First, we create this kernel,
-# and then we apply it to the basis in the parametric space and
-# the geometrical map
+# space, which are conceptually defined as $ϕ(x) = ϕr_k∘ξ_K^{-1}(x)$.
 
-# TRIGGERS ERRORS (PENDING)
+# [TRIGGERS ERRORS, PENDING!!!]
 ϕₖ = lazy_map(Broadcasting(∘),ϕrₖ,lazy_map(inverse_map,ξₖ))
 
-# PENDING
-# P1. map = Gridap.Fields.AddMap()
-# P2. ϕₖ = apply(map,ϕrₖ,ξₖ)
-# P3. @test ϕₖ === attachmap(ϕrₖ,ξₖ)
+# Again, the result is a `LazyArray` that provides an array of `Field`s at each cell. We can build the same cell array of array of `Field`s using the `change_domain` function applied to a `CellField` object, i.e., `dv`
 
-# Again, the result is an `AppliedArray` that provides a `Field` at each cell.
+dv_physical = change_domain(vd,PhysicalDomain())
+
+
 
 # We note that when using ref FEs in the parametric space, the points in which
 # we will evaluate the function are also in the parametric space (quadrature in

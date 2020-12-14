@@ -71,7 +71,7 @@ add_tag_from_tags!(labels,"dirig",
 #
 # Now, we can build the FE space by using the newly defined boundary tags.
 
-reffe = ReferenceFE(:Lagrangian,Float64,1)
+reffe = ReferenceFE(lagrangian,Float64,1)
 V0 = TestFESpace(model,reffe,conformity=:H1,labels=labels,dirichlet_tags=["diri0", "dirig"])
 
 # The construction of this space is essentially the same as in the first tutorial (we build a continuous scalar-valued Lagrangian interpolation of first order). However, we also pass here the `labels` object (that contains the newly created boundary tags). From this FE space, we define the trial FE spaces

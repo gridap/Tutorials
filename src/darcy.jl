@@ -64,10 +64,10 @@ model = CartesianDiscreteModel(domain,partition)
 
 order = 1
 
-V = FESpace(model, ReferenceFE(:RaviartThomas,Float64,order),
+V = FESpace(model, ReferenceFE(raviart_thomas,Float64,order),
       conformity=:HDiv, dirichlet_tags=[5,6])
 
-Q = FESpace(model, ReferenceFE(:Lagrangian,Float64,order),
+Q = FESpace(model, ReferenceFE(lagrangian,Float64,order),
       conformity=:L2)
 
 # Note that the Dirichlet boundary for the flux are the bottom and top sides of the squared domain (identified with the boundary tags 5, and 6 respectively), whereas no Dirichlet data can be imposed on the pressure space. We select `conformity=:HDiv` for the flux (i.e., shape functions with $H^1(\mathrm{div};\Omega)$ regularity) and `conformity=:L2` for the pressure (i.e. discontinuous shape functions).

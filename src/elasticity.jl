@@ -61,7 +61,7 @@ writevtk(model,"model")
 
 order = 1
 
-reffe = ReferenceFE(:Lagrangian,VectorValue{3,Float64},order)
+reffe = ReferenceFE(lagrangian,VectorValue{3,Float64},order)
 V0 = TestFESpace(model,reffe;
   conformity=:H1,
   dirichlet_tags=["surface_1","surface_2"],

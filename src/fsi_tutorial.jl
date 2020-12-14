@@ -184,8 +184,8 @@ model_fluid = DiscreteModel(model,tags="fluid")
 k = 2
 
 # Now we define the reference FE for the velocity and pressure fields. The velocity field reference FE, both for fluid and solid domains, will be defined by a 2-dimensional `VectorValue` type `:Lagrangian` reference FE element of order `k`. The reference FE for the pressure will be given by a scalar value type `:Lagrangian` reference FE element of order `k-1`.
-reffeᵤ = ReferenceFE(:Lagrangian,VectorValue{2,Float64},k)
-reffeₚ = ReferenceFE(:Lagrangian,Float64,k-1)
+reffeᵤ = ReferenceFE(lagrangian,VectorValue{2,Float64},k)
+reffeₚ = ReferenceFE(lagrangian,Float64,k-1)
 
 # Having set up all the ingredients, we can create the different FE spaces for the test functions. For the velocity FE spaces we call the `TestFESpace` function with the corresponding discrete model, using the velocity reference FE `reffeᵤ` and conformity `:H1`. Note that we assign different Dirichlet boundary labels for the two different parts, generating the variational spaces with homogeneous Dirichlet boundary conditions, $V_{\rm F,0}$ and $V_{\rm S,0}$ .
 Vf = TestFESpace(

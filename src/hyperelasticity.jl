@@ -70,7 +70,7 @@ jac_geo(u,du,v) = ∫( ∇(v) ⊙ ( (S∘∇(u))⋅∇(du) ) )*dΩ
 jac(u,du,v) = jac_mat(u,v,du) + jac_geo(u,v,du)
 
 # Construct the FEspace
-reffe = ReferenceFE(:Lagrangian,VectorValue{2,Float64},1)
+reffe = ReferenceFE(lagrangian,VectorValue{2,Float64},1)
 V = TestFESpace(model,reffe,conformity=:H1,dirichlet_tags = ["diri_0", "diri_1"])
 
 # Setup non-linear solver

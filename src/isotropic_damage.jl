@@ -68,7 +68,7 @@ const b_max = VectorValue(0.0,0.0,-(9.81*2.5e3))
 # ## L2 projection
 # form Gauss points to a Lagrangian piece-wise discontinuous space
 function project(q,model,dΩ,order)
-  reffe = ReferenceFE(:Lagrangian,Float64,order)
+  reffe = ReferenceFE(lagrangian,Float64,order)
   V = FESpace(model,reffe,conformity=:L2)
   a(u,v) = ∫( u*v )*dΩ
   l(v) = ∫( v*q )*dΩ
@@ -92,7 +92,7 @@ function main(;n,nsteps)
 
   order = 1
 
-  reffe = ReferenceFE(:Lagrangian,VectorValue{3,Float64},order)
+  reffe = ReferenceFE(lagrangian,VectorValue{3,Float64},order)
   V = TestFESpace(model,reffe,labels=labeling,dirichlet_tags=["supports"])
   U = TrialFESpace(V)
 

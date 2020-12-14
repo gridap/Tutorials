@@ -87,12 +87,12 @@ add_tag_from_tags!(labels,"diri0",[1,2,3,4,5,7,8])
 
 D = 2
 order = 2
-reffeᵤ = ReferenceFE(:Lagrangian,VectorValue{2,Float64},order)
+reffeᵤ = ReferenceFE(lagrangian,VectorValue{2,Float64},order)
 V = TestFESpace(model,reffeᵤ,conformity=:H1,labels=labels,dirichlet_tags=["diri0","diri1"])
 
 # The interpolation space for the pressure is built as follows
 
-reffeₚ = ReferenceFE(:Lagrangian,Float64,order-1;space=:P)
+reffeₚ = ReferenceFE(lagrangian,Float64,order-1;space=:P)
 Q = TestFESpace(model,reffeₚ,conformity=:L2,constraint=:zeromean)
 
 # With the options `:Lagrangian`, `space=:P`, `valuetype=Float64`, and `order=order-1`, we select the local polynomial space $P_{k-1}(T)$ on the cells $T\in\mathcal{T}$. With the symbol `space=:P` we specifically chose a local Lagrangian interpolation of type "P". Without using `space=:P`, would lead to a local Lagrangian of type "Q" since this is the default for quadrilateral or hexahedral elements. On the other hand, `constraint=:zeromean` leads to a FE space, whose functions are constrained to have mean value equal to zero, which is just what we need for the pressure space. With these objects, we build the trial multi-field FE spaces

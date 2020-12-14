@@ -21,8 +21,8 @@ add_tag_from_tags!(labels,"diri0",[1,2,3,4,5,7,8])
 
 # Define reference FE (Q2/P1(disc) pair)
 order = 2
-reffeᵤ = ReferenceFE(:Lagrangian,VectorValue{2,Float64},order)
-reffeₚ = ReferenceFE(:Lagrangian,Float64,order-1;space=:P)
+reffeᵤ = ReferenceFE(lagrangian,VectorValue{2,Float64},order)
+reffeₚ = ReferenceFE(lagrangian,Float64,order-1;space=:P)
 
 # Define test FESpaces
 V = TestFESpace(model,reffeᵤ,labels=labels,dirichlet_tags=["diri0","diri1"],conformity=:H1)

@@ -87,7 +87,7 @@ writevtk(model,"model")
 # We compute a FE approximation of the Poisson problem above by following the steps detailed in the previous tutorial:
 
 order = 1
-reffe = ReferenceFE(:Lagrangian,Float64,order)
+reffe = ReferenceFE(lagrangian,Float64,order)
 V0 = TestFESpace(model,reffe,conformity=:H1,dirichlet_tags="boundary")
 U = TrialFESpace(V0,u)
 
@@ -163,7 +163,7 @@ function run(n,order)
   model = CartesianDiscreteModel(domain,partition)
 
   order = 1
-  reffe = ReferenceFE(:Lagrangian,Float64,order)
+  reffe = ReferenceFE(lagrangian,Float64,order)
   V0 = TestFESpace(model,reffe,conformity=:H1,dirichlet_tags="boundary")
   U = TrialFESpace(V0,u)
 

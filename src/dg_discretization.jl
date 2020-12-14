@@ -186,7 +186,7 @@ model2D = CartesianDiscreteModel(domain2D,partition2D)
 
 order = 3
 V = TestFESpace(model,
-                ReferenceFE(:Lagrangian,Float64,order),
+                ReferenceFE(lagrangian,Float64,order),
                 conformity=:L2)
 
 # We have select a Lagrangian, scalar-valued interpolation of order $3$ within

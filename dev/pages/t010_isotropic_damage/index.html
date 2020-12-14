@@ -4,7 +4,7 @@ using LinearAlgebra</code></pre><h2 id="Model-definition-1"><a class="docs-headi
 const ν = 0.3 # dim-less
 const λ = (E*ν)/((1+ν)*(1-2*ν))
 const μ = E/(2*(1+ν))
-@law σe(ε) = λ*tr(ε)*one(ε) + 2*μ*ε # Pa
+σe(ε) = λ*tr(ε)*one(ε) + 2*μ*ε # Pa
 τ(ε) = sqrt(ε ⊙ σe(ε)) # Pa^(1/2)</code></pre><p>Damage</p><pre><code class="language-julia">const σ_u = 4.0e5 # Pa
 const r_0 = σ_u / sqrt(E) # Pa^(1/2)
 const H = 0.5 # dim-less
@@ -15,7 +15,7 @@ end
 
 function q(r)
   r_0 + H*(r-r_0)
-end</code></pre><p>Update of the state variables</p><pre><code class="language-julia">@law function update(ε_in,r_in,d_in)
+end</code></pre><p>Update of the state variables</p><pre><code class="language-julia">function new_state(r_in,d_in,ε_in)
   τ_in = τ(ε_in)
   if τ_in &lt;= r_in
     r_out = r_in
@@ -27,38 +27,25 @@ end</code></pre><p>Update of the state variables</p><pre><code class="language-j
     damaged = true
   end
   damaged, r_out, d_out
-end</code></pre><p>Constitutive law and its linearization</p><pre><code class="language-julia">@law function σ(ε_in,r_in,d_in)
-
-  _, _, d_out = update(ε_in,r_in,d_in)
-
+end</code></pre><p>Constitutive law and its linearization</p><pre><code class="language-julia">function σ(ε_in,r_in,d_in)
+  _, _, d_out = new_state(r_in,d_in,ε_in)
   (1-d_out)*σe(ε_in)
-
 end
 
-@law function dσ(dε_in,ε_in,state)
-
+function dσ(dε_in,ε_in,state)
   damaged, r_out, d_out = state
-
   if ! damaged
     return (1-d_out)*σe(dε_in)
-
   else
     c_inc = ((q(r_out) - H*r_out)*(σe(ε_in) ⊙ dε_in))/(r_out^3)
     return (1-d_out)*σe(dε_in) - c_inc*σe(ε_in)
-
   end
-end</code></pre><p>max dead load</p><pre><code class="language-julia">const b_max = VectorValue(0.0,0.0,-(9.81*2.5e3))</code></pre><h2 id="L2-projection-1"><a class="docs-heading-anchor" href="#L2-projection-1">L2 projection</a><a class="docs-heading-anchor-permalink" href="#L2-projection-1" title="Permalink"></a></h2><p>form Gauss points to a Lagrangian piece-wise discontinuous space</p><pre><code class="language-julia">function project(q,trian,quad,order)
-
-  a(u,v) = u*v
-  l(v) = v*q
-  t_Ω = AffineFETerm(a,l,trian,quad)
-
-  V = TestFESpace(
-    reffe=:Lagrangian, valuetype=Float64, order=order,
-    triangulation=trian, conformity=:L2)
-
-  U = TrialFESpace(V)
-  op = AffineFEOperator(U,V,t_Ω)
+end</code></pre><p>max dead load</p><pre><code class="language-julia">const b_max = VectorValue(0.0,0.0,-(9.81*2.5e3))</code></pre><h2 id="L2-projection-1"><a class="docs-heading-anchor" href="#L2-projection-1">L2 projection</a><a class="docs-heading-anchor-permalink" href="#L2-projection-1" title="Permalink"></a></h2><p>form Gauss points to a Lagrangian piece-wise discontinuous space</p><pre><code class="language-julia">function project(q,model,dΩ,order)
+  reffe = ReferenceFE(lagrangian,Float64,order)
+  V = FESpace(model,reffe,conformity=:L2)
+  a(u,v) = ∫( u*v )*dΩ
+  l(v) = ∫( v*q )*dΩ
+  op = AffineFEOperator(a,l,V,V)
   qh = solve(op)
   qh
 end</code></pre><h2 id="Main-function-1"><a class="docs-heading-anchor" href="#Main-function-1">Main function</a><a class="docs-heading-anchor-permalink" href="#Main-function-1" title="Permalink"></a></h2><pre><code class="language-julia">function main(;n,nsteps)
@@ -75,58 +62,47 @@ end</code></pre><h2 id="Main-function-1"><a class="docs-heading-anchor" href="#M
 
   order = 1
 
-  V = TestFESpace(
-    reffe=:Lagrangian, valuetype=VectorValue{3,Float64}, order=order,
-    model=model,
-    labels = labeling,
-    dirichlet_tags=[&quot;supports&quot;])
-
+  reffe = ReferenceFE(lagrangian,VectorValue{3,Float64},order)
+  V = TestFESpace(model,reffe,labels=labeling,dirichlet_tags=[&quot;supports&quot;])
   U = TrialFESpace(V)
 
-  trian = Triangulation(model)
   degree = 2*order
-  quad = CellQuadrature(trian,degree)
+  Ω = Triangulation(model)
+  dΩ = Measure(Ω,degree)
 
-  r = CellField(r_0,trian,quad)
-  d = CellField(0.0,trian,quad)
+  r = CellState(r_0,dΩ)
+  d = CellState(0.0,dΩ)
 
   nls = NLSolver(show_trace=true, method=:newton)
   solver = FESolver(nls)
 
-  function step(uh_in,factor)
-
+  function step(uh_in,factor,cache)
     b = factor*b_max
-    res(u,v) = ( ε(v) ⊙ σ(ε(u),r,d) ) - v⋅b
-    function jac(u,du,v)
-      state = update(ε(u),r,d)
-      ε(v) ⊙ dσ(ε(du),ε(u),state)
-    end
-    t_Ω = FETerm(res,jac,trian,quad)
-    op = FEOperator(U,V,t_Ω)
-
-    uh_out, = solve!(uh_in,solver,op)
-
-    update_state_variables!(update,quad,ε(uh_out),r,d)
-
-    uh_out
+    res(u,v) = ∫(  ε(v) ⊙ (σ∘(ε(u),r,d))  - v⋅b )*dΩ
+    jac(u,du,v) = ∫(  ε(v) ⊙ (dσ∘(ε(du),ε(u),new_state∘(r,d,ε(u))))  )*dΩ
+    op = FEOperator(res,jac,U,V)
+    uh_out, cache = solve!(uh_in,solver,op,cache)
+    update_state!(new_state,r,d,ε(uh_out))
+    uh_out, cache
   end
 
   factors = collect(1:nsteps)*(1/nsteps)
   uh = zero(V)
+  cache = nothing
 
   for (istep,factor) in enumerate(factors)
 
     println(&quot;\n+++ Solving for load factor $factor in step $istep of $nsteps +++\n&quot;)
 
-    uh = step(uh,factor)
-    dh = project(d,trian,quad,order)
-    rh = project(r,trian,quad,order)
+    uh,cache = step(uh,factor,cache)
+    dh = project(d,model,dΩ,order)
+    rh = project(r,model,dΩ,order)
 
     writevtk(
-      trian,&quot;results_$(lpad(istep,3,&#39;0&#39;))&quot;,
+      Ω,&quot;results_$(lpad(istep,3,&#39;0&#39;))&quot;,
       cellfields=[&quot;uh&quot;=&gt;uh,&quot;epsi&quot;=&gt;ε(uh),&quot;damage&quot;=&gt;dh,
-                  &quot;threshold&quot;=&gt;rh,&quot;sigma_elast&quot;=&gt;σe(ε(uh))])
+                  &quot;threshold&quot;=&gt;rh,&quot;sigma_elast&quot;=&gt;σe∘ε(uh)])
 
   end
 
-end</code></pre><p>Run!</p><pre><code class="language-julia">main(n=6,nsteps=20)</code></pre><h2 id="Results-1"><a class="docs-heading-anchor" href="#Results-1">Results</a><a class="docs-heading-anchor-permalink" href="#Results-1" title="Permalink"></a></h2><p>Animation of the load history using for <code>main(n=8,nsteps=30)</code> <img src="../../assets/isotropic_damage/damage.gif" alt/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../t009_stokes/">« 9 Stokes equation</a><a class="docs-footer-nextpage" href="../t011_fsi_tutorial/">11 Fluid-Structure Interaction »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 4 December 2020 15:52">Friday 4 December 2020</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><p>Run!</p><pre><code class="language-julia">main(n=6,nsteps=20)</code></pre><h2 id="Results-1"><a class="docs-heading-anchor" href="#Results-1">Results</a><a class="docs-heading-anchor-permalink" href="#Results-1" title="Permalink"></a></h2><p>Animation of the load history using for <code>main(n=8,nsteps=30)</code> <img src="../../assets/isotropic_damage/damage.gif" alt/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../t009_stokes/">« 9 Stokes equation</a><a class="docs-footer-nextpage" href="../t011_fsi_tutorial/">11 Fluid-Structure Interaction »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 14 December 2020 20:25">Monday 14 December 2020</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

@@ -4,22 +4,16 @@ domain = (0,1,0,1)
 partition = (n,n)
 model = CartesianDiscreteModel(domain, partition)</code></pre><p>Define Dirichlet boundaries</p><pre><code class="language-julia">labels = get_face_labeling(model)
 add_tag_from_tags!(labels,&quot;diri1&quot;,[6,])
-add_tag_from_tags!(labels,&quot;diri0&quot;,[1,2,3,4,5,7,8])</code></pre><p>Define test FESpaces (Q2/P1(disc) pair)</p><pre><code class="language-julia">V = TestFESpace(
-  reffe=:QLagrangian, conformity=:H1, valuetype=VectorValue{2,Float64},
-  model=model, labels=labels, order=2, dirichlet_tags=[&quot;diri0&quot;,&quot;diri1&quot;])
-Q = TestFESpace(
-  reffe=:PLagrangian, conformity=:L2, valuetype=Float64,
-  model=model, order=1, constraint=:zeromean)
+add_tag_from_tags!(labels,&quot;diri0&quot;,[1,2,3,4,5,7,8])</code></pre><p>Define reference FE (Q2/P1(disc) pair)</p><pre><code class="language-julia">order = 2
+reffeᵤ = ReferenceFE(lagrangian,VectorValue{2,Float64},order)
+reffeₚ = ReferenceFE(lagrangian,Float64,order-1;space=:P)</code></pre><p>Define test FESpaces</p><pre><code class="language-julia">V = TestFESpace(model,reffeᵤ,labels=labels,dirichlet_tags=[&quot;diri0&quot;,&quot;diri1&quot;],conformity=:H1)
+Q = TestFESpace(model,reffeₚ,conformity=:L2,constraint=:zeromean)
 Y = MultiFieldFESpace([V,Q])</code></pre><p>Define trial FESpaces from Dirichlet values</p><pre><code class="language-julia">u0 = VectorValue(0,0)
 u1 = VectorValue(1,0)
 U = TrialFESpace(V,[u0,u1])
 P = TrialFESpace(Q)
-X = MultiFieldFESpace([U,P])</code></pre><p>Define integration mesh and quadrature</p><pre><code class="language-julia">trian = get_triangulation(model); degree = 2
-quad = CellQuadrature(trian,degree)</code></pre><p>Define and solve the FE problem</p><pre><code class="language-julia">function a(x,y)
-  v,q = y
-  u,p = x
-  ∇(v)⊙∇(u) - (∇⋅v)*p + q*(∇⋅u)
-end
-t_Ω = LinearFETerm(a,trian,quad)
-op = AffineFEOperator(X,Y,t_Ω)
-uh, ph = solve(op)</code></pre><p>Export results to vtk</p><pre><code class="language-julia">writevtk(trian,&quot;results&quot;,order=2,cellfields=[&quot;uh&quot;=&gt;uh,&quot;ph&quot;=&gt;ph])</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../t008_inc_navier_stokes/">« 8 Incompressible Navier-Stokes</a><a class="docs-footer-nextpage" href="../t010_isotropic_damage/">10 Isotropic damage model »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 4 December 2020 15:52">Friday 4 December 2020</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+X = MultiFieldFESpace([U,P])</code></pre><p>Define triangulation and integration measure</p><pre><code class="language-julia">degree = order
+Ωₕ = Triangulation(model)
+dΩ = Measure(Ωₕ,degree)</code></pre><p>Define bilinear and linear form</p><pre><code class="language-julia">f = VectorValue(0.0,0.0)
+a((u,p),(v,q)) = ∫( ∇(v)⊙∇(u) - (∇⋅v)*p + q*(∇⋅u) )dΩ
+l((v,q)) = ∫( v⋅f )dΩ</code></pre><p>Build affine FE operator</p><pre><code class="language-julia">op = AffineFEOperator(a,l,X,Y)</code></pre><p>Solve</p><pre><code class="language-julia">uh, ph = solve(op)</code></pre><p>Export results to vtk</p><pre><code class="language-julia">writevtk(Ωₕ,&quot;results&quot;,order=2,cellfields=[&quot;uh&quot;=&gt;uh,&quot;ph&quot;=&gt;ph])</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../t008_inc_navier_stokes/">« 8 Incompressible Navier-Stokes</a><a class="docs-footer-nextpage" href="../t010_isotropic_damage/">10 Isotropic damage model »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 14 December 2020 20:25">Monday 14 December 2020</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

@@ -148,15 +148,15 @@ const E_s = 1.0
 const ν_s = 0.33
 const (λ_s,μ_s) = lame_parameters(E_s,ν_s)
 
-# The Cauchy stress tensor for the solid part is defined by $\sigma_s = 2\mu\varepsilon + \lambda tr(\varepsilon)\mathbf{I}$. Note that we use the trace operator from the `LinearAlgebra` package. With the macro `@law` we are able to define a function whose arguments depend on the coordinates, without the need of passing such coordinates as an argument.
+# The Cauchy stress tensor for the solid part is defined by $\sigma_s = 2\mu\varepsilon + \lambda tr(\varepsilon)\mathbf{I}$. Note that we use the trace operator from the `LinearAlgebra` package. Note that this function will be used as a composition (`∘`), using as argument a function whose arguments depend on the coordinates, without the need of passing such coordinates as an argument. That is `σ_s(ε(u)) = σ_s ∘ ε(u)`.
 using LinearAlgebra: tr
-@law σ_s(ε) = λ_s*tr(ε)*one(ε) + 2*μ_s*ε
+σₛ(ε) = λ_s*tr(ε)*one(ε) + 2*μ_s*ε
 
 # For the fluid part, we only need to define the viscosity $\mu_f$, which we set to $0.01$.
 const μ_f = 0.01
 
 # The Cauchy stress tensor for the fluid part is given by $\sigma_f = \sigma^{dev}_f - p\mathbf{I}$, with $\sigma^{dev}_f=2\mu_f$ the deviatoric part of the stress. Since we use a mixed form with the pressure $p$ as an unknown, the stress law will only involve the deviatoric part.
-@law σ_dev_f(ε) = 2*μ_f*ε
+σ_dev_f(ε) = 2*μ_f*ε
 
 # ```@raw HTML
 # <a name="numericalScheme"></a>
@@ -177,35 +177,33 @@ const μ_f = 0.01
 # ```
 
 # Before creating the FE spaces, we first need to define the discrete model of each of the sub-domains, which are constructed restricting the global discrete model to the corresponding part. This is done by calling the `DiscreteModel` function with the desired geometrical part label, i.e. `"solid"` and `"fluid"`, respectively.
-model_solid = DiscreteModel(model,"solid")
-model_fluid = DiscreteModel(model,"fluid")
+model_solid = DiscreteModel(model,tags="solid")
+model_fluid = DiscreteModel(model,tags="fluid")
 
 # In what follows we will assume a second-order veloticty interpolation, i.e. $k=2$
 k = 2
 
-# Having set up all the ingredients, we can create the different FE spaces for the test functions. For the velocity FE spaces we call the `TestFESpace` function with the corresponding discrete model, using a 2-dimensional `VectorValue` type, a `:Lagrangian` reference FE element of order `k` and conformity `:H1`. Note that we assign different Dirichlet boundary labels for the two different parts, generating the variational spaces with homogeneous Dirichlet boundary conditions, $V_{\rm F,0}$ and $V_{\rm S,0}$ .
+# Now we define the reference FE for the velocity and pressure fields. The velocity field reference FE, both for fluid and solid domains, will be defined by a 2-dimensional `VectorValue` type `:Lagrangian` reference FE element of order `k`. The reference FE for the pressure will be given by a scalar value type `:Lagrangian` reference FE element of order `k-1`.
+reffeᵤ = ReferenceFE(lagrangian,VectorValue{2,Float64},k)
+reffeₚ = ReferenceFE(lagrangian,Float64,k-1)
+
+# Having set up all the ingredients, we can create the different FE spaces for the test functions. For the velocity FE spaces we call the `TestFESpace` function with the corresponding discrete model, using the velocity reference FE `reffeᵤ` and conformity `:H1`. Note that we assign different Dirichlet boundary labels for the two different parts, generating the variational spaces with homogeneous Dirichlet boundary conditions, $V_{\rm F,0}$ and $V_{\rm S,0}$ .
 Vf = TestFESpace(
-    model=model_fluid,
-    valuetype=VectorValue{2,Float64},
-    reffe=:Lagrangian,
-    order=k,
-    conformity =:H1,
-    dirichlet_tags=["inlet", "noSlip", "cylinder"])
+  model_fluid,
+  reffeᵤ,
+  conformity=:H1,
+  dirichlet_tags=["inlet", "noSlip", "cylinder"])
 
 Vs = TestFESpace(
-    model=model_solid,
-    valuetype=VectorValue{2,Float64},
-    reffe=:Lagrangian,
-    order=k,
-    conformity =:H1,
-    dirichlet_tags=["fixed"])
+  model_solid,
+  reffeᵤ,
+  conformity=:H1,
+  dirichlet_tags=["fixed"])
 
-# For the pressure test FE space, we use the fluid discrete model, a scalar value type, a `:Lagrangian` reference FE element of order `k-1` and `:C0` conformity.
+# For the pressure test FE space, we use the fluid discrete model, the pressure reference FE `reffeₚ` and `:C0` conformity.
 Qf = TestFESpace(
-  model=model_fluid,
-  valuetype=Float64,
-  order=k-1,
-  reffe=:Lagrangian,
+  model_fluid,
+  reffeₚ,
   conformity=:C0)
 
 # The trial FE spaces are generated from the test FE spaces, adding the corresponding function for the various Dirichlet boundaries, leading to $U_{\rm F,g_{\rm F}}$, $U_{\rm S,g_{\rm S}}$ and $P_{\rm F}$.
@@ -218,122 +216,117 @@ Y = MultiFieldFESpace([Vs,Vf,Qf])
 X = MultiFieldFESpace([Us,Uf,Pf])
 
 # ```@raw HTML
-# <a name="weakForm"></a>
-# ```
-# ### Weak form
-# We now introduce the solution and test function vectors as $\mathbf{x}^h=[\mathbf{u}^h_{\rm S},\mathbf{u}^h_{\rm F}, p^h_{\rm F}]^T$ and $\mathbf{y}^h=[\mathbf{v}^h_{\rm S},\mathbf{v}^h_{\rm F}, q^h_{\rm F}]^T$. The weak form of the coupled FSI problem using the Nitche's method, see for instance [2], reads:
-# find $\mathbf{x}^h \in X$ such that
-# ```math
-# a_s(\mathbf{x}^h,\mathbf{y}^h) + a_f(\mathbf{x}^h,\mathbf{y}^h) + a_{fs}(\mathbf{x}^h,\mathbf{y}^h) = l_s(\mathbf{y}^h) + l_f(\mathbf{y}^h) + l_{f,\Gamma_N}(\mathbf{y}^h)\qquad\forall\mathbf{y}^h\in Y,
-# ```
-# with the following definitions:
-
-# - $a_s(\mathbf{x}^h,\mathbf{y}^h)$ is the bilinear form associated with the solid counterpart, defined as
-# ```math
-# a_s(\mathbf{x}^h,\mathbf{y}^h)=(\varepsilon(\mathbf{v}^h_{\rm S}),\boldsymbol{\sigma}_s(\mathbf{u}^h_{\rm S})).
-# ```
-function a_s(x,y)
-  us,uf,p = x
-  vs,vf,q = y
-	ε(vs) ⊙ σ_s(ε(us))
-end
-
-# - $a_f(\mathbf{x}^h,\mathbf{y}^h)$ is the bilinear form associated with the fluid counterpart, defined as
-# ```math
-# a_f(\mathbf{x}^h,\mathbf{y}^h)=(\varepsilon(\mathbf{v}^h_{\rm F}),\boldsymbol{\sigma}^{dev}_f(\mathbf{u}^h_{\rm F})) - (\nabla\cdot\mathbf{v}^h_{\rm F},p_{\rm F}) + (q_{\rm F}, \nabla\cdot\mathbf{u}^h_{\rm F}).
-# ```
-function a_f(x,y)
-  us,uf,p = x
-  vs,vf,q = y
-  (ε(vf) ⊙ σ_dev_f(ε(uf))) - (∇⋅vf)*p + q*(∇⋅uf)
-end
-
-# - $a_{fs}(\mathbf{x}^h,\mathbf{y}^h)$ is the bilinear form associated with the coupling between fluid and solid counterparts. To difine this form we use the well known Nitsche's method, which enforces the continuity of fluid and solid velocities as well as the continuity of the normal stresses, see for instance [2]. The final expression for this term reads:
-# ```math
-# \begin{aligned}
-# a_{fs}(\mathbf{x}^h,\mathbf{y}^h)=&\langle\gamma\frac{\mu_f}{h}(\mathbf{v}^h_{\rm F}-\mathbf{v}^h_{\rm S}),(\mathbf{u}^h_{\rm F}-\mathbf{u}^h_{\rm S})\rangle_{\Gamma_{\rm FS}}\\
-# &-  \langle(\mathbf{v}^h_{\rm F}-\mathbf{v}^h_{\rm S}),\mathbf{n}_{\rm FS}\cdot\boldsymbol{\sigma}^{dev}_f(\mathbf{u}^h_{\rm F})\rangle_{\Gamma_{\rm FS}}
-# +  \langle(\mathbf{v}^h_{\rm F}-\mathbf{v}^h_{\rm S}),p^h_{\rm F}\mathbf{n}_{\rm FS}\rangle_{\Gamma_{\rm FS}}\\
-# &-  \chi\langle\mathbf{n}_{\rm FS}\cdot\boldsymbol{\sigma}^{dev}_f(\mathbf{v}^h_{\rm F}),(\mathbf{u}^h_{\rm F}-\mathbf{u}^h_{\rm S})\rangle_{\Gamma_{\rm FS}}
-# +  \langle q^h_{\rm F}\mathbf{n}_{\rm FS},(\mathbf{u}^h_{\rm F}-\mathbf{u}^h_{\rm S})\rangle_{\Gamma_{\rm FS}}\\
-# \end{aligned}
-# ```
-# Where $\chi$ is a parameter that can take values $1.0$ or $-1.0$ and it is used to define the symmetric or antisymmetric version of the method, respectively.
-const γ = 1.0
-const χ = -1.0
-function a_fs(x,y)
-  us_Γ, uf_Γ, p_Γ = x
-  vs_Γ, vf_Γ, q_Γ = y
-  us, uf, p = us_Γ.⁻, uf_Γ.⁺, p_Γ.⁺
-  vs, vf, q = vs_Γ.⁻, vf_Γ.⁺, q_Γ.⁺
-  α*(vf-vs)⋅(uf-us) + (vf-vs)⋅(p*n_Γfs-n_Γfs⋅σ_dev_f(ε(uf))) + (q*n_Γfs-χ*n_Γfs⋅σ_dev_f(ε(vf)))⋅(uf-us)
-end
-
-# - $l_s(\mathbf{y}^h)$ is the linear form associated with the solid counterpart, defined as
-# ```math
-# l_s(\mathbf{y}^h)=(\mathbf{v}^h_{\rm S},s).
-# ```
-function l_s(y)
-  vs,vf,q = y
-  vs⋅s
-end
-
-# - $l_f(\mathbf{y}^h)$ is the linear form associated with the fluid counterpart, defined as
-# ```math
-# l_f(\mathbf{y}^h)=(\mathbf{v}^h_{\rm F},f).
-# ```
-function l_f(y)
-  vs,vf,q = y
-  vf⋅f + q*g
-end
-
-# - $l_{f,\Gamma_N}(\mathbf{y}^h)$ is the linear form associated with the fluid Neumann boundary condition, defined as
-# ```math
-# l_{f,\Gamma_N}(\mathbf{y}^h)=\langle\mathbf{v}^h_{\rm F},h\rangle_{\Gamma_N}.
-# ```
-function l_f_Γn(y)
-  vs,vf,q = y
-  vf⋅hN
-end
-
-# ```@raw HTML
 # <a name="integration"></a>
 # ```
 # ### Numerical integration
 # To define the quadrature rules used in the numerical integration of the different terms, we first need to generate the domain triangulation. Here we create the triangulation of the global domain, $\mathcal{T}$.
-trian = Triangulation(model)
+Ω = Triangulation(model)
 
 # The solid and fluid triangulations, $\mathcal{T}_{\rm F}$ and $\mathcal{T}_{\rm S}$, are constructed from the discrete models restricted to the respective parts.
-trian_solid = Triangulation(model_solid)
-trian_fluid = Triangulation(model_fluid)
+Ω_s = Triangulation(model_solid)
+Ω_f = Triangulation(model_fluid)
 
 # We also generate the triangulation and associated outer normal field for the outlet boundary, $\Gamma_{\rm F,N_{out}}$, which will be used to impose a Neumann condition.
-trian_Γout = BoundaryTriangulation(model,"outlet")
-n_Γout = get_normal_vector(trian_Γout)
+Γ_out = BoundaryTriangulation(model,tags="outlet")
+n_Γout = get_normal_vector(Γ_out)
 
 # Finally, to impose the interface condition between solid and fluid, we will need the triangulation and normal field of such interface, $\Gamma_{\rm FS}$. The interface triangulation is generated by calling the `InterfaceTriangulation` function specifying the two interfacing domain models. Note that the normal field will point outwards with respect to the first entry.
-trian_Γfs = InterfaceTriangulation(model_fluid,model_solid)
-n_Γfs = get_normal_vector(trian_Γfs)
+Γ_fs = InterfaceTriangulation(model_fluid,model_solid)
+n_Γfs = get_normal_vector(Γ_fs)
 
-# From the interface triangulation we can obtain the interface elements length, $h$, and the penalty parameter, $\alpha=\gamma\frac{\mu_f}{h}$, used in the Nitsche's terms.
-using Gridap.Arrays
-using LinearAlgebra: norm
-xe = get_cell_coordinates(trian_Γfs)
-he = apply(x->norm(x[2]-x[1]),xe)
-α = apply(h->γ*μ_f/h, he)
-
-# Once we have all the triangulations, we can generate the quadrature rules to be applied each domain.
+# Once we have all the triangulations, we can generate the quadrature rules to be applied each domain. This will be generated by calling the `Measure` function, that given a triangulation and an integration degree, it returns the Lebesgue integral measure $d\Omega$.
 degree = 2*k
-quad_solid = CellQuadrature(trian_solid,degree)
-quad_fluid = CellQuadrature(trian_fluid,degree)
+dΩₛ = Measure(Ω_s,degree)
+dΩ_f = Measure(Ω_f,degree)
 
 # Idem for the boundary part.
 bdegree = 2*k
-quad_Γout = CellQuadrature(trian_Γout,bdegree)
+dΓ_out = Measure(Γ_out,bdegree)
 
 # Idem for the interface part.
 idegree = 2*k
-quad_Γfs = CellQuadrature(trian_Γfs,idegree)
+dΓ_fs = Measure(Γ_fs,idegree)
+
+# ```@raw HTML
+# <a name="weakForm"></a>
+# ```
+# ### Weak form
+# We now introduce the solution and test function vectors as $[\mathbf{u}^h_{\rm s},\mathbf{u}^h_{\rm s}, p^h_{\rm f}]^T$ and $[\mathbf{v}^h_{\rm s},\mathbf{v}^h_{\rm f}, q^h_{\rm f}]^T$. The weak form of the coupled FSI problem using the Nitche's method, see for instance [2], reads:
+#
+# find $[\mathbf{u}^h_{\rm s},\mathbf{u}^h_{\rm s}, p^h_{\rm f}]^T \in X$ such that
+# ```math
+# a([\mathbf{u}^h_{\rm s},\mathbf{u}^h_{\rm s}, p^h_{\rm f}],[\mathbf{v}^h_{\rm s},\mathbf{v}^h_{\rm f}, q^h_{\rm f}])=l([\mathbf{v}^h_{\rm s},\mathbf{v}^h_{\rm f}, q^h_{\rm f}])\qquad\forall[\mathbf{v}^h_{\rm s},\mathbf{v}^h_{\rm f}, q^h_{\rm f}]^T\in Y,
+# ```
+# where
+# ```math
+# \begin{aligned}
+# &a([\mathbf{u}^h_{\rm s},\mathbf{u}^h_{\rm s}, p^h_{\rm f}],[\mathbf{v}^h_{\rm s},\mathbf{v}^h_{\rm f}, q^h_{\rm f}])\doteq a_s(\mathbf{u}^h_{\rm s},\mathbf{v}^h_{\rm s}) + a_f((\mathbf{u}^h_{\rm f},p^h_{\rm f}),(\mathbf{v}^h_{\rm f},q^h_{\rm f})) + a_{fs}((\mathbf{u}^h_{\rm s},\mathbf{u}^h_{\rm f}, p^h_{\rm f}),(\mathbf{v}^h_{\rm s},\mathbf{v}^h_{\rm f}, q^h_{\rm f}))\\
+# &l([\mathbf{v}^h_{\rm s},\mathbf{v}^h_{\rm f}, q^h_{\rm f}])\doteq l_s(\mathbf{v}^h_{\rm s}) + l_f(\mathbf{v}^h_{\rm f}) + l_{f,\Gamma_N}(\mathbf{v}^h_{\rm f}).
+# \end{aligned}
+# ```
+a((us,uf,p),(vs,vf,q)) = a_s(us,vs) + a_f((uf,p),(vf,q)) + a_fs((us,uf,p),(vs,vf,q))
+l((vs,vf,q)) = l_s(vs) + l_f((vf,q)) + l_f_Γn(vf)
+
+# with the following definitions:
+#
+# - The bilinear form associated with the solid counterpart, $a_s(\mathbf{u}^h_{\rm s},\mathbf{v}^h_{\rm s})$, defined as
+# ```math
+# a_s(\mathbf{u},\mathbf{v})=\int\varepsilon(\mathbf{v}):\boldsymbol{\sigma}_s(\epsilon(\mathbf{u}))\ d\Omega_{\rm S}.
+# ```
+a_s(u,v) = ∫( ε(v) ⊙ (σₛ ∘ ε(u)) )dΩₛ
+
+# - The bilinear form associated with the fluid counterpart, $a_f((\mathbf{u}^h_{\rm f},p^h_{\rm f}),(\mathbf{v}^h_{\rm f},q^h_{\rm f}))$, is defined as
+# ```math
+# a_f((\mathbf{u},p),(\mathbf{v},q))=\int\left(\varepsilon(\mathbf{v}):\boldsymbol{\sigma}^{dev}_f(\mathbf{u}) - (\nabla\cdot\mathbf{v})\ p + q\ (\nabla\cdot\mathbf{u})\right) d\Omega_{\rm F}.
+# ```
+a_f((u,p),(v,q)) = ∫( ε(v) ⊙ (σ_dev_f ∘ ε(u)) - (∇⋅v)*p + q*(∇⋅u) )dΩ_f
+
+# - The bilinear form associated with the coupling between fluid and solid counterparts, $a_{fs}((\mathbf{u}^h_{\rm s},\mathbf{u}^h_{\rm f}, p^h_{\rm f}),(\mathbf{v}^h_{\rm s},\mathbf{v}^h_{\rm f}, q^h_{\rm f}))$, is given by:
+# ```math
+# \begin{aligned}
+# a_{fs}((\mathbf{u}_{\rm s},\mathbf{u}_{\rm f}, p),((\mathbf{v}_{\rm s},\mathbf{v}_{\rm f}, q))=&\int\left(\gamma\frac{\mu_f}{h}(\mathbf{v}_{\rm f}-\mathbf{v}_{\rm s})\cdot(\mathbf{u}_{\rm f}-\mathbf{u}_{\rm s})\right.\\
+# &-  (\mathbf{v}_{\rm f}-\mathbf{v}_{\rm s})\cdot(\mathbf{n}_{\rm fs}\cdot\boldsymbol{\sigma}^{dev}_f(\mathbf{u}_{\rm f}))
+# +   (\mathbf{v}_{\rm f}-\mathbf{v}_{\rm S})\cdot(p_{\rm f}\mathbf{n}_{\rm fs})\\
+# &-  \chi(\mathbf{n}_{\rm fs}\cdot\boldsymbol{\sigma}^{dev}_f(\mathbf{v}_{\rm f})\cdot(\mathbf{u}^{\rm f}-\mathbf{u}_{\rm s})
+# + \left.(q_{\rm f}\mathbf{n}_{\rm fs})\cdot(\mathbf{u}_{\rm f}-\mathbf{u}_{\rm s})\ \right) d\Gamma_{\rm FS}
+# \end{aligned}
+# ```
+a_fs((us,uf,p),(vs,vf,q)) = ∫( α*(jump_Γ(vf,vs)⋅jump_Γ(uf,us)) +
+                               jump_Γ(vf,vs)⋅t_Γfs(1,p,uf,n_Γfs) +
+                               t_Γfs(χ,q,vf,n_Γfs)⋅jump_Γ(uf,us) )dΓ_fs
+# Where $\chi$ is a parameter that can take values $1.0$ or $-1.0$ and it is used to define the symmetric or antisymmetric version of the method, respectively. To difine this form we used the well known Nitsche's method, which enforces the continuity of fluid and solid velocities as well as the continuity of the normal stresses, see for instance [2].
+const γ = 1.0
+const χ = -1.0
+jump_Γ(wf,ws) = wf.⁺-ws.⁻
+t_Γfs(χ,q,w,n) = q.⁺*n.⁺ - χ*n.⁺⋅(σ_dev_f∘ε(w.⁺))
+
+# From the interface triangulation we can obtain the interface elements length, $h$, and the penalty parameter, $\alpha=\gamma\frac{\mu_f}{h}$, used in the Nitsche's terms.
+using Gridap.CellData
+dim = num_cell_dims(Γ_fs)
+h_Γfs = get_array(∫(1)dΓ_fs)
+α = CellField( lazy_map(h->γ*μ_f/(h.^dim),h_Γfs), Γ_fs)
+
+# - The linear form associated with the solid counterpart, $l_s(\mathbf{v}^h_{\rm s})$, is defined as
+# ```math
+# l_s(\mathbf{v})=\int\mathbf{v}\cdot s\ d\Omega_{\rm S}.
+# ```
+l_s(v) = ∫( v⋅s )dΩₛ
+
+# - The linear form associated with the fluid counterpart, $l_f(\mathbf{v}^h_{\rm f})$ is defined as
+# ```math
+# l_f(\mathbf{v},q)=\int\mathbf{v}\cdot f + qg\ d\Omega_{\rm F}.
+# ```
+l_f((v,q)) = ∫( v⋅f + q*g )dΩ_f
+
+# - The linear form associated with the fluid Neumann boundary condition, $l_{f,\Gamma_N}(\mathbf{v}^h_{\rm f})$, is defined as
+# ```math
+# l_{f,\Gamma_N}(\mathbf{v})=\int\mathbf{v}\cdot h\ d\Gamma_{\rm N_{out}}.
+# ```
+l_f_Γn(v) = ∫( v⋅hN )dΓ_out
+
+# The final bilinear and linear forms will be given by
+
+
 
 # ```@raw HTML
 # <a name="algebraic"></a>
@@ -355,18 +348,11 @@ quad_Γfs = CellQuadrature(trian_Γfs,idegree)
 # \mathbf{F}^h_{p,\rm F}\\
 # \end{bmatrix}
 # ```
-# In order to construct the system we first define the diferent discrete terms using the functions `AffineFETerm`, that assemble contributions on the left-hand side and the right-hand side of the system, for the fluid and solid interior terms evaluated in the respective triangulations, $\mathcal{T}_{\rm F}$ and $\mathcal{T}_{\rm S}$. The fluid Neumann boundary condition is assembled using the function `FESource`, which only affects the right-hand side of the system, evaluating the corresponding form on the triangulation of the outlet boundary, $\Gamma_{\rm F,N_{out}}$. The coupling terms are evaluated at the interface $\Gamma_{\rm FS}$ using the function `LinearFETerm`, assembling only to the left-hand side of the system.
-t_Ω_s= AffineFETerm(a_s,l_s,trian_solid,quad_solid)
-t_Ω_f = AffineFETerm(a_f,l_f,trian_fluid,quad_fluid)
-t_Γfs = LinearFETerm(a_fs,trian_Γfs,quad_Γfs)
-t_Γn_f = FESource(l_f_Γn,trian_Γout,quad_Γout)
-
-# The final FE operator is constructed using the function `AffineFEOperator` and passing as arguments the trial and test FE spaces, $X$ and $Y$, and all the different terms previously defined.
-op = AffineFEOperator(X,Y,t_Ω_s,t_Ω_f,t_Γn_f,t_Γfs)
+# In order to construct the system we define the final FE operator, constructed using the function `AffineFEOperator` passing as arguments the bilinear and linear forms, $a$ and $l$, together with the trial and test FE spaces, $X$ and $Y$.
+op = AffineFEOperator(a,l,X,Y)
 
 # Finally, we call `solve` to obtain the solution vector of nodal values $[\mathbf{U}^h_{\rm S},\mathbf{U}^h_{\rm F},\mathbf{P}^h_{\rm F}]^T$
 uhs, uhf, ph = solve(op)
-
 
 # ```@raw HTML
 # <a name="postprocess"></a>
@@ -377,27 +363,22 @@ uhs, uhf, ph = solve(op)
 # ```
 # ### Visualization
 # The solution fields $[\mathbf{U}^h_{\rm S},\mathbf{U}^h_{\rm F},\mathbf{P}^h_{\rm F}]^T$ are defined over all the domain, extended with zeros on the inactive part. Calling the function `writevtk` passing the global triangulation, we will output the global fields.
-writevtk(trian,"trian", cellfields=["uhs" => uhs, "uhf" => uhf, "ph" => ph])
+writevtk(Ω,"trian", cellfields=["uhs" => uhs, "uhf" => uhf, "ph" => ph])
 # ![](../assets/fsi/Global_solution.png)
 
 # However, we can also restrict the fields to the active part by calling the function `restrict` with the field along with the respective active triangulation.
-uhs_solid = restrict(uhs, trian_solid)
-uhf_fluid = restrict(uhf, trian_fluid)
-ph_fluid = restrict(ph, trian_fluid)
-writevtk(trian_solid,"trian_solid",cellfields=["uhs"=>uhs_solid])
-writevtk(trian_fluid,"trian_fluid",cellfields=["ph"=>ph_fluid,"uhf"=>uhf_fluid])
+writevtk(Ω_s,"trian_solid",cellfields=["uhs"=>uhs])
+writevtk(Ω_f,"trian_fluid",cellfields=["ph"=>ph,"uhf"=>uhf])
 # ![](../assets/fsi/Local_solution.png)
 
 # ```@raw HTML
 # <a name="QOIs"></a>
 # ```
 # ### Quantities of Interest
-trian_ΓS = BoundaryTriangulation(model,["cylinder","interface"])
-quad_ΓS = CellQuadrature(trian_ΓS,bdegree)
-n_ΓS = get_normal_vector(trian_ΓS)
-uh_ΓS = restrict(uhf_fluid,trian_ΓS)
-ph_ΓS = restrict(ph_fluid,trian_ΓS)
-FD, FL = sum( integrate( (n_ΓS⋅σ_dev_f(ε(uh_ΓS))) - ph_ΓS*n_ΓS, trian_ΓS, quad_ΓS ) )
+Γ_S = BoundaryTriangulation(model,tags=["cylinder","interface"])
+dΓₛ = Measure(Γ_S,bdegree)
+n_ΓS = get_normal_vector(Γ_S)
+FD, FL = sum( ∫( (n_ΓS⋅σ_dev_f(ε(uhf))) - ph*n_ΓS )*dΓₛ )
 println("Drag force: ", FD)
 println("Lift force: ", FL)
 

@@ -1,7 +1,7 @@
 name = "Tutorials"
 uuid = "ab87341f-2653-5384-8dc6-691ea82e91b3"
 authors = ["Santiago Badia <santiago.badia@monash.edu>", "Francesc Verdugo <fverdugo@cimne.upc.edu>"]
-version = "0.13.0"
+version = "0.15.0"
 
 [deps]
 Gridap = "56d4f2e9-7ea1-5844-9cf6-b9c51ca7ce8e"

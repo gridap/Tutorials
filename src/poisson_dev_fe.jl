@@ -7,6 +7,7 @@
 
 # Let us start including `Gridap` and some of its submodules, to have access to a rich set of not so high-level methods. Note that the module `Gridap` provides the high-level API, whereas the submodules like `Gridap.FESpaces` provide access to the different parts of the low-level API.
 
+# ---TO CHECK WHICH SUBMODULE APIs ARE NEEDED AND ADD THEM TO GRIDAP---
 using Gridap
 using Gridap.FESpaces
 using Gridap.ReferenceFEs
@@ -64,9 +65,9 @@ subtypes(CellDatum)
 
 # `CellDatum` is the root of one out of three main type hierarchies in Gridap (along with the ones rooted at the abstract types `Map` and `Field`) on which the the evaluation of variational methods in finite-dimensional spaces is grounded on. Any developer of Gridap should familiarize with these three hierarchies to some extent. Along this tutorial we will give some insight on the rationale underlying these, with some examples, but more effort in the form of self-research is expected from the reader as well.
 
-# Conceptually, an instance of a `CellDatum` represents a collection of quantities (e.g., points in a reference system, or scalar-, vector- or tensor-valued fields, or arrays made of these), once per each cell of a triangulation. Using the `get_cell_data` generic function one can extract an array with such quantities. For example, in the case of Qₕ, we get an array of quadrature rules for numerical integration.
+# Conceptually, an instance of a `CellDatum` represents a collection of quantities (e.g., points in a reference system, or scalar-, vector- or tensor-valued fields, or arrays made of these), once per each cell of a triangulation. Using the `get_data` generic function one can extract an array with such quantities. For example, in the case of Qₕ, we get an array of quadrature rules for numerical integration.
 
-Qₕ_cell_data = get_cell_data(Qₕ)
+Qₕ_cell_data = get_data(Qₕ)
 @test length(Qₕ_cell_data) == num_cells(Tₕ)
 
 # In this case we get the same quadrature rule in all cells (note that the returned array is of type `Fill`). Gridap also supports different quadrature rules to be used in different cells. Exploring such feature is out of scope of the present tutorial.
@@ -76,15 +77,21 @@ Qₕ_cell_data = get_cell_data(Qₕ)
 DomainStyle(Qₕ) == ReferenceDomain()
 DomainStyle(Qₕ) == PhysicalDomain()
 
-# If we evaluate the two expressions above, we can see that the `DomainStyle` trait of Qₕ is `ReferenceDomain`. This means that the evaluation points of the quadrature rules within Qₕ are expressed in the parametric space of the reference domain of the cells. We note that, while finite elements may not be defined in this parametric space (it is though standard practice with Lagrangian FEs, and other FEs, because of performance reasons), finite element functions are always integrated in such a parametric space.
+# If we evaluate the two expressions above, we can see that the `DomainStyle` trait of Qₕ is `ReferenceDomain`. This means that the local FE space in the physical space in which our problem is posed is expressed in terms of the composition of a space in a reference FE in a parametric space (which is being shared by many or all FEs in the physical space) and the inverse of the geometrical map (from the parametric to the physical space).
 
-# Using the array of quadrature rules `Qₕ_cell_data`, we can access to any of its entries. The object retrieved provides an array of points (`Point` data type in `Gridap`) in the cell's reference parametric space $[0,1]^d$ and their corresponding weights.
+# In practise, the integration in the physical space is transformed into a numerical integration in the reference space (via a change of variables) using a quadrature. We can exploit this property for `ReferenceDomain` FE spaces to reduce computations, i.e., to avoid applying the geometrical map to the quadrature points within Qₕ and its inverse at the shape functions in the physical space.
+
+# We note that, while finite elements may not be defined in this parametric space (it is though standard practice with Lagrangian FEs, and other FEs, because of performance reasons), finite element functions are always integrated in such a parametric space. However, for FE spaces that are genuinely defined in the physical space, i.e., the ones with the `PhysicalDomain` trait, the transformation of quadrature points from the reference to the physical space is required.
+
+# In fact, the `DomainStyle` metadata of `CellDatum` allows `Gridap` to do the right thing (as soon as it is implemented) for all combinations of points and FE spaces (both either expressed in the reference or physical space). This is accomplished by the `chage_domain` function in the API of `CellDatum`.
+
+# Using the array of quadrature rules `Qₕ_cell_data`, we can access to any of its entries. The object retrieved provides an array of points (`Point` data type in `Gridap`) in the cell reference parametric space $[0,1]^d$ and their corresponding weights.
 
 q = Qₕ_cell_data[rand(1:num_cells(Tₕ))]
 p = get_coordinates(q)
 w = get_weights(q)
 
-# However, there is a more convenient way (for reasons made clear along the tutorial) to work with the evaluation points of quadratures rules in `Gridap`. Namely, using the `get_cell_points` function we can extract a `CellPoint` object out of a `CellQuadrature`.
+# However, there is a more convenient way (for reasons made clear above) to work with the evaluation points of quadratures rules in `Gridap`. Namely, using the `get_cell_points` function we can extract a `CellPoint` object out of a `CellQuadrature`.
 
 Qₕ_cell_point = get_cell_points(Qₕ)
 
@@ -92,14 +99,16 @@ Qₕ_cell_point = get_cell_points(Qₕ)
 
 @test isa(Qₕ_cell_point, CellDatum)
 
-# and thus we can ask for the value of its `DomainStyle` trait, and get an array of quantities out of it using the `get_cell_data` generic function
+# and thus we can ask for the value of its `DomainStyle` trait, and get an array of quantities out of it using the `get_data` generic function
 
 @test DomainStyle(Qₕ_cell_point) == ReferenceDomain()
-qₖ = get_cell_data(Qₕ_cell_point)
+qₖ = get_data(Qₕ_cell_point)
 
 # Not surprisingly, the `DomainStyle` trait of the `CellPoint` object is `ReferenceDomain`, and we get a (cell) array with an array of `Point`s per each cell out of a `CellPoint`. As seen in the sequel, `CellPoint`s are relevant objects because they are the ones that one can use in order to evaluate the so-called `CellField` objects on the set of points of a `CellPoint`.
 
-# `CellField` is an abstract type rooted at a hierarchy that plays a cornerstone role in the implementation of the finite element method in `Gridap`. At this point, the reader should keep in mind that the finite element method works with global spaces of functions which are defined piece-wise on each cell of the triangulation. In a nutshell (more in the sections below), a `CellField`, as it being a subtype of `CellDatum`, might be understood as a collection of `Field`s (or arrays made out them) per each triangulation cell. Unlike a plain array of `Field`s, a `CellField` is associated to triangulation, and it holds the required metadata in order to perform, e.g., the transformations among parametric spaces when taking a differential operator out of it (e.g., the pull back of the gradients). For example, a global finite element function, or the collection of shape basis functions in the local FE space of each cell are examples of `CellField` objects.
+# `CellField` is an abstract type rooted at a hierarchy that plays a cornerstone role in the implementation of the finite element method in `Gridap`. At this point, the reader should keep in mind that the finite element method works with global spaces of functions which are defined piece-wise on each cell of the triangulation. In a nutshell (more in the sections below), a `CellField`, as it being a subtype of `CellDatum`, might be understood as a collection of `Field`s (or arrays made out them) per each triangulation cell. `Field` represents a [field](https://simple.wikipedia.org/wiki/Field_(physics)), e.g., a scalar, vector, or tensor field. Thus, the domain of a `Field` are points in the physical domain (represented by a type `Point` in `Gridap`, which is a `VectorValue` of dimension the one of the environment space) and the range is a scalar, vector (represented by `VectorValue`) or tensor (represented by `TensorValue`).
+
+# Unlike a plain array of `Field`s, a `CellField` is associated to a triangulation and is specifically designed having in mind FEs. For example, a global finite element function, or the collection of shape basis functions in the local FE space of each cell are examples of `CellField` objects. As commented above, these fields can be defined in the physical or a reference space (combined with a geometrical map provided by the triangulation object for each cell). Thus, `CellField` (as a sub-type of `CellDatum`) has the `DomainStyle` metadata that is used, e.g., for point-wise evaluations (as indicated above) of the fields and their derivatives (by implementing the transformations when taking a differential operators, e.g., the pull-back of the gradients).
 
 ## Exploring our first `CellField` objects, namely `FEBasis` objects, and its evaluation
 
@@ -123,21 +132,21 @@ du = get_cell_shapefuns_trial(Uₕ)
 @test DomainStyle(dv) == ReferenceDomain()
 @test DomainStyle(du) == ReferenceDomain()
 
-# We can see that the `DomainStyle` of both `FEBasis` objects is `ReferenceDomain`. In the case of `CellField` objects, this specifies that the point coordinates on which we evaluate the cell-local shape basis functions should be provided in the parametric space of the reference cell. However, the output from evaluation, as usual in finite elements defined parametrically, is the cell-local shape function in the physical domain evaluated at the corresponding mapped point.
+# We can see that the `DomainStyle` of both `FEBasis` objects is `ReferenceDomain`. In the case of `CellField` objects, this specifies that the point coordinates on which we evaluate the cell-local shape basis functions should be provided in the parametric space of the reference cell (to avoid the need to use the inverse of the geometrical map). However, the output from evaluation, as usual in finite elements defined parametrically, is the cell-local shape function in the physical domain evaluated at the corresponding mapped point.
 
-# Recall from above that `CellField` objects are designed to be evaluated at `CellPoint` objects, and that we extracted a `CellPoint` object, `Qₕ_cell_point`, out of a `CellQuadrature`, of `ReferenceDomain` trait `DomainStyle`. [SHOULD WE MENTION HERE ANYTHING RELATED TO THE `change_domain` FEATURE AND ITS PURPOSE?] Thus, we can evaluate `dv` and `du` at the quadrature rule evaluation points, on all cells, straight away as:
+# Recall from above that `CellField` objects are designed to be evaluated at `CellPoint` objects, and that we extracted a `CellPoint` object, `Qₕ_cell_point`, out of a `CellQuadrature`, of `ReferenceDomain` trait `DomainStyle`. Thus, we can evaluate `dv` and `du` at the quadrature rule evaluation points, on all cells, straight away as:
 
 dv_at_Qₕ = evaluate(dv,Qₕ_cell_point)
 du_at_Qₕ = evaluate(du,Qₕ_cell_point)
 
-# There are a pair of worth noting observations on the result of the previous two instructions. First, both `dv_at_Qₕ` and `du_at_Qₕ` are arrays of type `Fill`, thus they provide the same entry for whatever index we provide.
+# There are a pair of worth noting observations on the result of the previous two instructions. First, both `dv_at_Qₕ` and `du_at_Qₕ` are arrays of type `Fill` (i.e., a constant array that only stores the entry once) because we are using the same quadrature and reference FE for all cells. This (same entry) is justified by: (1) the local shape functions are evaluated at the same set of points in the reference cell parametric space for all cells (i.e., the quadrature rule points), and (2) the shape functions in physical space have these very same values at the corresponding mapped points in the physical space for all cells. Thus they provide the same entry for whatever index we provide.
 
 dv_at_Qₕ[rand(1:num_cells(Tₕ))]
 du_at_Qₕ[rand(1:num_cells(Tₕ))]
 
-# This (same entry) is justified by: (1) the local shape functions are evaluated at the same set of points in the reference cell parametric space for all cells (i.e., the quadrature rule points), and (2) the shape functions in physical space have the same values in all cells at the corresponding mapped points in physical space. At this point, the reader may want to observe which object results from the evaluation of, e.g., `dv_at_Qₕ`, at a different set points for each cell (e.g. by building its own array of arrays of `Points`).
+# At this point, the reader may want to observe which object results from the evaluation of, e.g., `dv_at_Qₕ`, at a different set points for each cell (e.g. by building its own array of arrays of `Points`).
 
-# Going back to our example, any entry of `dv_at_Qₕ` is a rank-2 array of size 4x4 that provides in position `[i,j]` the i-th test shape function at the j-th quadrature rule evaluation point. On the other hand, any entry of `du_at_Qₕ` is a rank-3 array of size `4x1x4` that provides in position `[i,1,j]` the i-th trial shape function at the j-th quadrature point. The reader might be wondering why the rank of these two arrays are different. The rationale is that, by means of a broadcasted `*` operation of these two arrays, we can get a 4x4x4 array where the `[i,j,k]` entry stores the product of the i-th test and j-th trial functions, both evaluated at the k-th quadrature point. If we sum over the $k$-index, we obtain part of the data required to compute the cell-local matrix that we assemble into the global matrix in order to get a mass matrix. For those readers more used to traditional finite element codes, the broadcast followed by the sum over k, provides the data required in order to implement the following triple standard for-nested loop:
+# Going back to our example, any entry of `dv_at_Qₕ` is a rank-2 array of size 4x4 that provides in position `[i,j]` the i-th test shape function at the j-th quadrature rule evaluation point. On the other hand, any entry of `du_at_Qₕ` is a rank-3 array of size `4x1x4` that provides in position `[i,1,j]` the i-th trial shape function at the j-th quadrature point. The reader might be wondering why the rank of these two arrays are different. The rationale is that, by means of the Julia [broadcasting](https://docs.julialang.org/en/v1/manual/arrays/#Broadcasting) of the `*` operation on these two arrays, we get the 4x4x4 array where the `[i,j,k]` entry stores the product of the i-th test and j-th trial functions, both evaluated at the k-th quadrature point. If we sum over the $k$-index, we obtain part of the data required to compute the cell-local matrix that we assemble into the global matrix in order to get a mass matrix. For those readers more used to traditional finite element codes, the broadcast followed by the sum over k, provides the data required in order to implement the following triple standard for-nested loop:
 
 #   M[:,:]=0.0
 #   Loop over quadrature points k
@@ -153,7 +162,11 @@ du_at_Qₕ[rand(1:num_cells(Tₕ))]
 dv_mult_du = du*dv
 dv_mult_du_at_Qₕ = evaluate(dv_mult_du,Qₕ_cell_point)
 
-# We can check that any entry of the resulting `Fill` array is the `4x4x4` array resulting from the broadcasted `*` of the two aforementioned arrays. In order to do so, we can use the so-called `Broadcasting(*)` `Gridap` `Map`. This `Map`, when applied to arrays of numbers, essentially translates into the built-in Julia broadcast (check that below!). However, as we will see along the tutorial, such a `Map` can also be applied to, e.g., (cell) arrays of `Field`s (arrays of `Field`s, resp.) to build new (cell) arrays of `Fields` (arrays of `Field`s, resp.). This becomes extremely useful to build and evaluate discrete variational forms.
+# We can check that any entry of the resulting `Fill` array is the `4x4x4` array resulting from the broadcasted `*` of the two aforementioned arrays. In order to do so, we can use the so-called `Broadcasting(*)` `Gridap` `Map` (one of the cornerstones of `Gridap`).
+
+# A `Map` represents a (general) function (a.k.a. map or mapping) that takes elements in its domain and return elements in its range. A `Field` is a sub-type of `Map` for the particular domain and ranges of physical fields detailed above. Why do we need to define the `Map` type in `Gridap` instead of using the Julia `Function`? As we will see later on, `Map` is essential for performance, as we will explain later on.
+
+# The `Map` below is a map that broadcasts the `*` operation. When applied to arrays of numbers, it essentially translates into the built-in Julia broadcast (check that below!). However, as we will see along the tutorial, such a `Map` can also be applied to, e.g., (cell) arrays of `Field`s (arrays of `Field`s, resp.) to build new (cell) arrays of `Fields` (arrays of `Field`s, resp.). This becomes extremely useful to build and evaluate discrete variational forms.
 
 m=Broadcasting(*)
 A=evaluate(m,dv_at_Qₕ[rand(1:num_cells(Tₕ))],du_at_Qₕ[rand(1:num_cells(Tₕ))])
@@ -161,10 +174,10 @@ B=broadcast(*,dv_at_Qₕ[rand(1:num_cells(Tₕ))],du_at_Qₕ[rand(1:num_cells(T�
 @test all(A .≈ B)
 @test all(A .≈ dv_mult_du_at_Qₕ[rand(1:num_cells(Tₕ))])
 
-# Recall from above that `CellField` objects are also `CellDatum` objects. Thus, one can use the `get_cell_data` generic function to extract, in an array, the collection of quantities, one per each cell of the triangulation, out of them. As one may expect, in the case of our `FEBasis` objects `dv` and `du` at hand, `get_cell_data` returns a (cell) array of arrays of `Field` objects, i.e., the cell-local shape basis functions:
+# Recall from above that `CellField` objects are also `CellDatum` objects. Thus, one can use the `get_data` generic function to extract, in an array, the collection of quantities, one per each cell of the triangulation, out of them. As one may expect, in the case of our `FEBasis` objects `dv` and `du` at hand, `get_data` returns a (cell) array of arrays of `Field` objects, i.e., the cell-local shape basis functions:
 
-dv_array = get_cell_data(dv)
-du_array = get_cell_data(du)
+dv_array = get_data(dv)
+du_array = get_data(du)
 
 @test isa(dv_array,AbstractVector{<:AbstractVector{<:Field}})
 @test isa(du_array,AbstractVector{<:AbstractArray{<:Field,2}})
@@ -173,7 +186,7 @@ du_array = get_cell_data(du)
 
 # As expected, both `dv_array` and `du_array` are (*conceptually*) vectors (i.e, rank-1 arrays) with as many entries as cells. The concrete type of each vector differs, though, i.e., `Fill` and `LazyArray`, resp. (We will come back to `LazyArray`s below, as they play a fundamental role in the way in which the finite element method is implemented in `Gridap`.) For each cell, we have arrays of `Field` objects. Recall from above that `Map` and `Field` (with `Field` a subtype of `Map`), and `CellDatum` and `CellField` (with `CellField` a subtype of `CellDatum`) and the associated type hierarchies, are fundamental in `Gridap` for the implementation of variational methods in finite-dimensional spaces. `Field` conceptually represents a physical (scalar, vector, or tensor) field. `Field` objects can be evaluated at single `Point` objects (or at an array of them in one shot), and they return scalars (i.e., a sub-type of Julia `Number`), `VectorValue`, or `TensorValue` objects (or an array of them, resp.)
 
-# In order to evaluate a `Field` object at a `Point` object, or at an array of `Points`, we can use the `evaluate` generic function. For example, the following statement
+# In order to evaluate a `Field` object at a `Point` object, or at an array of `Points`, we can use the `evaluate` generic function in its `API`. For example, the following statement
 
 ϕ₃ = dv_array[1][3]
 evaluate(ϕ₃,[Point(0,0),Point(1,0),Point(0,1),Point(1,1)])
@@ -190,19 +203,27 @@ evaluate(ϕ,[Point(0,0),Point(1,0),Point(0,1),Point(1,1)])
 dv_array_at_qₖ = lazy_map(evaluate,dv_array,qₖ)
 du_array_at_qₖ = lazy_map(evaluate,du_array,qₖ)
 
-# We note that the results of these two expressions are equivalent to the ones of `evaluate(dv, Qₕ_cell_point)` and `evaluate(du,Qₕ_cell_point)`, resp. (check it!) In fact, these latter two expressions translate under the hood into the calls to `lazy_map` above. These calls to `lazy_map` return an array of the same length of the input arrays, with their i-th entry conceptually defined, e.g., as `evaluate(du_array[i],qₖ[i])` in the case of the second array. To be "conceptually defined as" does not mean that they are actually computed as `evaluate(du_array[i],qₖ[i])`. Indeed they don't, it would not be high performant.
+# We note that the results of these two expressions are equivalent to the ones of `evaluate(dv, Qₕ_cell_point)` and `evaluate(du,Qₕ_cell_point)`, resp. (check it!) In fact, these latter two expressions translate under the hood into the calls to `lazy_map` above. These calls to `lazy_map` return an array of the same length of the input arrays, with their i-th entry conceptually defined, e.g., as `evaluate(du_array[i],qₖ[i])` in the case of the second array. To be "conceptually defined as" does not mean that they are actually computed as `evaluate(du_array[i],qₖ[i])`. Indeed they don't, this would not be high performant.
 
 # You might be now wondering which is the main point behind `lazy_map`. `lazy_map` turns to be cornerstone in `Gridap`. (At this point, you may execute `methods(lazy_map)` to observe that a large amount of programming logic is devoted to it.) Let us try to answer it more abstractly now. However, this will be revisited along the tutorial with additional examples.
 
-# 1. To keep memory demands at low levels, `lazy_map` NEVER returns an array that stores the result at all cells at once. In the two examples above, this is achieved using `Fill` arrays. However, this is only possible in very particular scenarios (see discussion above). In more general cases, the array resulting from `lazy_map` does not have the same entry in all cells. In such cases, `lazy_map` returns a `LazyArray`, which is another essential component of `Gridap`. In a nutshell, a `LazyArray` is an array that applies, entry-wise, arrays of operations over array(s). These operations are only computed when accessing the corresponding index, thus the name lazy. Besides, the entries of these are computed in an efficient way, using a set of mechanisms that will be illustrated below with examples.
+# `lazy_map` can be applied to a `Map` and an array or a set of arrays, all with the same layout, that provide at every entry the arguments of the map. It conceptually returns the array that results from applying the `Map` to the arguments in each index of the argument array(s). Usually, the resulting type is a `LazyArray`.
 
-# 2. Apart from `Function` objects, such as `evaluate`, `lazy_map` can also be combined with other objects, e.g., `Map`s. For example, `Broadcasting(*)` presented above. As there are `Map`s that can be applied to `Field`s (or arrays of `Fields`) to build new `Field`s (or arrays of `Fields`), the recursive application of `lazy_map` let us build complex operation trees among arrays of `Field`s as the ones required for the implementation of variational forms. While building these trees, by virtue of Julia support for multiple type dispatching, there are plenty of opportunities for optimization by changing the order in which the operations are performed. These optimizations typically come in the form of a significant saving of FLOPs, by exploiting the particular properties of the `Field`s at hand, or into higher granularity for vectorized array operations when the expressions are actually evaluated [IS THIS SECOND STATEMENT TRUE? CAN WE PUT AN EXAMPLE?]. Indeed, the arrays that one usually obtains from `lazy_map` are not the trivial `LazyArray`s that one would expect from a naive combination of the arguments to `lazy_map`
+# When the resulting `LazyArray` entries are also `Map`s, one could `evaluate` the `LazyArray` on the array(s) that provide the argument(s) (i.e., its domain) using again a `lazy_map`. E.g., for the sub-type `Field`, one can create an array of fields, e.g., cell shape function, apply a `Map` over this array, e.g., a scaling of the shape functions, using `lazy_map`. The resulting array (conceptually also an array of `Field`s) can be evaluated in a set of points applying `evaluate` using `lazy_map`, as in the two code lines above.
+
+# These lazy objects are cornerstones of `Gridap` for the following reasons:
+
+# 1. To keep memory allocation (and consumption) at very low levels, `lazy_map` NEVER returns an array that stores the result at all cells at once. In the two examples above, this is achieved using `Fill` arrays. However, this is only possible in very particular scenarios (see discussion above). In more general cases, the array resulting from `lazy_map` does not have the same entry in all cells. In such cases, `lazy_map` returns a `LazyArray`, which is another essential component of `Gridap`. In a nutshell, a `LazyArray` is an array that applies entry-wise arrays of `Map`s (functions, operations) over array(s) that provide the `Map`s arguments. These operations are only computed when accessing the corresponding index, thus the name lazy. Besides, the entries of these are computed in an efficient way, using a set of mechanisms that will be illustrated below with examples (e.g., using cache to store the entry-wise data without the need to allocate memory each time we access the `LazyArray`).
+
+# 2. Apart from `Function` objects, such as `evaluate`, `lazy_map` can also be used to apply `Map`s to arguments. For example, `Broadcasting(*)` presented above. A `Map` (or its sub-type `Field`) can be applied via `lazy_map` to other `Map`s (or arrays of `Map`s) to build a new `Map` (or array of `Map`s). Thus, the recursive application of `lazy_map` let us build complex operation trees among arrays of `Map`s as the ones required for the implementation of variational forms. While building these trees, by virtue of Julia support for multiple type dispatching, there are plenty of opportunities for optimization by changing the order in which the operations are performed. These optimizations typically come in the form of a significant saving of FLOPs by exploiting the particular properties of the `Map`s at hand, but could also come from higher granularity for vectorized array operations when the expressions are actually evaluated. Indeed, the arrays that one usually obtains from `lazy_map` differ in some cases from the trivial `LazyArray`s that one would expect from a naive combination of the arguments to `lazy_map`
+
+# 3. Using `lazy_map` we are hiding thousands of cell loops across the code (as the one for the computation of the element matrices above). As a result, `Gridap` is much more expressive for cell-wise implementations.
 
 # ## Exploring another type of `CellField` objects, FE functions
 
-# Let us now work with another type of `CellField` objects, the ones that are used to represent an arbitrary element of a global FE space of functions, i.e., a FE function. A global FE function can be understood conceptually as a collection of `Field`s, one per each cell of the triangulation. The `Field` corresponding to a cell represents the restriction of the global FE function to the cell (Recall that in finite elements, global functions are defined piece-wise on each cell.) As we did in the previous section, we will explore, at different levels, how FE functions are evaluated. However, we will dig deeper into this by illustrating some the aforementioned mechanisms on which `LazyArray` relies in order to efficiently implement the entry-wise application of an operation (or array of operations) to a set of input arrays.
+# Let us now work with another type of `CellField` objects, the ones that are used to represent an arbitrary element of a global FE space of functions, i.e., a FE function. A global FE function can be understood conceptually as a collection of `Field`s, one per each cell of the triangulation. The `Field` corresponding to a cell represents the restriction of the global FE function to the cell. (Recall that in finite elements, global functions are defined piece-wise on each cell.) As we did in the previous section, we will explore, at different levels, how FE functions are evaluated. However, we will dig deeper into this by illustrating some of the aforementioned mechanisms on which `LazyArray` relies in order to efficiently implement the entry-wise application of an operation (or array of operations) to a set of input arrays.
 
-# Let us now build a FE function belonging to the global trial space of functions Uₕ, with [rand](https://docs.julialang.org/en/v1/stdlib/Random/#Base.rand) free DOF values. Using `Gridap`'s higher-level API, this can be achieved as follows
+# Let us now build a FE function belonging to the global trial space of functions Uₕ, with [rand](https://docs.julialang.org/en/v1/stdlib/Random/#Base.rand) free DOF values. Using `Gridap` higher-level API, this can be achieved as follows
 
 uₕ = FEFunction(Uₕ,rand(num_free_dofs(Uₕ)))
 
@@ -214,11 +235,13 @@ uₕ = FEFunction(Uₕ,rand(num_free_dofs(Uₕ)))
 
 @test DomainStyle(uₕ) == ReferenceDomain()
 
-# Thus, in order to evaluate the `Field` object that represents the restriction of the FE function to a given cell, we have to provide `Point`s in the parametric space of the reference cell, and we get the value of the FE function at the corresponding mapped `Point`s in the physical domain. This should not come as a surprise as we have that: (1) the restriction of the FE function to a given cell is mathematically defined as a linear combination of the local shape functions of the cell (with coefficients given by the values of the DOFs at the cell). (2) As observed in the previous section, the shape functions are such that they have to be evaluated at `Point`s in the parametric space of of the reference cell. This property is thus transferred to the FE function.
+# Thus, in order to evaluate the `Field` object that represents the restriction of the FE function to a given cell, we have to provide `Point`s in the parametric space of the reference cell, and we get the value of the FE function at the corresponding mapped `Point`s in the physical domain. This should not come as a surprise as we have that: (1) the restriction of the FE function to a given cell is mathematically defined as a linear combination of the local shape functions of the cell (with coefficients given by the values of the DOFs at the cell). (2) As observed in the previous section, the shape functions are such that their value at `Point`s that are mapped from the reference cell to the physical cell by the cell geometrical map can be simply be obtained by evaluating the corresponding shape function in the reference FE at the same `Point`s in the parametric space (without the need to compute the geometrical map and its inverse, i.e., exploiting the fact that the combination of this two is the identity map). This property is thus transferred to the FE function.
 
 # As FE functions are `CellField` objects, we can evaluate them at `CellPoint` objects. Let us do it at the points within `Qₕ_cell_point` (see above for a justification of why this is possible):
 
 uₕ_at_Qₕ = evaluate(uₕ,Qₕ_cell_point)
+
+# We note that internally this is just the application of `evaluate` via `lazy_map` for the raw (i.e., without the `CellDatum` metadata) cell arrays of `uₕ` and `Qₕ_cell_point` (obtained via `get_data`). Internally, a `change_domain` is invoked if required, i.e., the two `CellDatum` do not have the same `DomainStyle` trait value (not the case here). You can check it by getting into this call using the VSCode debugger (write `@enter` at the beginning of the line and run it). In any case, we provide many more details below.
 
 # For the first time in this tutorial, we have obtained a cell array of type `LazyArray` from evaluating a `CellField` at a `CellPoint`.
 
@@ -230,11 +253,11 @@ uₕ_at_Qₕ = evaluate(uₕ,Qₕ_cell_point)
 
 print(typeof(uₕ_at_Qₕ))
 
-# we will dissect `LazyArray`s up to an extent that hopefully after we complete this section we will have a better grasp of it. By now, the most important thing for you to keep in mind is that `LazyArray`s objects encode a recipe to produce its entries just-in-time when they are accessed. They NEVER store all of its entries at once. Even if the expression `uₕ_at_Qₕ` typed in the REPL, (or inline evaluations in your code editor) show the array with all of its entries at once, don't get confused. This is because the Julia REPL is evaluating the array at all indices and collecting the result just for printing purposes.
+# we will dissect `LazyArray`s in this section up to an extent that will allow us to have a better grasp of it. By now, the most important thing for you to keep in mind is that `LazyArray`s objects encode a recipe to produce its entries just-in-time when they are accessed. They NEVER store all of its entries at once. Even if the expression `uₕ_at_Qₕ` typed in the REPL, (or inline evaluations in your code editor) show the array with all of its entries at once, don't get confused. This is because the Julia REPL is evaluating the array at all indices and collecting the result just for printing purposes.
 
 # Just as we did with `FEBasis`, we can extract an array of `Field` objects out of `uₕ_at_Qₕ`, as `uₕ_at_Qₕ` is also a `CellBasis` object.
 
-uₕ_array = get_cell_data(uₕ)
+uₕ_array = get_data(uₕ)
 
 # As expected, `uₕ_array` is (conceptually) a vector (i.e., rank-1 array) of `Field` objects.
 
@@ -248,9 +271,9 @@ uₕ_array = get_cell_data(uₕ)
 
 print(typeof(uₕ_array))
 
-# As mentioned above, `lazy_map` returns `LazyArray`s in the most general scenarios. Thus, it is reasonable to think that `get_cell_data(uₕ)` returns an array that has been built via `lazy_map`. (We advance now that this is indeed the case.) On the other hand, as `uₕ_array` is (conceptually) a vector (i.e., rank-1 array) of `Field` objects, this also tells us that the `lazy_map`/`LazyArray` pair does not only play a fundamental role in the evaluation of (e.g., cell) arrays of `Field`s on (e.g., cell) arrays of arrays of `Point`s, but also in building new cell arrays of `Field`s (i.e., the local restriction of a FE function to each cell) out of existing ones (i.e., the cell array with the local shape functions). In the words of the previous section, we can use `lazy_map` to build complex operation trees among arrays of `Field`s, as required by the computer implementation of variational methods.
+# As mentioned above, `lazy_map` returns `LazyArray`s in the most general scenarios. Thus, it is reasonable to think that `get_data(uₕ)` returns an array that has been built via `lazy_map`. (We advance now that this is indeed the case.) On the other hand, as `uₕ_array` is (conceptually) a vector (i.e., rank-1 array) of `Field` objects, this also tells us that the `lazy_map`/`LazyArray` pair does not only play a fundamental role in the evaluation of (e.g., cell) arrays of `Field`s on (e.g., cell) arrays of arrays of `Point`s, but also in building new cell arrays of `Field`s (i.e., the local restriction of a FE function to each cell) out of existing ones (i.e., the cell array with the local shape functions). In the words of the previous section, we can use `lazy_map` to build complex operation trees among arrays of `Field`s, as required by the computer implementation of variational methods.
 
-# The key question now is: what is the point behind `get_cell_data(uₕ)` returning a `LazyArray` of `Field`s, and not just a plain Julia array of `Field`s? At the end of the day, `Field` objects themselves have very low memory demands, they only need to hold the necessary information to encode their action (evaluation) on a `Point`/array of `Point`s. This is in contrast to the evaluation of (e.g., cell) arrays of `Field`s (or arrays of `Field`s) at an array of `Point`s, which does consume a significantly larger amount of memory (if all entries are to be stored at once in memory, and not by demand). The short answer is higher performance. Using `LazyArray`s to encode operation trees among cell arrays of `Field`s, we can apply optimizations when evaluating these operation trees that would be deactivated if we just computed a plain array of `Field`s. If all this sounds quite abstract, (most probably it does), we are going to dig into this further in the rest of the section.
+# The key question now is: what is the point behind `get_data(uₕ)` returning a `LazyArray` of `Field`s, and not just a plain Julia array of `Field`s? At the end of the day, `Field` objects themselves have very low memory demands, they only need to hold the necessary information to encode their action (evaluation) on a `Point`/array of `Point`s. This is in contrast to the evaluation of (e.g., cell) arrays of `Field`s (or arrays of `Field`s) at an array of `Point`s, which does consume a significantly allocation of memory (if all entries are to be stored at once in memory, and not by demand). The short answer is higher performance. Using `LazyArray`s to encode operation trees among cell arrays of `Field`s, we can apply optimizations when evaluating these operation trees that would not be possible if we just computed a plain array of `Field`s. If all this sounds quite abstract, (most probably it does), we are going to dig into this further in the rest of the section.
 
 # As mentioned above, `uₕ_array` can be conceptually seen as an array of `Field`s. Thus, if we access to a particular entry of it, we should get a `Field` object. (Although possible, this is not the way in which `uₕ_array` is conceived to be used, as was also mentioned in the previous section.) This is indeed confirmed when accessing to, e.g., the third entry of `uₕ_array`:
 
@@ -263,7 +286,7 @@ uₕ³ = uₕ_array[3]
 
 Uₖ = get_cell_dof_values(uₕ)
 
-# (The returned array turns to be of concrete type `LazyArray`, again to keep memory demands low, but let us skip this detail for the moment.) If we restrict `Uₖ` and `dv_array` to the third cell
+# (The returned array turns to be of concrete type `LazyArray`, again to keep memory allocation low, but let us skip this detail for the moment.) If we restrict `Uₖ` and `dv_array` to the third cell
 
 Uₖ³ = Uₖ[3]
 ϕₖ³ = dv_array[3]
@@ -354,11 +377,11 @@ print_lazy_array_type_parameters("",typeof(manual_uₕ_array_at_qₖ))
 
 # We can observe from the output of these calls the following:
 
-# 1. `uₕ_array_at_qₖ` is a `LazyArray` whose entries are defined as the result of applying a `Fill` array of `LinearCombinationMap{Colon}` `Map`s (G) to a `LazyArray` (F[1]) and a `Fill` array (F[2]). The first array provides the FE function DOF values restricted to each cell, and the second the local basis shape functions evaluated at the quadrature points. As the shape functions in physical space have the same values in all cells at the corresponding mapped points in physical space, there is no need to re-evaluate them at each cell, we can evaluate them only once. And this is what the second `Fill` array stores as its unique entry, i.e., a matrix M[i,j] defined as the value of the j-th `Field` (i.e., shape function) evaluated at the i-th `Point`. *This is indeed the main optimization that `lazy_map` applies compared to our manual construction of `uₕ_array_at_qₖ`.* It worths noting that, if `v` denotes the linear combination coefficients, and `M` the matrix resulting from the evaluation of an array of `Fields` at a set of `Points`, with M[i,j] being the value of the j-th `Field` evaluated at the i-th point, the evaluation of `LinearCombinationMap{Colon}` at `v` and `M` returns a vector `w` with w[i] defined as w[i]=sum_k v[k]*M[i,k], i.e., the FE function evaluated at the i-th point. `uₕ_array_at_qₖ` handles the cache of `LinearCombinationMap{Colon}` (which holds internal storage for `w`) and that of the first `LazyArray` (F[1]), so that when it retrieves the DOF values `v` of a given cell, and then applies `LinearCombinationMap{Colon}` to `v` and `M`, it does not have to allocate any temporary working arrays, but re-uses the ones stored in the different caches.
+# 1. `uₕ_array_at_qₖ` is a `LazyArray` whose entries are defined as the result of applying a `Fill` array of `LinearCombinationMap{Colon}` `Map`s (G) to a `LazyArray` (F[1]) and a `Fill` array (F[2]). The first array provides the FE function DOF values restricted to each cell, and the second the local basis shape functions evaluated at the quadrature points. As the shape functions in physical space have the same values in all cells at the corresponding mapped points in physical space, there is no need to re-evaluate them at each cell, we can evaluate them only once. And this is what the second `Fill` array stores as its unique entry, i.e., a matrix M[i,j] defined as the value of the j-th `Field` (i.e., shape function) evaluated at the i-th `Point`. *This is indeed the main optimization that `lazy_map` applies compared to our manual construction of `uₕ_array_at_qₖ`.* It is worth noting that, if `v` denotes the linear combination coefficients, and `M` the matrix resulting from the evaluation of an array of `Fields` at a set of `Points`, with M[i,j] being the value of the j-th `Field` evaluated at the i-th point, the evaluation of `LinearCombinationMap{Colon}` at `v` and `M` returns a vector `w` with w[i] defined as w[i]=sum_k v[k]*M[i,k], i.e., the FE function evaluated at the i-th point. `uₕ_array_at_qₖ` handles the cache of `LinearCombinationMap{Colon}` (which holds internal storage for `w`) and that of the first `LazyArray` (F[1]), so that when it retrieves the DOF values `v` of a given cell, and then applies `LinearCombinationMap{Colon}` to `v` and `M`, it does not have to allocate any temporary working arrays, but re-uses the ones stored in the different caches.
 
 # 2. `manual_uₕ_array_at_qₖ` is also a `LazyArray`, but structured rather differently to `uₕ_array_at_qₖ`. In particular, its entries are defined as the result of applying a plain array of `LinearCombinationField`s (G) to a `Fill` array of `Point`s (F[1]) that holds the coordinates of the quadrature rule evaluation points in the parametric space of the reference cell (which are equivalent for all cells, thus the `Fill` array). The evaluation of a `LinearCombinationField` on a set of `Point`s ultimately depends on `LinearCombinationMap`. As seen in the previous point, the evaluation of this `Map` requires a vector `v` and a matrix `M`. `v` was built in-situ when building each `LinearCombinationField`, and stored within these instances. However, in contrast to `uₕ_array_at_qₖ`, `M` is not part of `manual_uₕ_array_at_qₖ`, and thus it has to be (re-)computed each time that we evaluate a new `LinearCombinationField` instance on a set of points. This is the main source of difference on the computation times observed. By eagerly constructing our array of `LinearCombinationField`s instead of deferring it until (lazy) evaluation via `lazy_map`, we lost optimization opportunities. We stress that `manual_uₕ_array_at_qₖ` also handles the cache of `LinearCombinationField` (that in turn handles the one of `LinearCombinationMap`), so that we do not need to allocate `M` at each cell, we re-use the space within the cache of `LinearCombinationField`.
 
-# To conclude the section, we expect the reader to be convinced of the negative consequences in performance that an eager (early) evaluation of the entries of the array returned by a `lazy_map` call can have in performance. The leitmotif of `Gridap` is *laziness*. When building new arrays of `Field`s (or arrays of `Field`s), out of existing ones, or when evaluating them at a set of `Point`s, ALWAYS use `lazy_map` (as far as you have a good reason for not using it). This may expand across several recursion levels when building complex operation trees among arrays of `Field`s. The more we defer the actual computation of the entries of `LazyArray`s, the more optimizations will be available at the `Gridap`'s disposal by re-arranging the order of operations via exploitation of the particular properties of the arrays at hand. And this is indeed what we are going to do in the rest of the tutorial, namely calling `lazy_map` to build new cell arrays out of existing ones, to end in a lazy cell array whose entries are the cell matrices and cell vectors contributions to the global linear system.
+# To conclude the section, we expect the reader to be convinced of the negative consequences in performance that an eager (early) evaluation of the entries of the array returned by a `lazy_map` call can have in performance. The leitmotif of `Gridap` is *laziness*. When building new arrays of `Field`s (or arrays of `Field`s), out of existing ones, or when evaluating them at a set of `Point`s, ALWAYS use `lazy_map`. This may expand across several recursion levels when building complex operation trees among arrays of `Field`s. The more we defer the actual computation of the entries of `LazyArray`s, the more optimizations will be available at the `Gridap`'s disposal by re-arranging the order of operations via exploitation of the particular properties of the arrays at hand. And this is indeed what we are going to do in the rest of the tutorial, namely calling `lazy_map` to build new cell arrays out of existing ones, to end in a lazy cell array whose entries are the cell matrices and cell vectors contributions to the global linear system.
 
 # Let us, e.g., build Uₖ manually using this idea. First, we extract out of uₕ and Uₕ two arrays with the free and fixed (due to strong Dirichlet boundary conditions) DOF values of uₕ
 
@@ -379,7 +402,9 @@ manual_Uₖ = lazy_map(m,σₖ)
 @test evaluate(PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values),3) == uₕ_free_dof_values[3]
 @test evaluate(PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values),-7) == uₕ_dirichlet_dof_values[7]
 
-# The Broadcasting(op) `Map` let us, in this particular example, broadcast the `PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values)` `Map` to an array a global DOF ids, to obtain the corresponding cell DOF values. As regular, `Broadcasting(op)` provides a cache with the work array required to store its result. `LazyArray` uses this cache to reduce the number of allocations while computing its entries just-in-time. Please note that in `Gridap` we put negative labels to fixed DOFs and positive to free DOFs in σₖ, thus we use an array that combines σₖ with the two arrays of free and fixed DOF values accessing the right one depending on the index. But everything is lazy, only computed when accessing the array. As mentioned multiple times laziness and quasi-immutability are leitmotifs in Gridap.
+# The Broadcasting(op) `Map` lets us, in this particular example, broadcast the `PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values)` `Map` to an array a global DOF ids, to obtain the corresponding cell DOF values. As regular, `Broadcasting(op)` provides a cache with the work array required to store its result. `LazyArray` uses this cache to reduce the number of allocations while computing its entries just-in-time. Please note that in `Gridap` we put negative labels to fixed DOFs and positive to free DOFs in σₖ, thus we use an array that combines σₖ with the two arrays of free and fixed DOF values accessing the right one depending on the index. But everything is lazy, only computed when accessing the array. As mentioned multiple times, laziness is one f the leitmotifs in Gridap, the other being immutability.
+
+# Immutability is a feature that comes from functional programming. An immutable object cannot be modified after created. Since objects cannot change, one does not require to track how they change, i.e., there is no need to design (and understand) state diagrams. A code that strictly sticks to this principle is much more readable. Due to laziness, `Gridap` objects are light-weight, and the (lazy) modification of existing (lazy) objects is highly efficient. You can find this action many times in the code above, in which we use `lazy_map` to perform actions over lazy objects (e.g., `LazyArray` or `Fill` arrays) to create new lazy objects. However, strictly conforming to immutability can be inefficient in some very specific scenarios. `Gridap` departs from immutability in the linear algebra part, since we want to re-use as much as possible the memory allocation for global arrays or symbolic/numeric factorisations in linear solvers.
 
 # ## The geometrical model
 
@@ -387,7 +412,8 @@ manual_Uₖ = lazy_map(m,σₖ)
 
 ξₖ = get_cell_map(Tₕ)
 
-# [ WHY CELL MAP IS NOT A `CellField` OBJECT? ]
+# We note that this map is just a `LazyArray` of `Field`s. The metadata related to `CellField` is not required here, the cell map can only go from the reference to physical space, and its domain can only be a reference cell. For this reason, it is not a `CellField`.
+
 # The cell map takes at each cell points in the parametric space and returns the mapped points in the physical space. Even though this space does not need a global definition (nothing has to be solved here), it is continuous across interior faces.
 
 # As usual, this cell_map is a `LazyArray`. At each cell, it provides the `Field` that maps `Point`s in the parametric space of the reference cell to `Point`s in physical space.
@@ -457,8 +483,6 @@ lazy_map(Broadcasting(∇),ψₖ)
 @test typeof(J) == typeof(lazy_map(Broadcasting(∇),ψₖ))
 @test lazy_map(evaluate,J,qₖ) == lazy_map(evaluate,lazy_map(Broadcasting(∇),ψₖ),qₖ)
 
-# [SHOULD WE MENTION ANYTHING RELATED TO THE FACT THAT GRIDAP ACTUALLY RETURNS THE TRANSPOSE OF JACOBIAN OF THE MAPPING? AND JUSTIFY WHY? (This is achieved in `LinearCombinationMap` via outer product and flipping the order of the arguments (gradient shape function,point) instead of (point, gradient shape function)]
-
 # ## Computing the gradients of the trial and test FE space bases
 
 # Another salient feature of Gridap is that we can directly take the gradient of finite element bases. (In general, of any `CellField` object.) In the following code snippet, we do so for `dv` and `du`
@@ -473,8 +497,8 @@ grad_du = ∇(du)
 
 # We can also extract an array of arrays of `Fields`, as we have done before with `FEBasis` objects.
 
-grad_dv_array = get_cell_data(grad_dv)
-grad_du_array = get_cell_data(grad_du)
+grad_dv_array = get_data(grad_dv)
+grad_du_array = get_data(grad_du)
 
 # The resulting `LazyArray`s encode the so-called pull back transformation of the gradients. We need this transformation in order to compute the gradients in physical space. The gradients in physical space are indeed the ones that we need to integrate in the finite element method, not the reference ones, even if we always evaluate the integrals in the parametric space of the reference cell. We can also check that the `DomainStyle` trait of `grad_dv` and `grad_du` is `ReferenceDomain`
 
@@ -493,7 +517,7 @@ manual_grad_dv_array = lazy_map(Broadcasting(push_∇),∇ϕrₖ,ξₖ)
 ∇ϕrₖᵀ                = Fill(∇ϕrᵀ,num_cells(Tₕ))
 manual_grad_du_array = lazy_map(Broadcasting(push_∇),∇ϕrₖᵀ,ξₖ)
 
-# We note the use of the `Broadcasting(push_∇)` `Map` at the last step. For Lagrangian FE spaces, this `Map` represents the pull back of the gradients. This transformation requires the gradients of the shape functions in the reference space, and the (gradient of the) geometrical map. The last step, e.g., the construction of `manual_dv_array`, actually translates into the combination of the following calls to `lazy_map` to build the final transformation:
+# We note the use of the `Broadcasting(push_∇)` `Map` at the last step. For Lagrangian FE spaces, this `Map` represents the pull back of the gradients. This transformation requires the gradients of the shape functions in the reference space, and the (gradient of the) geometrical map. The last step, e.g., the construction of `manual_grad_dv_array`, actually translates into the combination of the following calls to `lazy_map` to build the final transformation:
 
 # Build array of `Field`s with the Jacobian transposed at each cell
 Jt     = lazy_map(Broadcasting(∇),ξₖ)
@@ -511,11 +535,11 @@ low_level_manual_gradient_dv_array = lazy_map(Broadcasting(Operation(⋅)),inv_J
 @test lazy_map(evaluate,grad_dv_array,qₖ) == lazy_map(evaluate,low_level_manual_gradient_dv_array,qₖ)
 @test lazy_map(evaluate,grad_dv_array,qₖ) == evaluate(grad_dv,Qₕ_cell_point)
 
-# With the lessons learned so far in this section, it is left as an exercise to the reader to manually build the array that `get_cell_data` returns when we call it with the `CellField` object resulting from taking the gradient of uₕ as an argument, i.e., `get_cell_data(∇(uₕ))`.
+# With the lessons learned so far in this section, it is left as an exercise for the reader to manually build the array that `get_data` returns when we call it with the `CellField` object resulting from taking the gradient of uₕ as an argument, i.e., `get_data(∇(uₕ))`.
 
 # ## A low-level implementation of the residual integration and assembly
 
-# Let us now manually an array of `Field`s uₖ that returns the FE funtion uₕ at each cell, and another array with its gradients, ∇uₖ. We hope that the next set of instructions can be already understood with the material covered so far
+# Let us now create manually an array of `Field`s uₖ that returns the FE funtion uₕ at each cell, and another array with its gradients, ∇uₖ. We hope that the next set of instructions can be already understood with the material covered so far
 
 ϕrₖ = Fill(ϕr,num_cells(Tₕ))
 ∇ϕₖ = manual_grad_dv_array
@@ -535,7 +559,7 @@ Iₖ = lazy_map(Broadcasting(Operation(⋅)),∇uₖ,∇ϕₖ)
 
 # This array is equivalent to the one within the `intg` `CellField` object
 
-@test all(lazy_map(evaluate,Iₖ,qₖ) .≈ lazy_map(evaluate,get_cell_data(intg),qₖ))
+@test all(lazy_map(evaluate,Iₖ,qₖ) .≈ lazy_map(evaluate,get_data(intg),qₖ))
 
 # Now, we can finally compute the cell-wise residual array, which using the high-level `integrate` function is
 
@@ -549,7 +573,7 @@ iwq = lazy_map(IntegrationMap(),intq,Qₕ.cell_weight,Jq)
 
 @test all(res .≈ iwq)
 
-# The result is the cell-wise residual (previous to assembly). This is a lazy array but you could collect the element residuals into a plain Juli array if you want
+# The result is the cell-wise residual (previous to assembly). This is a lazy array but you could collect the element residuals into a plain Julia array if you want
 
 collect(iwq)
 
@@ -582,7 +606,7 @@ assemble_vector!(b,assem,rs)
 ∇ϕₖᵀ = manual_grad_du_array
 int = lazy_map(Broadcasting(Operation(⋅)),∇ϕₖ,∇ϕₖᵀ)
 @test all(collect(lazy_map(evaluate,int,qₖ)) .==
-            collect(lazy_map(evaluate,get_cell_data(∇(du)⋅∇(dv)),qₖ)))
+            collect(lazy_map(evaluate,get_data(∇(du)⋅∇(dv)),qₖ)))
 
 intq = lazy_map(evaluate,int,qₖ)
 Jq = lazy_map(evaluate,J,qₖ)
@@ -602,3 +626,7 @@ uf = sol = get_free_values(uₕ) - x
 ufₕ = FEFunction(Uₕ,uf)
 
 @test sum(integrate((u-ufₕ)*(u-ufₕ),Qₕ)) <= 10^-8
+
+# or if you like Unicode symbols
+
+@test ∑(integrate((u-ufₕ)*(u-ufₕ),Qₕ)) <= 10^-8

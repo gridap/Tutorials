@@ -1,13 +1,11 @@
-# --- TO RE-THINK ---
-#Disclaimer: This tutorial is about a low-level definition of Finite Element (FE) methods. It would be convenient to have two (or three) previous tutorials, about the three data type hierarchies rooted at `Map`, `Field`, and `CellDatum`, the details underlying the `lazy_map` generic function, and the related `LazyArray`, and the combination of these to create lazy mathematical expressions that involve fields. This is work in progress. --- TO RE-THINK ---
-
 # This tutorial is advanced and you only need to go through this if you want to know the internals of `Gridap` and what it does under the hood. Even though you will likely want to use the high-level APIs in `Gridap`, this tutorial will (hopefully) help if you want to become a `Gridap` developer, not just a user. We also consider that this tutorial shows how powerful and expressive the `Gridap` kernel is, and how mastering it you can implement new algorithms not currently provided by the library.
 
 # It is highly recommended (if not essential) that the tutorial is followed together with a Julia debugger, e.g., the one which comes with the Visual Studio Code (VSCode) extension for the Julia programming language. Some of the observations that come along with the code snippets are quite subtle/technical and may require a deeper exploration of the underlying code using a debugger.
 
 # Let us start including `Gridap` and some of its submodules, to have access to a rich set of not so high-level methods. Note that the module `Gridap` provides the high-level API, whereas the submodules like `Gridap.FESpaces` provide access to the different parts of the low-level API.
 
-# ---TO CHECK WHICH SUBMODULE APIs ARE NEEDED AND ADD THEM TO GRIDAP---
+# <!-- TO CHECK WHICH SUBMODULE APIs ARE NEEDED AND ADD THEM TO GRIDAP -->
+
 using Gridap
 using Gridap.FESpaces
 using Gridap.ReferenceFEs
@@ -110,9 +108,9 @@ qₖ = get_data(Qₕ_cell_point)
 
 # Unlike a plain array of `Field`s, a `CellField` is associated to a triangulation and is specifically designed having in mind FEs. For example, a global finite element function, or the collection of shape basis functions in the local FE space of each cell are examples of `CellField` objects. As commented above, these fields can be defined in the physical or a reference space (combined with a geometrical map provided by the triangulation object for each cell). Thus, `CellField` (as a sub-type of `CellDatum`) has the `DomainStyle` metadata that is used, e.g., for point-wise evaluations (as indicated above) of the fields and their derivatives (by implementing the transformations when taking a differential operators, e.g., the pull-back of the gradients).
 
-## Exploring our first `CellField` objects, namely `FEBasis` objects, and its evaluation
+# ## Exploring our first `CellField` objects
 
-# Let us work with our first `CellField` objects. In particular, let us extract out of the global test space, Vₕ, and trial space, Uₕ, a collection of local test and trial finite element shape basis functions, respectively.
+# Let us work with our first `CellField` objects, namely `FEBasis` objects, and its evaluation. In particular, let us extract out of the global test space, Vₕ, and trial space, Uₕ, a collection of local test and trial finite element shape basis functions, respectively.
 
 dv = get_cell_shapefuns(Vₕ)
 du = get_cell_shapefuns_trial(Uₕ)
@@ -148,12 +146,12 @@ du_at_Qₕ[rand(1:num_cells(Tₕ))]
 
 # Going back to our example, any entry of `dv_at_Qₕ` is a rank-2 array of size 4x4 that provides in position `[i,j]` the i-th test shape function at the j-th quadrature rule evaluation point. On the other hand, any entry of `du_at_Qₕ` is a rank-3 array of size `4x1x4` that provides in position `[i,1,j]` the i-th trial shape function at the j-th quadrature point. The reader might be wondering why the rank of these two arrays are different. The rationale is that, by means of the Julia [broadcasting](https://docs.julialang.org/en/v1/manual/arrays/#Broadcasting) of the `*` operation on these two arrays, we get the 4x4x4 array where the `[i,j,k]` entry stores the product of the i-th test and j-th trial functions, both evaluated at the k-th quadrature point. If we sum over the $k$-index, we obtain part of the data required to compute the cell-local matrix that we assemble into the global matrix in order to get a mass matrix. For those readers more used to traditional finite element codes, the broadcast followed by the sum over k, provides the data required in order to implement the following triple standard for-nested loop:
 
-#   M[:,:]=0.0
-#   Loop over quadrature points k
-#     detJ_wk=det(J)*w[k]
-#     Loop over shape test functions i
-#       Loop over shape trial functions j
-#            M[i,j]+=shape_test[i,k]*shape_trial[j,k]*detJ_wk
+#   M[:,:]=0.0 <br>
+#   Loop over quadrature points k <br>
+#     detJ_wk=det(J)*w[k] <br>
+#     Loop over shape test functions i <br>
+#       Loop over shape trial functions j <br>
+#            M[i,j]+=shape_test[i,k]*shape_trial[j,k]*detJ_wk <br>
 
 # where det(K) represents the determinant of the reference-physical mapping of the current cell, and w[k] the quadrature rule weight corresponding to the k-th evaluation point. Using Julia built-in support for broadcasting, we can vectorize the full operation, and get much higher performance.
 
@@ -219,7 +217,7 @@ du_array_at_qₖ = lazy_map(evaluate,du_array,qₖ)
 
 # 3. Using `lazy_map` we are hiding thousands of cell loops across the code (as the one for the computation of the element matrices above). As a result, `Gridap` is much more expressive for cell-wise implementations.
 
-# ## Exploring another type of `CellField` objects, FE functions
+# ## Exploring another type of `CellField` objects
 
 # Let us now work with another type of `CellField` objects, the ones that are used to represent an arbitrary element of a global FE space of functions, i.e., a FE function. A global FE function can be understood conceptually as a collection of `Field`s, one per each cell of the triangulation. The `Field` corresponding to a cell represents the restriction of the global FE function to the cell. (Recall that in finite elements, global functions are defined piece-wise on each cell.) As we did in the previous section, we will explore, at different levels, how FE functions are evaluated. However, we will dig deeper into this by illustrating some of the aforementioned mechanisms on which `LazyArray` relies in order to efficiently implement the entry-wise application of an operation (or array of operations) to a set of input arrays.
 
@@ -354,7 +352,9 @@ smart_sum(manual_uₕ_array_at_qₖ) # Execute once before to neglect JIT-compil
         end
       end
 
-# we can observe that the array returned by `Gridap` can be summed in significantly less time, using significantly less allocations. [WHY THE SECOND PIECE OF CODE REQUIRES A NUMBER OF ALLOCATIONS THAT GROWS WITH THE NUMBER OF CELLS? I CAN UNDERSTAND THAT THE CACHE ARRAY of `manual_uₕ_array_at_qₖ` REQUIRES MORE MEMORY IN ABSOLUTE TERMS, BUT I AM NOT ABLE TO SEE WHY IT GROWS WITH THE NUMBER OF CELLS!!!! ANY HINT?]
+# we can observe that the array returned by `Gridap` can be summed in significantly less time, using significantly less allocations.
+
+# <!-- [WHY THE SECOND PIECE OF CODE REQUIRES A NUMBER OF ALLOCATIONS THAT GROWS WITH THE NUMBER OF CELLS? I CAN UNDERSTAND THAT THE CACHE ARRAY of `manual_uₕ_array_at_qₖ` REQUIRES MORE MEMORY IN ABSOLUTE TERMS, BUT I AM NOT ABLE TO SEE WHY IT GROWS WITH THE NUMBER OF CELLS!!!! ANY HINT?] -->
 
 # Let us try to answer the question now qualitatively. In order to do so, we can take a look at the full names of the types of both `LazyArray`s. `LazyArray`s have four type parameters, referred to as `G`, `T`, `N`, and `F`. `G` is the type of the array with the entry-wise operations (e.g., a `Function` object, a `Map` or a `Field`) to be applied, `T` is the type of the elements of the array, and `N` its rank. Finally, `F` is a `Tuple` with the types of the arrays to which the operations are applied in order to obtain the entries of the `LazyArray`. We can use the following function to pretty-print the `LazyArray` data type name in a more human-friendly way, while taking into account that types in `F` may be in turn `LazyArray`s recursively:
 

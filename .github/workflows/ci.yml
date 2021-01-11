@@ -12,6 +12,8 @@ jobs:
       matrix:
         version:
           - '1.5'
+          - '^1.6.0-0'
+          - 'nightly'
         os:
           - ubuntu-latest
         arch:
@@ -42,6 +44,8 @@ jobs:
       matrix:
         version:
           - '1.5'
+          - '^1.6.0-0'
+          - 'nightly'
         os:
           - ubuntu-latest
         arch:
@@ -72,6 +76,8 @@ jobs:
       matrix:
         version:
           - '1.5'
+          - '^1.6.0-0'
+          - 'nightly'
         os:
           - ubuntu-latest
         arch:
@@ -102,6 +108,8 @@ jobs:
       matrix:
         version:
           - '1.5'
+          - '^1.6.0-0'
+          - 'nightly'
         os:
           - ubuntu-latest
         arch:

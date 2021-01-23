@@ -162,7 +162,6 @@ function run(n,order)
   partition = (n,n)
   model = CartesianDiscreteModel(domain,partition)
 
-  order = 1
   reffe = ReferenceFE(lagrangian,Float64,order)
   V0 = TestFESpace(model,reffe,conformity=:H1,dirichlet_tags="boundary")
   U = TrialFESpace(V0,u)

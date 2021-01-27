@@ -248,6 +248,6 @@ slope(hs,eh1s)
 
 #md # If your run these lines in a notebook, you will see that
 #nb # As you can see,
-# the slopes for the $L^2$ and $H^1$ error norms are circa 3 and 2 respectively (as one expects for interpolation order 2)
+# the slopes for the $L^2$ and $H^1$ error norms are circa 3 (slightly better than the expected third and second order convergence resp. expected from theory).
 #
 # Congrats, another tutorial done!

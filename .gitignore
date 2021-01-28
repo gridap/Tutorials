@@ -5,3 +5,4 @@ notebooks
 .ipynb_checkpoints/
 *.vtu
 tmp/
+.vscode/

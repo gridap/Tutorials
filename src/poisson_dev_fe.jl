@@ -15,6 +15,7 @@ using Gridap.Fields
 using Gridap.CellData
 using FillArrays
 using Test
+using InteractiveUtils
 
 # We first create the geometry model and FE spaces using the high-level API. In this tutorial, we are not going to describe the geometrical machinery in detail, only what is relevant for the discussion. To simplify the analysis of the outputs, you can consider a 2D mesh, i.e., `D=2` (everything below works for any spatial dimension without any extra complication). In order to make things slightly more interesting, i.e., having non-constant Jacobians, we have considered a mesh that is a stretching of an equal-sized structured mesh.
 

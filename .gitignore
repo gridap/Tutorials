@@ -6,3 +6,4 @@ notebooks
 *.vtu
 tmp/
 .vscode/
+*.code-workspace

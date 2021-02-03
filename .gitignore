@@ -4,3 +4,4 @@ notebooks
 Manifest.toml
 .ipynb_checkpoints/
 *.vtu
+*.pvd

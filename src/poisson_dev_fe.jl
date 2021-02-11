@@ -291,7 +291,7 @@ uₕ³ = uₕ_array[3]
 
 # The concrete type of `uₕ³` is `LinearCombinationField`. This type represents a `Field` defined as a linear combination of an existing vector of `Field`s. This sort of `Field`s can be built using the `linear_combination` generic function. Among its methods, there is one which takes (1) a vector of scalars (i.e., Julia `Number`s) with the coefficients of the expansion and (2) a vector of `Field`s as its two arguments, and returns a `LinearCombinationField` object. As mentioned above, this is the exact mathematical definition of a FE function restricted to a cell.
 
-# Let us manually build uₕ³. In order to do so, we can first use the `get_cell_ DOF_values` generic function, which extracts out of uₕ a cell array of arrays with the DOF values of uₕ restricted to all cells of the triangulation (defined from a conceptual point of view).
+# Let us manually build uₕ³. In order to do so, we can first use the `get_cell_dof_values` generic function, which extracts out of uₕ a cell array of arrays with the DOF values of uₕ restricted to all cells of the triangulation (defined from a conceptual point of view).
 
 Uₖ = get_cell_dof_values(uₕ)
 
@@ -335,12 +335,12 @@ uₕ_array_at_qₖ = lazy_map(evaluate,uₕ_array,qₖ)
 # Therefore, why `Gridap` does not build `manual_uₕ_array_at_qₖ`? what's wrong with it? Let us first try to answer this quantitatively. Let us assume that we want to sum all entries of a `LazyArray`. In the case of `LazyArray`s of arrays, this operation is only well-defined if the size of the arrays of all entries matches. This is the case of the `uₕ_array_at_qₖ` and `manual_uₕ_array_at_qₖ` arrays, as we have the same quadrature rule at all cells. We can write this function following the `Gridap` internals' way.
 
 function smart_sum(a::LazyArray)
-  cache=array_cache(a)             # Create cache out of a
-  sum=copy(getindex!(cache,a,1))   # We have to copy the output
-                                   # from get_index! to avoid array aliasing
+  cache=array_cache(a)             #Create cache out of a
+  sum=copy(getindex!(cache,a,1))   #We have to copy the output
+                                   #from get_index! to avoid array aliasing
   for i in 2:length(a)
-    ai = getindex!(cache,a,i)      # Compute the i-th entry of a
-                                   # re-using work arrays in cache
+    ai = getindex!(cache,a,i)      #Compute the i-th entry of a
+                                   #re-using work arrays in cache
     sum .= sum .+ ai
   end
   sum
@@ -419,7 +419,7 @@ manual_Uₖ = lazy_map(m,σₖ)
 
 # ## The geometrical model
 
-# From the triangulation we can also extract the cell map, i.e., the geometrical map that takes points in the parametric space $[0,1]^D$ (the SEGMENT, QUAD, or HEX in 1, 2, or 3D, resp.) and maps it to the cell in the physical space $\Omega$.
+# From the triangulation we can also extract the cell map, i.e., the geometrical map that takes points in the parametric space $[0,1]^D$ (the `SEGMENT`, `QUAD`, or `HEX` in 1, 2, or 3D, resp.) and maps it to the cell in the physical space $\Omega$.
 
 ξₖ = get_cell_map(Tₕ)
 

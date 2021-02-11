@@ -1,10 +1,14 @@
+# ## Introduction and caveat
+
+
 # This tutorial is advanced and you only need to go through this if you want to know the internals of `Gridap` and what it does under the hood. Even though you will likely want to use the high-level APIs in `Gridap`, this tutorial will (hopefully) help if you want to become a `Gridap` developer, not just a user. We also consider that this tutorial shows how powerful and expressive the `Gridap` kernel is, and how mastering it you can implement new algorithms not currently provided by the library.
 
 # It is highly recommended (if not essential) that the tutorial is followed together with a Julia debugger, e.g., the one which comes with the Visual Studio Code (VSCode) extension for the Julia programming language. Some of the observations that come along with the code snippets are quite subtle/technical and may require a deeper exploration of the underlying code using a debugger.
 
-# Let us start including `Gridap` and some of its submodules, to have access to a rich set of not so high-level methods. Note that the module `Gridap` provides the high-level API, whereas the submodules like `Gridap.FESpaces` provide access to the different parts of the low-level API.
 
-# <!-- TO CHECK WHICH SUBMODULE APIs ARE NEEDED AND ADD THEM TO GRIDAP -->
+# ## Including Gridap's low-level API
+
+# Let us start including `Gridap` and some of its submodules, to have access to a rich set of not so high-level methods. Note that the module `Gridap` provides the high-level API, whereas the submodules such as, e.g., `Gridap.FESpaces`, provide access to the different parts of the low-level API.
 
 using Gridap
 using Gridap.FESpaces
@@ -16,6 +20,8 @@ using Gridap.CellData
 using FillArrays
 using Test
 using InteractiveUtils
+
+# ## Discrete model and FE spaces set up using high-level API
 
 # We first create the geometry model and FE spaces using the high-level API. In this tutorial, we are not going to describe the geometrical machinery in detail, only what is relevant for the discussion. To simplify the analysis of the outputs, you can consider a 2D mesh, i.e., `D=2` (everything below works for any spatial dimension without any extra complication). In order to make things slightly more interesting, i.e., having non-constant Jacobians, we have considered a mesh that is a stretching of an equal-sized structured mesh.
 
@@ -53,7 +59,9 @@ Vₕ = FESpace(model,reffe;conformity=:H1,dirichlet_tags="boundary")
 u(x) = x[1]            # Analytical solution (for Dirichlet data)
 Uₕ = TrialFESpace(Vₕ,u)
 
-# We also want to extract the triangulation of the model and obtain a quadrature.
+# ## The `CellDatum` abstract type and (some of) its subtypes
+
+# We also want to extract the triangulation out of the model and create a numerical quadrature.
 Tₕ = Triangulation(model)
 Qₕ = CellQuadrature(Tₕ,2*order)
 
@@ -145,16 +153,18 @@ du_at_Qₕ[rand(1:num_cells(Tₕ))]
 
 # At this point, the reader may want to observe which object results from the evaluation of, e.g., `dv_at_Qₕ`, at a different set points for each cell (e.g. by building its own array of arrays of `Points`).
 
-# Going back to our example, any entry of `dv_at_Qₕ` is a rank-2 array of size 4x4 that provides in position `[i,j]` the i-th test shape function at the j-th quadrature rule evaluation point. On the other hand, any entry of `du_at_Qₕ` is a rank-3 array of size `4x1x4` that provides in position `[i,1,j]` the i-th trial shape function at the j-th quadrature point. The reader might be wondering why the rank of these two arrays are different. The rationale is that, by means of the Julia [broadcasting](https://docs.julialang.org/en/v1/manual/arrays/#Broadcasting) of the `*` operation on these two arrays, we get the 4x4x4 array where the `[i,j,k]` entry stores the product of the i-th test and j-th trial functions, both evaluated at the k-th quadrature point. If we sum over the $k$-index, we obtain part of the data required to compute the cell-local matrix that we assemble into the global matrix in order to get a mass matrix. For those readers more used to traditional finite element codes, the broadcast followed by the sum over k, provides the data required in order to implement the following triple standard for-nested loop:
+# Going back to our example, any entry of `dv_at_Qₕ` is a rank-2 array of size 4x4 that provides in position `[i,j]` the j-th test shape function at the i-th quadrature rule evaluation point. On the other hand, any entry of `du_at_Qₕ` is a rank-3 array of size `4x1x4` that provides in position `[i,1,j]` the j-th trial shape function at the i-th quadrature point. The reader might be wondering why the rank of these two arrays are different. The rationale is that, by means of the Julia [broadcasting](https://docs.julialang.org/en/v1/manual/arrays/#Broadcasting) of the `*` operation on these two arrays, we get the 4x4x4 array where the `[i,j,k]` entry stores the product of the j-th test and k-th trial functions, both evaluated at the i-th quadrature point. If we sum over the $i$-index, we obtain part of the data required to compute the cell-local matrix that we assemble into the global matrix in order to get a mass matrix. For those readers more used to traditional finite element codes, the broadcast followed by the sum over i, provides the data required in order to implement the following triple standard for-nested loop:
 
-#   M[:,:]=0.0 <br>
-#   Loop over quadrature points k <br>
-#     detJ_wk=det(J)*w[k] <br>
-#     Loop over shape test functions i <br>
-#       Loop over shape trial functions j <br>
-#            M[i,j]+=shape_test[i,k]*shape_trial[j,k]*detJ_wk <br>
+# ```
+#  M[:,:]=0.0
+#  Loop over quadrature points i
+#    detJK_wi=det(JK)*w[i]
+#    Loop over shape test functions j
+#      Loop over shape trial functions k
+#         M[j,k]+=shape_test[i,j]*shape_trial[i,k]*detJK_wi
+# ```
 
-# where det(K) represents the determinant of the reference-physical mapping of the current cell, and w[k] the quadrature rule weight corresponding to the k-th evaluation point. Using Julia built-in support for broadcasting, we can vectorize the full operation, and get much higher performance.
+# where `det(JK)` represents the determinant of the reference-physical mapping of the current cell, and `w[i]` the quadrature rule weight corresponding to the i-th evaluation point. Using Julia built-in support for broadcasting, we can vectorize the full operation, and get much higher performance.
 
 # The highest-level possible way of performing the aforementioned broadcasted `*` is by building a "new" `CellField` instance by multiplying the two `FEBasis` objects, and then evaluating the resulting object at the points in `Qₕ_cell_point`. This is something common in `Gridap`. One can create new `CellField` objects out of existing ones, e.g., by performing operations among them, or by applying a differential operator, such as the gradient.
 
@@ -163,7 +173,7 @@ dv_mult_du_at_Qₕ = evaluate(dv_mult_du,Qₕ_cell_point)
 
 # We can check that any entry of the resulting `Fill` array is the `4x4x4` array resulting from the broadcasted `*` of the two aforementioned arrays. In order to do so, we can use the so-called `Broadcasting(*)` `Gridap` `Map` (one of the cornerstones of `Gridap`).
 
-# A `Map` represents a (general) function (a.k.a. map or mapping) that takes elements in its domain and return elements in its range. A `Field` is a sub-type of `Map` for the particular domain and ranges of physical fields detailed above. Why do we need to define the `Map` type in `Gridap` instead of using the Julia `Function`? As we will see later on, `Map` is essential for performance, as we will explain later on.
+# A `Map` represents a (general) function (a.k.a. map or mapping) that takes elements in its domain and return elements in its range. A `Field` is a sub-type of `Map` for the particular domain and ranges of physical fields detailed above. Why do we need to define the `Map` type in `Gridap` instead of using the Julia `Function`? `Map` is essential for performance, as we will explain later on.
 
 # The `Map` below is a map that broadcasts the `*` operation. When applied to arrays of numbers, it essentially translates into the built-in Julia broadcast (check that below!). However, as we will see along the tutorial, such a `Map` can also be applied to, e.g., (cell) arrays of `Field`s (arrays of `Field`s, resp.) to build new (cell) arrays of `Fields` (arrays of `Field`s, resp.). This becomes extremely useful to build and evaluate discrete variational forms.
 
@@ -378,7 +388,7 @@ print_lazy_array_type_parameters("",typeof(manual_uₕ_array_at_qₖ))
 
 # We can observe from the output of these calls the following:
 
-# 1. `uₕ_array_at_qₖ` is a `LazyArray` whose entries are defined as the result of applying a `Fill` array of `LinearCombinationMap{Colon}` `Map`s (G) to a `LazyArray` (F[1]) and a `Fill` array (F[2]). The first array provides the FE function DOF values restricted to each cell, and the second the local basis shape functions evaluated at the quadrature points. As the shape functions in physical space have the same values in all cells at the corresponding mapped points in physical space, there is no need to re-evaluate them at each cell, we can evaluate them only once. And this is what the second `Fill` array stores as its unique entry, i.e., a matrix M[i,j] defined as the value of the j-th `Field` (i.e., shape function) evaluated at the i-th `Point`. *This is indeed the main optimization that `lazy_map` applies compared to our manual construction of `uₕ_array_at_qₖ`.* It is worth noting that, if `v` denotes the linear combination coefficients, and `M` the matrix resulting from the evaluation of an array of `Fields` at a set of `Points`, with M[i,j] being the value of the j-th `Field` evaluated at the i-th point, the evaluation of `LinearCombinationMap{Colon}` at `v` and `M` returns a vector `w` with w[i] defined as w[i]=sum_k v[k]*M[i,k], i.e., the FE function evaluated at the i-th point. `uₕ_array_at_qₖ` handles the cache of `LinearCombinationMap{Colon}` (which holds internal storage for `w`) and that of the first `LazyArray` (F[1]), so that when it retrieves the DOF values `v` of a given cell, and then applies `LinearCombinationMap{Colon}` to `v` and `M`, it does not have to allocate any temporary working arrays, but re-uses the ones stored in the different caches.
+# 1. `uₕ_array_at_qₖ` is a `LazyArray` whose entries are defined as the result of applying a `Fill` array of `LinearCombinationMap{Colon}` `Map`s (G) to a `LazyArray` (`F[1]`) and a `Fill` array (`F[2]`). The first array provides the FE function DOF values restricted to each cell, and the second the local basis shape functions evaluated at the quadrature points. As the shape functions in physical space have the same values in all cells at the corresponding mapped points in physical space, there is no need to re-evaluate them at each cell, we can evaluate them only once. And this is what the second `Fill` array stores as its unique entry, i.e., a matrix `M[i,j]` defined as the value of the j-th `Field` (i.e., shape function) evaluated at the i-th `Point`. *This is indeed the main optimization that `lazy_map` applies compared to our manual construction of `uₕ_array_at_qₖ`.* It is worth noting that, if `v` denotes the linear combination coefficients, and `M` the matrix resulting from the evaluation of an array of `Fields` at a set of `Points`, with `M[i,j]` being the value of the j-th `Field` evaluated at the i-th point, the evaluation of `LinearCombinationMap{Colon}` at `v` and `M` returns a vector `w` with `w[i]` defined as `w[i]=sum_k v[k]*M[i,k]`, i.e., the FE function evaluated at the i-th point. `uₕ_array_at_qₖ` handles the cache of `LinearCombinationMap{Colon}` (which holds internal storage for `w`) and that of the first `LazyArray` (F[1]), so that when it retrieves the DOF values `v` of a given cell, and then applies `LinearCombinationMap{Colon}` to `v` and `M`, it does not have to allocate any temporary working arrays, but re-uses the ones stored in the different caches.
 
 # 2. `manual_uₕ_array_at_qₖ` is also a `LazyArray`, but structured rather differently to `uₕ_array_at_qₖ`. In particular, its entries are defined as the result of applying a plain array of `LinearCombinationField`s (G) to a `Fill` array of `Point`s (F[1]) that holds the coordinates of the quadrature rule evaluation points in the parametric space of the reference cell (which are equivalent for all cells, thus the `Fill` array). The evaluation of a `LinearCombinationField` on a set of `Point`s ultimately depends on `LinearCombinationMap`. As seen in the previous point, the evaluation of this `Map` requires a vector `v` and a matrix `M`. `v` was built in-situ when building each `LinearCombinationField`, and stored within these instances. However, in contrast to `uₕ_array_at_qₖ`, `M` is not part of `manual_uₕ_array_at_qₖ`, and thus it has to be (re-)computed each time that we evaluate a new `LinearCombinationField` instance on a set of points. This is the main source of difference on the computation times observed. By eagerly constructing our array of `LinearCombinationField`s instead of deferring it until (lazy) evaluation via `lazy_map`, we lost optimization opportunities. We stress that `manual_uₕ_array_at_qₖ` also handles the cache of `LinearCombinationField` (that in turn handles the one of `LinearCombinationMap`), so that we do not need to allocate `M` at each cell, we re-use the space within the cache of `LinearCombinationField`.
 
@@ -403,7 +413,7 @@ manual_Uₖ = lazy_map(m,σₖ)
 @test evaluate(PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values),3) == uₕ_free_dof_values[3]
 @test evaluate(PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values),-7) == uₕ_dirichlet_dof_values[7]
 
-# The Broadcasting(op) `Map` lets us, in this particular example, broadcast the `PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values)` `Map` to an array a global DOF ids, to obtain the corresponding cell DOF values. As regular, `Broadcasting(op)` provides a cache with the work array required to store its result. `LazyArray` uses this cache to reduce the number of allocations while computing its entries just-in-time. Please note that in `Gridap` we put negative labels to fixed DOFs and positive to free DOFs in σₖ, thus we use an array that combines σₖ with the two arrays of free and fixed DOF values accessing the right one depending on the index. But everything is lazy, only computed when accessing the array. As mentioned multiple times, laziness is one f the leitmotifs in Gridap, the other being immutability.
+# The `Broadcasting(op)` `Map` lets us, in this particular example, broadcast the `PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values)` `Map` to an array a global DOF ids, to obtain the corresponding cell DOF values. As regular, `Broadcasting(op)` provides a cache with the work array required to store its result. `LazyArray` uses this cache to reduce the number of allocations while computing its entries just-in-time. Please note that in `Gridap` we put negative labels to fixed DOFs and positive to free DOFs in σₖ, thus we use an array that combines σₖ with the two arrays of free and fixed DOF values accessing the right one depending on the index. But everything is lazy, only computed when accessing the array. As mentioned multiple times, laziness is one f the leitmotifs in Gridap, the other being immutability.
 
 # Immutability is a feature that comes from functional programming. An immutable object cannot be modified after created. Since objects cannot change, one does not require to track how they change, i.e., there is no need to design (and understand) state diagrams. A code that strictly sticks to this principle is much more readable. Due to laziness, `Gridap` objects are light-weight, and the (lazy) modification of existing (lazy) objects is highly efficient. You can find this action many times in the code above, in which we use `lazy_map` to perform actions over lazy objects (e.g., `LazyArray` or `Fill` arrays) to create new lazy objects. However, strictly conforming to immutability can be inefficient in some very specific scenarios. `Gridap` departs from immutability in the linear algebra part, since we want to re-use the memory allocation as much as possible for global arrays or symbolic/numeric factorisations in linear solvers.
 
@@ -540,7 +550,7 @@ low_level_manual_gradient_dv_array = lazy_map(Broadcasting(Operation(⋅)),inv_J
 
 # ## A low-level implementation of the residual integration and assembly
 
-# Let us now create manually an array of `Field`s uₖ that returns the FE funtion uₕ at each cell, and another array with its gradients, ∇uₖ. We hope that the next set of instructions can be already understood with the material covered so far
+# Let us now create manually an array of `Field`s uₖ that returns the FE function uₕ at each cell, and another array with its gradients, ∇uₖ. We hope that the next set of instructions can be already understood with the material covered so far
 
 ϕrₖ = Fill(ϕr,num_cells(Tₕ))
 ∇ϕₖ = manual_grad_dv_array
@@ -588,7 +598,7 @@ cellvals = ∫( ∇(dv)⋅∇(uₕ) )*Qₕ
 
 # ## Assembling a residual
 
-# Now, we need to assemble these cell-wise (lazy) residual contributions in a global (non-lazy) array. With all this, we can assemble our vector using the cell-wise residual constributions and the assembler. Let us create a standard assembler struct for the finite element spaces at hand. This will create a vector of size global number of DOFs, and a `SparseMatrixCSC`, to which we can add contributions.
+# Now, we need to assemble these cell-wise (lazy) residual contributions in a global (non-lazy) array. With all this, we can assemble our vector using the cell-wise residual contributions and the assembler. Let us create a standard assembler struct for the finite element spaces at hand. This will create a vector of size global number of DOFs, and a `SparseMatrixCSC`, to which we can add contributions.
 
 assem = SparseMatrixAssembler(Uₕ,Vₕ)
 

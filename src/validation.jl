@@ -45,6 +45,8 @@ import Gridap: ∇
 
 ∇(u) === ∇u
 
+# Note: the definition of the gradient is optional. If not provided, the gradient will be computed with automatic differentiation.
+
 # ## Cartesian mesh generation
 #
 # In order to discretize the geometry of the unit square, we use the Cartesian mesh generator available in Gridap:
@@ -85,21 +87,18 @@ writevtk(model,"model")
 # We compute a FE approximation of the Poisson problem above by following the steps detailed in the previous tutorial:
 
 order = 1
-V0 = TestFESpace(
-  reffe=:Lagrangian, order=order, valuetype=Float64,
-  conformity=:H1, model=model, dirichlet_tags="boundary")
-
+reffe = ReferenceFE(lagrangian,Float64,order)
+V0 = TestFESpace(model,reffe,conformity=:H1,dirichlet_tags="boundary")
 U = TrialFESpace(V0,u)
 
-trian = Triangulation(model)
 degree = 2
-quad = CellQuadrature(trian,degree)
+Ω = Triangulation(model)
+dΩ = Measure(Ω,degree)
 
-a(u,v) = ∇(v)⊙∇(u)
-b(v) = v*f
+a(u,v) = ∫( ∇(v)⊙∇(u) )*dΩ
+b(v) = ∫( v*f )*dΩ
 
-t_Ω = AffineFETerm(a,b,trian,quad)
-op = AffineFEOperator(U,V0,t_Ω)
+op = AffineFEOperator(a,b,U,V0)
 
 uh = solve(op)
 
@@ -114,7 +113,7 @@ e = u - uh
 
 # Once the error is defined, you can, e.g., visualize it.
 
-writevtk(trian,"error",cellfields=["e" => e])
+writevtk(Ω,"error",cellfields=["e" => e])
 
 # This generates a file called `error.vtu`. Open it with Paraview to check that the error is of the order of the machine precision.
 #
@@ -127,20 +126,13 @@ writevtk(trian,"error",cellfields=["e" => e])
 # \| w \|_{H^1}^2 \doteq \int_{\Omega} w^2 + \nabla w \cdot \nabla w \ \text{d}\Omega.
 # ```
 #
-# In order to compute these norms, we are going to use the `integrate` function. To this end, we need to define the integrands that we want to integrate, namely
+# In order to compute these norms, we use again the `∫` function and the integration measure `dΩ`, namely
 
-l2(w) = w*w
-h1(w) = a(w,w) + l2(w)
+el2 = sqrt(sum( ∫( e*e )*dΩ ))
+eh1 = sqrt(sum( ∫( e*e + ∇(e)⋅∇(e) )*dΩ ))
 
-# Note that in order to define the integrand of the $H^1$ norm, we have reused function `a`, previously used to define the bilinear form of the problem.  Once we have defined the integrands, we are ready to compute the integrals. For the $L^2$ norm
-
-el2 = sqrt(sum( integrate(l2(e),trian,quad) ))
-
-# and for the $H^1$ norm
-
-eh1 = sqrt(sum( integrate(h1(e),trian,quad) ))
-
-# The `integrate` function works as follows. In the first argument, we pass the integrand. In the second and third arguments, we pass a `Triangulation` object and a`CellQuadrature` that represent the data needed in order to perform the integrals numerically. The `integrate` function returns an object containing the contribution to the integrated value of each cell in the given `Triangulation`. To end up with the desired error norms, one has to sum these contributions and take the square root. You can check that the computed error norms are close to machine precision (as one would expect).
+# The expression `∫( fun )*dΩ` returns an object storing the cell contributions of the integral of the given function `fun`.
+#  To end up with the desired error norms, one has to sum these contributions and take the square root. You can check that the computed error norms are close to machine precision (as one would expect).
 
 tol = 1.e-10
 @assert el2 < tol
@@ -160,7 +152,7 @@ f(x) = (k^2)*sin(k*x[1])*x[2]
 # Since we have redefined the valiables `u`, `∇u`, and `f`, we need to execute these lines again
 
 ∇(::typeof(u)) = ∇u
-b(v) = v*f
+b(v) = ∫( v*f )*dΩ
 
 # In order to perform the convergence test, we write in a function all the code needed to perform a single computation and measure its error. The input of this function is the number of cells in each direction and the interpolation order. The output is the computed $L^2$ and $H^1$ error norms.
 
@@ -170,25 +162,25 @@ function run(n,order)
   partition = (n,n)
   model = CartesianDiscreteModel(domain,partition)
 
-  V0 = TestFESpace(
-    reffe=:Lagrangian, order=order, valuetype=Float64,
-    conformity=:H1, model=model, dirichlet_tags="boundary")
-
+  reffe = ReferenceFE(lagrangian,Float64,order)
+  V0 = TestFESpace(model,reffe,conformity=:H1,dirichlet_tags="boundary")
   U = TrialFESpace(V0,u)
 
-  trian = Triangulation(model)
-  degree=2*order
-  quad = CellQuadrature(trian,degree)
+  degree = 2
+  Ω = Triangulation(model)
+  dΩ = Measure(Ω,degree)
 
-  t_Ω = AffineFETerm(a,b,trian,quad)
-  op = AffineFEOperator(U,V0,t_Ω)
+  a(u,v) = ∫( ∇(v)⊙∇(u) )*dΩ
+  b(v) = ∫( v*f )*dΩ
+
+  op = AffineFEOperator(a,b,U,V0)
 
   uh = solve(op)
 
   e = u - uh
 
-  el2 = sqrt(sum( integrate(l2(e),trian,quad) ))
-  eh1 = sqrt(sum( integrate(h1(e),trian,quad) ))
+  el2 = sqrt(sum( ∫( e*e )*dΩ ))
+  eh1 = sqrt(sum( ∫( e*e + ∇(e)⋅∇(e) )*dΩ ))
 
   (el2, eh1)
 
@@ -256,6 +248,6 @@ slope(hs,eh1s)
 
 #md # If your run these lines in a notebook, you will see that
 #nb # As you can see,
-# the slopes for the $L^2$ and $H^1$ error norms are circa 3 and 2 respectively (as one expects for interpolation order 2)
+# the slopes for the $L^2$ and $H^1$ error norms are circa 3 (slightly better than the expected third and second order convergence resp. expected from theory).
 #
 # Congrats, another tutorial done!

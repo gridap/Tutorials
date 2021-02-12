@@ -166,7 +166,7 @@ function run(n,order)
   V0 = TestFESpace(model,reffe,conformity=:H1,dirichlet_tags="boundary")
   U = TrialFESpace(V0,u)
 
-  degree = 2
+  degree = 2*(order-1)
   Ω = Triangulation(model)
   dΩ = Measure(Ω,degree)
 

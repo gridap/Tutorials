@@ -30,21 +30,21 @@ uh = solve(op)</code></pre><p>Note that we are imposing Dirichlet boundary condi
 \| w \|_{H^1}^2 \doteq \int_{\Omega} w^2 + \nabla w \cdot \nabla w \ \text{d}\Omega.\]</div><p>In order to compute these norms, we use again the <code>∫</code> function and the integration measure <code>dΩ</code>, namely</p><pre><code class="language-julia">el2 = sqrt(sum( ∫( e*e )*dΩ ))
 eh1 = sqrt(sum( ∫( e*e + ∇(e)⋅∇(e) )*dΩ ))</code></pre><p>The expression <code>∫( fun )*dΩ</code> returns an object storing the cell contributions of the integral of the given function <code>fun</code>.  To end up with the desired error norms, one has to sum these contributions and take the square root. You can check that the computed error norms are close to machine precision (as one would expect).</p><pre><code class="language-julia">tol = 1.e-10
 @assert el2 &lt; tol
-@assert eh1 &lt; tol</code></pre><h2 id="Convergence-test-1"><a class="docs-heading-anchor" href="#Convergence-test-1">Convergence test</a><a class="docs-heading-anchor-permalink" href="#Convergence-test-1" title="Permalink"></a></h2><p>We end up this tutorial by performing a convergence test, where we are going to use all the new concepts we have learned.  We will consider a manufactured solution that does not belong to the FE interpolation space. In this test, we expect to see the optimal convergence order of the FE discretization.</p><p>Here, we define the manufactured functions</p><pre><code class="language-julia">const k = 2*pi
-u(x) = sin(k*x[1]) * x[2]
-∇u(x) = VectorValue(k*cos(k*x[1])*x[2], sin(k*x[1]))
-f(x) = (k^2)*sin(k*x[1])*x[2]</code></pre><p>Since we have redefined the valiables <code>u</code>, <code>∇u</code>, and <code>f</code>, we need to execute these lines again</p><pre><code class="language-julia">∇(::typeof(u)) = ∇u
-b(v) = ∫( v*f )*dΩ</code></pre><p>In order to perform the convergence test, we write in a function all the code needed to perform a single computation and measure its error. The input of this function is the number of cells in each direction and the interpolation order. The output is the computed <span>$L^2$</span> and <span>$H^1$</span> error norms.</p><pre><code class="language-julia">function run(n,order)
+@assert eh1 &lt; tol</code></pre><h2 id="Convergence-test-1"><a class="docs-heading-anchor" href="#Convergence-test-1">Convergence test</a><a class="docs-heading-anchor-permalink" href="#Convergence-test-1" title="Permalink"></a></h2><p>We end up this tutorial by performing a convergence test, where we are going to use all the new concepts we have learned.  We will consider a manufactured solution that does not belong to the FE interpolation space. In this test, we expect to see the optimal convergence order of the FE discretization.</p><p>Here, we define the manufactured functions</p><pre><code class="language-julia">p = 3
+u(x) = x[1]^p+x[2]^p
+∇u(x) = VectorValue(p*x[1]^(p-1),p*x[2]^(p-1))
+f(x) = -p*(p-1)*(x[1]^(p-2)+x[2]^(p-2))</code></pre><p>Since we have redefined the valiables <code>u</code>, <code>∇u</code>, and <code>f</code>, we need to execute these lines again</p><pre><code class="language-julia">∇(::typeof(u)) = ∇u
+b(v) = ∫( v*f )*dΩ</code></pre><p>In order to perform the convergence test, we write in a function all the code needed to perform a single computation and measure its error. The input of this function is the number of cells in each direction and the interpolation order. The output is the computed <span>$L^2$</span> and <span>$H^1$</span> error norms.</p><pre><code class="language-julia">function run(n,k)
 
   domain = (0,1,0,1)
   partition = (n,n)
   model = CartesianDiscreteModel(domain,partition)
 
-  reffe = ReferenceFE(lagrangian,Float64,order)
+  reffe = ReferenceFE(lagrangian,Float64,k)
   V0 = TestFESpace(model,reffe,conformity=:H1,dirichlet_tags=&quot;boundary&quot;)
   U = TrialFESpace(V0,u)
 
-  degree = 2
+  degree = 2*p
   Ω = Triangulation(model)
   dΩ = Measure(Ω,degree)
 
@@ -62,7 +62,7 @@ b(v) = ∫( v*f )*dΩ</code></pre><p>In order to perform the convergence test, w
 
   (el2, eh1)
 
-end</code></pre><p>The following function does the convergence test. It takes a vector of integers (representing the number of cells per direction in each computation) plus the interpolation order. It returns the <span>$L^2$</span> and <span>$H^1$</span> error norms for each computation as well as the corresponding cell size.</p><pre><code class="language-julia">function conv_test(ns,order)
+end</code></pre><p>The following function does the convergence test. It takes a vector of integers (representing the number of cells per direction in each computation) plus the interpolation order. It returns the <span>$L^2$</span> and <span>$H^1$</span> error norms for each computation as well as the corresponding cell size.</p><pre><code class="language-julia">function conv_test(ns,k)
 
   el2s = Float64[]
   eh1s = Float64[]
@@ -70,7 +70,7 @@ end</code></pre><p>The following function does the convergence test. It takes a 
 
   for n in ns
 
-    el2, eh1 = run(n,order)
+    el2, eh1 = run(n,k)
     h = 1.0/n
 
     push!(el2s,el2)
@@ -81,16 +81,19 @@ end</code></pre><p>The following function does the convergence test. It takes a 
 
   (el2s, eh1s, hs)
 
-end</code></pre><p>We are ready to perform the test! We consider several mesh sizes and interpolation order equal to 2.</p><pre><code class="language-julia">el2s, eh1s, hs = conv_test([8,16,32,64,128],2);
+end</code></pre><p>We are ready to perform the test! We consider several mesh sizes and interpolation order <span>$k=1$</span> and <span>$k=2$</span> (for <span>$k=3$</span> the error will be close to machine precision, as before, except if you change the value of <span>$p$</span> above).</p><pre><code class="language-julia">el2s1, eh1s1, hs = conv_test([8,16,32,64,128],1);
+el2s2, eh1s2, hs = conv_test([8,16,32,64,128],2);
 nothing #hide</code></pre><p>With the generated data, we do the classical convergence plot.</p><pre><code class="language-julia">using Plots
 
-plot(hs,[el2s eh1s],
+plot(hs,[el2s1 eh1s1 el2s2 eh1s2],
     xaxis=:log, yaxis=:log,
-    label=[&quot;L2&quot; &quot;H1&quot;],
+    label=[&quot;L2 k=1&quot; &quot;H1 k=1&quot; &quot;L2 k=2&quot; &quot;H1 k=2&quot;],
     shape=:auto,
-    xlabel=&quot;h&quot;,ylabel=&quot;error norm&quot;)</code></pre><p>If you run the code in a notebook, you will see a figure like this one: <img src="../../assets/validation/conv.png" alt/></p><p>The generated curves make sense. It is observed that the convergence of the <span>$H^1$</span> error is slower that <span>$L^2$</span> one. However, in order to be more conclusive, we need to compute the slope of these lines. It can be done with this little function that internally uses a linear regression.</p><pre><code class="language-julia">function slope(hs,errors)
+    xlabel=&quot;h&quot;,ylabel=&quot;error norm&quot;)</code></pre><p>If you run the code in a notebook, you will see a figure like this one: <img src="../../assets/validation/conv.png" alt/></p><p>The generated curves make sense. For a given interpolation order it is observed that the convergence of the <span>$H^1$</span> error is slower that <span>$L^2$</span> one whereas increasing the order makes convergence faster both in <span>$L^2$</span> and in <span>$H^1$</span>. However, in order to be more conclusive, we need to compute the slope of these lines. It can be done with this little function that internally uses a linear regression.</p><pre><code class="language-julia">function slope(hs,errors)
   x = log10.(hs)
   y = log10.(errors)
   linreg = hcat(fill!(similar(x), 1), x) \ y
   linreg[2]
-end</code></pre><p>The slope for the <span>$L^2$</span> error norm is computed as</p><pre><code class="language-julia">slope(hs,el2s)</code></pre><p>and for the <span>$H^1$</span> error norm</p><pre><code class="language-julia">slope(hs,eh1s)</code></pre><p>If your run these lines in a notebook, you will see that the slopes for the <span>$L^2$</span> and <span>$H^1$</span> error norms are circa 3 (slightly better than the expected third and second order convergence resp. expected from theory).</p><p>Congrats, another tutorial done!</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../t001_poisson/">« 1 Poisson equation</a><a class="docs-footer-nextpage" href="../t003_elasticity/">3 Linear elasticity »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 27 January 2021 22:49">Wednesday 27 January 2021</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><p>The slopes for the <span>$L^2$</span> error norm is computed as</p><pre><code class="language-julia">slope(hs,el2s1)
+slope(hs,el2s2)</code></pre><p>and for the <span>$H^1$</span> error norm as</p><pre><code class="language-julia">slope(hs,eh1s1)
+slope(hs,eh1s2)</code></pre><p>If your run these lines in a notebook, you will see that the slopes for the <span>$L^2$</span> and <span>$H^1$</span> error norms are 2 and 1 for <span>$k=1$</span> and 3 and 2 for <span>$k=2$</span> respectively.</p><p>Congrats, another tutorial done!</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../t001_poisson/">« 1 Poisson equation</a><a class="docs-footer-nextpage" href="../t003_elasticity/">3 Linear elasticity »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 15 February 2021 16:03">Monday 15 February 2021</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

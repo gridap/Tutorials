@@ -1,5 +1,5 @@
 # In this tutorial, we will learn
-# - How to use `DrWatson.jl` in our Gridap simulation workflows
+# - How to use `DrWatson.jl` to accelerate and reproduce our Gridap simulation workflows
 
 # [DrWatson.jl](https://github.com/JuliaDynamics/DrWatson.jl) is a Julia package that helps managing a typical scientific workflow thorought all its phases, see a summary [here](https://juliadynamics.github.io/DrWatson.jl/stable/workflow/).
 
@@ -11,7 +11,7 @@
 
 # ## 1. Activate your project
 
-# The first step is to activate our project using `quickactivate`. This does not only activate the project, it also sets the relative paths within the project, so you can safely use the functions `projectdir()` and its derivatives `datadir()`, `plotsdir()`, `srcdir()`, etc. Beware of this [warning](https://juliadynamics.github.io/DrWatson.jl/dev/project/#DrWatson.quickactivate).
+# The first step is to activate our project using `quickactivate`. This does not only activate the project, it also sets the relative paths within the project, so you can safely use the functions `projectdir()` and its derivatives `datadir()`, `plotsdir()`, `srcdir()`, etc. Beware of this [warning](https://juliadynamics.github.io/DrWatson.jl/dev/project/#DrWatson.quickactivate), you must activate the project before using other packages.
 
 using DrWatson
 @quickactivate "Tutorials"
@@ -53,7 +53,7 @@ dicts = dict_list(params)
 
 # **Warning!** Be careful when combining parameters of different value type. You may end up with dictionaries that do not have a concrete type and experience a significant type-inference overhead when running the simulations.
 
-# We wrap next in a function a run of our computational model for a single pair (cells_per_axis,fe_order). The function returns the L2- and H1-error norms.
+# We wrap next in a function a run of our computational model for a single pair `(cells_per_axis,fe_order)`. The function returns the L2- and H1-error norms.
 
 # We define the manufactured function, as usual
 
@@ -65,7 +65,7 @@ f(x) = -p*(p-1)*(x[1]^(p-2)+x[2]^(p-2))
 
 # And the function that runs a single case of our parametric space reads
 
-function run(n,k)
+function run(n::Int,k::Int)
 
   domain = (0,1,0,1)
   partition = (n,n)
@@ -99,7 +99,7 @@ end
 
 # Note the use of functions [@unpack](https://juliadynamics.github.io/DrWatson.jl/dev/name/#UnPack.@unpack) and [@dict](https://juliadynamics.github.io/DrWatson.jl/dev/name/#DrWatson.@dict) to decompose and compose the dictionaries. You can check in `DrWatson.jl`'s documentation further functions to manipulate dictionaries.
 
-function run(case)
+function run(case::Dict)
   @unpack cells_per_axis, fe_order = case
   el2, eh1 = run(cells_per_axis,fe_order)
   h = 1.0/cells_per_axis
@@ -109,13 +109,13 @@ end
 
 # ## 3. Run and save
 
-# While running the simulations, we need to save the results. `DrWatson.jl` frees you from the burden of generating the filenames for each case. For this purpose, it provides the functions [savename](https://juliadynamics.github.io/DrWatson.jl/stable/name/#DrWatson.savename), [@tagsave](https://juliadynamics.github.io/DrWatson.jl/stable/save/#DrWatson.@tagsave) or [produce_or_load](https://juliadynamics.github.io/DrWatson.jl/stable/save/#DrWatson.produce_or_load).
+# While running the simulations, we need to save the results. `DrWatson.jl` frees you from the burden of generating the filenames for each case. For this purpose, it provides the functions [savename](https://juliadynamics.github.io/DrWatson.jl/stable/name/#DrWatson.savename), [@tagsave](https://juliadynamics.github.io/DrWatson.jl/stable/save/#DrWatson.@tagsave) or [produce_or_load](https://juliadynamics.github.io/DrWatson.jl/stable/save/#DrWatson.produce_or_load), among others.
 
 # Among them, we recommend using [produce_or_load](https://juliadynamics.github.io/DrWatson.jl/stable/save/#DrWatson.produce_or_load). The special feature of this function is that it checks whether the file containing the output data of the case already exists. If that happens, then the function loads the file, instead of running the case. In this way, we avoid repeating simulations that have already been run.
 
 # Thus, in order to run all simulation cases, it suffices to map all cases in `dicts` to the `produce_or_load` function:
 
-function run_or_load(case)
+function run_or_load(case::Dict)
   produce_or_load(
     projectdir("assets","validation_DrWatson"),
     case,
@@ -132,6 +132,8 @@ map(run_or_load,dicts)
 # Note that the results of each case are stored in a binary database file in the `projectdir("assets","validation_DrWatson")` folder. Each result file stores the output dictionary that returns from `run(case)`.
 
 # We also observe that we set `tag=true` in `produce_or_load`. This option is *key to preserve reproducibility*. It adds to the output dictionary the field `:gitcommit`, thus allowing us to trace the status of the code, at which we obtained those results. Furthermore, if the git repo is dirty, one more field `:gitpatch` is added, storing the difference string.
+
+# In some situations, you will prefer to repeat all simulations and track their evolution as you change the code. To this end, check out [safesave](https://juliadynamics.github.io/DrWatson.jl/dev/save/#DrWatson.safesave).
 
 # ## 4. Listing the simulations
 

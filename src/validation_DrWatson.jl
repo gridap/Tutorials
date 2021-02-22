@@ -172,3 +172,21 @@ plot(hs,[el2s1 eh1s1 el2s2 eh1s2],
 #md # ![](../assets/validation_DrWatson/conv.png)
 #
 # Congrats, another tutorial done!
+
+# ---
+
+# If you use DrWatson.jl in a scientific project that leads to a publication, please do not forget to cite the paper associated with it:
+# ```
+# @article{Datseris2020,
+#  doi = {10.21105/joss.02673},
+#  url = {https://doi.org/10.21105/joss.02673},
+#  year = {2020},
+#  publisher = {The Open Journal},
+#  volume = {5},
+#  number = {54},
+#  pages = {2673},
+#  author = {George Datseris and Jonas Isensee and Sebastian Pech and Tamás Gál},
+#  title = {DrWatson: the perfect sidekick for your scientific inquiries},
+#  journal = {Journal of Open Source Software}
+# }
+# ```

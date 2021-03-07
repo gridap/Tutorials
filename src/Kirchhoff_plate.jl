@@ -1,4 +1,7 @@
-module KirchhoffPlate
+#md # !!! note
+#
+#     This tutorial is under construction, but the code below is already functional.
+#
 
 using Gridap
 using GridapODEs
@@ -48,12 +51,10 @@ ls = LUSolver()
 odes = Newmark(ls,dt,0.5,0.25)
 solver = TransientFESolver(odes)
 
-sol = solve(solver,op,u₀,v₀,a₀,t0,tF)
+sol = solve(solver,op,(u₀,v₀,a₀),t0,tF)
 
-outfiles = paraview_collection("tmp", append=false) do pvd
+outfiles = paraview_collection("KirchhoffPlate", append=false) do pvd
   for (uₙ,tₙ) in sol
-    pvd[tₙ] = createvtk(Ω,"tmp_$tₙ.vtu",cellfields = ["u" => uₙ]) 
+    pvd[tₙ] = createvtk(Ω,"KirchhoffPlate_$tₙ.vtu",cellfields = ["u" => uₙ]) 
   end
-end
-
 end

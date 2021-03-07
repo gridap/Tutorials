@@ -94,7 +94,7 @@ const μ = E/(2*(1+ν))
 #
 #  ## Weak form
 #
-#  As seen in previous tutorials, in order to define the week form we need to build the integration mesh and the corresponding measure
+#  As seen in previous tutorials, in order to define the weak form we need to build the integration mesh and the corresponding measure
 
 degree = 2*order
 Ω = Triangulation(model)

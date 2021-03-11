@@ -61,9 +61,9 @@ Uₕ = TrialFESpace(Vₕ,u)
 
 # ## The `CellDatum` abstract type and (some of) its subtypes
 
-# We also want to extract the triangulation out of the model and create a numerical quadrature.
+# We also want to extract the triangulation out of the model and create a numerical quadrature. We use a quadrature rule with a higher number integration points than those strictly needed to integrate a mass matrix exactly, i.e., `4*order`, instead of `2*order` We do so in order to help the reader distinguish the axis used for quadrature points, and the one used for DoFs in multi-dimensional arrays, which contain the result of evaluating fields (or a differential operator acting on these) in a set of quadrature rule evaluation points.
 Tₕ = Triangulation(model)
-Qₕ = CellQuadrature(Tₕ,2*order)
+Qₕ = CellQuadrature(Tₕ,4*order)
 
 # Qₕ is an instance of type `CellQuadrature`, a subtype of the `CellDatum` abstract data type.
 

@@ -688,4 +688,4 @@ ufₕ = FEFunction(Uₕ,uf)
 
 # or if you like Unicode symbols
 
-@test ∑(integrate((u-ufₕ)*(u-ufₕ),Qₕ)) <= 10^-8
+@test ∑(∫(((u-ufₕ)*(u-ufₕ)))Qₕ) <= 10^-8

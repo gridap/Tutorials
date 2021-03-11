@@ -144,16 +144,18 @@ du = get_cell_shapefuns_trial(Uₕ)
 # Recall from above that `CellField` objects are designed to be evaluated at `CellPoint` objects, and that we extracted a `CellPoint` object, `Qₕ_cell_point`, out of a `CellQuadrature`, of `ReferenceDomain` trait `DomainStyle`. Thus, we can evaluate `dv` and `du` at the quadrature rule evaluation points, on all cells, straight away as:
 
 dv_at_Qₕ = evaluate(dv,Qₕ_cell_point)
+
 du_at_Qₕ = evaluate(du,Qₕ_cell_point)
 
 # There are a pair of worth noting observations on the result of the previous two instructions. First, both `dv_at_Qₕ` and `du_at_Qₕ` are arrays of type `Fill` (i.e., a constant array that only stores the entry once) because we are using the same quadrature and reference FE for all cells. This (same entry) is justified by: (1) the local shape functions are evaluated at the same set of points in the reference cell parametric space for all cells (i.e., the quadrature rule points), and (2) the shape functions in physical space have these very same values at the corresponding mapped points in the physical space for all cells. Thus they provide the same entry for whatever index we provide.
 
 dv_at_Qₕ[rand(1:num_cells(Tₕ))]
+
 du_at_Qₕ[rand(1:num_cells(Tₕ))]
 
 # At this point, the reader may want to observe which object results from the evaluation of, e.g., `dv_at_Qₕ`, at a different set points for each cell (e.g. by building its own array of arrays of `Points`).
 
-# Going back to our example, any entry of `dv_at_Qₕ` is a rank-2 array of size 4x4 that provides in position `[i,j]` the j-th test shape function at the i-th quadrature rule evaluation point. On the other hand, any entry of `du_at_Qₕ` is a rank-3 array of size `4x1x4` that provides in position `[i,1,j]` the j-th trial shape function at the i-th quadrature point. The reader might be wondering why the rank of these two arrays are different. The rationale is that, by means of the Julia [broadcasting](https://docs.julialang.org/en/v1/manual/arrays/#Broadcasting) of the `*` operation on these two arrays, we get the 4x4x4 array where the `[i,j,k]` entry stores the product of the j-th test and k-th trial functions, both evaluated at the i-th quadrature point. If we sum over the $i$-index, we obtain part of the data required to compute the cell-local matrix that we assemble into the global matrix in order to get a mass matrix. For those readers more used to traditional finite element codes, the broadcast followed by the sum over i, provides the data required in order to implement the following triple standard for-nested loop:
+# Going back to our example, any entry of `dv_at_Qₕ` is a rank-2 array of size 9x4 that provides in position `[i,j]` the j-th test shape function at the i-th quadrature rule evaluation point. On the other hand, any entry of `du_at_Qₕ` is a rank-3 array of size `9x1x4` that provides in position `[i,1,j]` the j-th trial shape function at the i-th quadrature point. The reader might be wondering why the rank of these two arrays are different. The rationale is that, by means of the Julia [broadcasting](https://docs.julialang.org/en/v1/manual/arrays/#Broadcasting) of the `*` operation on these two arrays, we get the 9x4x4 array where the `[i,j,k]` entry stores the product of the j-th test and k-th trial functions, both evaluated at the i-th quadrature point. If we sum over the $i$-index, we obtain part of the data required to compute the cell-local matrix that we assemble into the global matrix in order to get a mass matrix. For those readers more used to traditional finite element codes, the broadcast followed by the sum over i, provides the data required in order to implement the following triple standard for-nested loop:
 
 # ```
 #  M[:,:]=0.0
@@ -171,7 +173,7 @@ du_at_Qₕ[rand(1:num_cells(Tₕ))]
 dv_mult_du = du*dv
 dv_mult_du_at_Qₕ = evaluate(dv_mult_du,Qₕ_cell_point)
 
-# We can check that any entry of the resulting `Fill` array is the `4x4x4` array resulting from the broadcasted `*` of the two aforementioned arrays. In order to do so, we can use the so-called `Broadcasting(*)` `Gridap` `Map` (one of the cornerstones of `Gridap`).
+# We can check that any entry of the resulting `Fill` array is the `9x4x4` array resulting from the broadcasted `*` of the two aforementioned arrays. In order to do so, we can use the so-called `Broadcasting(*)` `Gridap` `Map` (one of the cornerstones of `Gridap`).
 
 # A `Map` represents a (general) function (a.k.a. map or mapping) that takes elements in its domain and return elements in its range. A `Field` is a sub-type of `Map` for the particular domain and ranges of physical fields detailed above. Why do we need to define the `Map` type in `Gridap` instead of using the Julia `Function`? `Map` is essential for performance, as we will explain later on.
 

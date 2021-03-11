@@ -8,7 +8,7 @@
 #
 # ## Problem statement
 # 
-# The goal of this tutorial is to solve a PDE using a DG formulation. For
+# The goal of this tutorial is to solve a PDE using a Discontinuous Galerkin (DG) formulation. For
 # simplicity, we take the Poisson equation on the unit cube $\Omega \doteq
 # (0,1)^3$ as the model problem, namely
 

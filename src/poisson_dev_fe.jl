@@ -506,7 +506,7 @@ Xₖ = lazy_map(Broadcasting(Reindex(X)),cell_node_ids)
 
 @test lazy_map(evaluate,ψₖ,qₖ) == lazy_map(evaluate,ξₖ,qₖ) # check
 
-# It is good to stress (if it was not fully grasped yet) that `lazy_map(k,a,b)` is semantically (conceptually) equivalent to `map((ai,bi)->evaluate(k,ai,bi),a,b)` but, among others, with a lazy result instead of a plain Julia array.
+# It is good to stress (if it was not fully grasped yet) that `lazy_map(k,a,b)`, with `k` being a callable Julia object, is semantically (conceptually) equivalent to `map(k,a,b)` but, among others, with a lazy result instead of a plain Julia array. A Julia object is callable if it makes sense to pass arguments to it. For example, objects `k` such that `isa(k,Map)==true` are callable.  For these objects, `k(x...)` is equivalent to `evaluate(k,x...)`.
 
 # Following the same ideas, we can compute the Jacobian of the geometrical map (cell-wise). The Jacobian of the transformation is simply its gradient. The gradient in the parametric space can be built using two equivalent approaches. On the one hand, we can apply the `Broadcasting(∇)` `Map` to the array of `Fields` with the local shape basis functions (i.e., `ϕrg`). This results in an array of `Field`s with the gradients, (Recall that `Map`s can be applied to array of `Field`s in order to get new array of `Field`s) that we use to build a `Fill` array with the result. Finally, we build the lazy array with the cell-wise Jacobians of the map as the linear combination of the node coordinates and the gradients of the local cell shape basis functions:
 

@@ -75,7 +75,7 @@ subtypes(CellDatum)
 # Conceptually, an instance of a `CellDatum` represents a collection of quantities (e.g., points in a reference system, or scalar-, vector- or tensor-valued fields, or arrays made of these), once per each cell of a triangulation. Using the `get_data` generic function one can extract an array with such quantities. For example, in the case of Qₕ, we get an array of quadrature rules for numerical integration.
 
 Qₕ_cell_data = get_data(Qₕ)
-
+#
 @test length(Qₕ_cell_data) == num_cells(Tₕ)
 
 # In this case we get the same quadrature rule in all cells (note that the returned array is of type `Fill`). Gridap also supports different quadrature rules to be used in different cells. Exploring such feature is out of scope of the present tutorial.
@@ -83,7 +83,7 @@ Qₕ_cell_data = get_data(Qₕ)
 # Any `CellDatum` has a trait, the so-called `DomainStyle` trait. This information is consumed by `Gridap` in different parts of the code. It specifies whether the quantities in it are either expressed in the reference (`ReferenceDomain`) or the physical (`PhysicalDomain`) domain. We can indeed check the `DomainStyle` of a `CellDatum` using the `DomainStyle` generic function:
 
 DomainStyle(Qₕ) == ReferenceDomain()
-
+#
 DomainStyle(Qₕ) == PhysicalDomain()
 
 # If we evaluate the two expressions above, we can see that the `DomainStyle` trait of Qₕ is `ReferenceDomain`. This means that the local FE space in the physical space in which our problem is posed is expressed in terms of the composition of a space in a reference FE in a parametric space (which is being shared by many or all FEs in the physical space) and the inverse of the geometrical map (from the parametric to the physical space).
@@ -97,9 +97,9 @@ DomainStyle(Qₕ) == PhysicalDomain()
 # Using the array of quadrature rules `Qₕ_cell_data`, we can access specific entries. The object retrieved provides an array of points (`Point` data type in `Gridap`) in the cell reference parametric space $[0,1]^d$ and their corresponding weights.
 
 q = Qₕ_cell_data[rand(1:num_cells(Tₕ))]
-
+#
 p = get_coordinates(q)
-
+#
 w = get_weights(q)
 
 # However, there is a more convenient way (for reasons made clear above) to work with the evaluation points of quadratures rules in `Gridap`. Namely, using the `get_cell_points` function we can extract a `CellPoint` object out of a `CellQuadrature`.
@@ -113,7 +113,7 @@ Qₕ_cell_point = get_cell_points(Qₕ)
 # and thus we can ask for the value of its `DomainStyle` trait, and get an array of quantities out of it using the `get_data` generic function
 
 @test DomainStyle(Qₕ_cell_point) == ReferenceDomain()
-
+#
 qₖ = get_data(Qₕ_cell_point)
 
 # Not surprisingly, the `DomainStyle` trait of the `CellPoint` object is `ReferenceDomain`, and we get a (cell) array with an array of `Point`s per each cell out of a `CellPoint`. As seen in the sequel, `CellPoint`s are relevant objects because they are the ones that one can use in order to evaluate the so-called `CellField` objects on the set of points of a `CellPoint`.
@@ -127,25 +127,25 @@ qₖ = get_data(Qₕ_cell_point)
 # Let us work with our first `CellField` objects, namely `FEBasis` objects, and its evaluation. In particular, let us extract out of the global test space, Vₕ, and trial space, Uₕ, a collection of local test and trial finite element shape basis functions, respectively.
 
 dv = get_cell_shapefuns(Vₕ)
-
+#
 du = get_cell_shapefuns_trial(Uₕ)
 
 # The objects returned are of `FEBasis` type, one of the subtypes of `CellField`. Apart from `DomainStyle`, `FEBasis` objects also have an additional trait, `BasisStyle`, which specifies whether the cell-local shape basis functions are either of test or trial type (in the Galerkin method). This information is consumed in different parts of the code.
 
 @test Gridap.FESpaces.BasisStyle(dv) == Gridap.FESpaces.TestBasis()
-
+#
 @test Gridap.FESpaces.BasisStyle(du) == Gridap.FESpaces.TrialBasis()
 
 # As expected, `dv` is made out of test shape functions, and `du`, of trial shape functions. We can also confirm that both `dv` and `du` are `CellField` and `CellDatum` objects (i.e., recall that `FEBasis` is a subtype of `CellField`, and the latter is a subtype of `CellDatum`).
 
 @test isa(dv,CellField) && isa(dv,CellDatum)
-
+#
 @test isa(du,CellField) && isa(du,CellDatum)
 
 # Thus, one may check the value of their `DomainStyle` trait.
 
 @test DomainStyle(dv) == ReferenceDomain()
-
+#
 @test DomainStyle(du) == ReferenceDomain()
 
 # We can see that the `DomainStyle` of both `FEBasis` objects is `ReferenceDomain`. In the case of `CellField` objects, this specifies that the point coordinates on which we evaluate the cell-local shape basis functions should be provided in the parametric space of the reference cell (to avoid the need to use the inverse of the geometrical map). However, the output from evaluation, as usual in finite elements defined parametrically, is the cell-local shape function in the physical domain evaluated at the corresponding mapped point.
@@ -153,13 +153,13 @@ du = get_cell_shapefuns_trial(Uₕ)
 # Recall from above that `CellField` objects are designed to be evaluated at `CellPoint` objects, and that we extracted a `CellPoint` object, `Qₕ_cell_point`, out of a `CellQuadrature`, of `ReferenceDomain` trait `DomainStyle`. Thus, we can evaluate `dv` and `du` at the quadrature rule evaluation points, on all cells, straight away as:
 
 dv_at_Qₕ = evaluate(dv,Qₕ_cell_point)
-
+#
 du_at_Qₕ = evaluate(du,Qₕ_cell_point)
 
 # There are a pair of worth noting observations on the result of the previous two instructions. First, both `dv_at_Qₕ` and `du_at_Qₕ` are arrays of type `Fill` (i.e., a constant array that only stores the entry once) because we are using the same quadrature and reference FE for all cells. This (same entry) is justified by: (1) the local shape functions are evaluated at the same set of points in the reference cell parametric space for all cells (i.e., the quadrature rule points), and (2) the shape functions in physical space have these very same values at the corresponding mapped points in the physical space for all cells. Thus they provide the same entry for whatever index we provide.
 
 dv_at_Qₕ[rand(1:num_cells(Tₕ))]
-
+#
 du_at_Qₕ[rand(1:num_cells(Tₕ))]
 
 # At this point, the reader may want to observe which object results from the evaluation of, e.g., `dv_at_Qₕ`, at a different set points for each cell (e.g. by building its own array of arrays of `Points`).
@@ -180,7 +180,7 @@ du_at_Qₕ[rand(1:num_cells(Tₕ))]
 # The highest-level possible way of performing the aforementioned broadcasted `*` is by building a "new" `CellField` instance by multiplying the two `FEBasis` objects, and then evaluating the resulting object at the points in `Qₕ_cell_point`. This is something common in `Gridap`. One can create new `CellField` objects out of existing ones, e.g., by performing operations among them, or by applying a differential operator, such as the gradient.
 
 dv_mult_du = du*dv
-
+#
 dv_mult_du_at_Qₕ = evaluate(dv_mult_du,Qₕ_cell_point)
 
 # We can check that any entry of the resulting `Fill` array is the `9x4x4` array resulting from the broadcasted `*` of the two aforementioned arrays. In order to do so, we can use the so-called `Broadcasting(*)` `Gridap` `Map` (one of the cornerstones of `Gridap`).
@@ -190,27 +190,27 @@ dv_mult_du_at_Qₕ = evaluate(dv_mult_du,Qₕ_cell_point)
 # The `Map` below is a map that broadcasts the `*` operation. When applied to arrays of numbers, it essentially translates into the built-in Julia broadcast (check that below!). However, as we will see along the tutorial, such a `Map` can also be applied to, e.g., (cell) arrays of `Field`s (arrays of `Field`s, resp.) to build new (cell) arrays of `Fields` (arrays of `Field`s, resp.). This becomes extremely useful to build and evaluate discrete variational forms.
 
 m=Broadcasting(*)
-
+#
 A=evaluate(m,dv_at_Qₕ[rand(1:num_cells(Tₕ))],du_at_Qₕ[rand(1:num_cells(Tₕ))])
-
+#
 B=broadcast(*,dv_at_Qₕ[rand(1:num_cells(Tₕ))],du_at_Qₕ[rand(1:num_cells(Tₕ))])
-
+#
 @test all(A .≈ B)
-
+#
 @test all(A .≈ dv_mult_du_at_Qₕ[rand(1:num_cells(Tₕ))])
 
 # Recall from above that `CellField` objects are also `CellDatum` objects. Thus, one can use the `get_data` generic function to extract, in an array, the collection of quantities, one per each cell of the triangulation, out of them. As one may expect, in the case of our `FEBasis` objects `dv` and `du` at hand, `get_data` returns a (cell) array of arrays of `Field` objects, i.e., the cell-local shape basis functions:
 
 dv_array = get_data(dv)
-
+#
 du_array = get_data(du)
-
+#
 @test isa(dv_array,AbstractVector{<:AbstractVector{<:Field}})
-
+#
 @test isa(du_array,AbstractVector{<:AbstractArray{<:Field,2}})
-
+#
 @test length(dv_array) == num_cells(Tₕ)
-
+#
 @test length(du_array) == num_cells(Tₕ)
 
 # As expected, both `dv_array` and `du_array` are (*conceptually*) vectors (i.e, rank-1 arrays) with as many entries as cells. The concrete type of each vector differs, though, i.e., `Fill` and `LazyArray`, resp. (We will come back to `LazyArray`s below, as they play a fundamental role in the way in which the finite element method is implemented in `Gridap`.) For each cell, we have arrays of `Field` objects. Recall from above that `Map` and `Field` (with `Field` a subtype of `Map`), and `CellDatum` and `CellField` (with `CellField` a subtype of `CellDatum`) and the associated type hierarchies, are fundamental in `Gridap` for the implementation of variational methods in finite-dimensional spaces. `Field` conceptually represents a physical (scalar, vector, or tensor) field. `Field` objects can be evaluated at single `Point` objects (or at an array of them in one shot), and they return scalars (i.e., a sub-type of Julia `Number`), `VectorValue`, or `TensorValue` objects (or an array of them, resp.)
@@ -230,7 +230,7 @@ evaluate(ϕ,[Point(0,0),Point(1,0),Point(0,1),Point(1,1)])
 # However, and here comes one of the main take-aways of this tutorial, in `Gridap`, (cell-wise) arrays of `Fields` (or arrays of `Fields`) are definitely NOT conceived to be evaluated following the approach that we used in the previous examples, i.e., by manually extracting the `Field` (array of `Field`s) corresponding to a cell, and then evaluating it (them) at a given set of `Point`s. Instead, one uses the `lazy_map` generic function, which combined with the `evaluate` function, represents the operation of walking over all cells, and evaluating the fields, cell by cell, as a whole. This is illustrated in the following piece of code:
 
 dv_array_at_qₖ = lazy_map(evaluate,dv_array,qₖ)
-
+#
 du_array_at_qₖ = lazy_map(evaluate,du_array,qₖ)
 
 # We note that the results of these two expressions are equivalent to the ones of `evaluate(dv, Qₕ_cell_point)` and `evaluate(du,Qₕ_cell_point)`, resp. (check it!) In fact, these latter two expressions translate under the hood into the calls to `lazy_map` above. These calls to `lazy_map` return an array of the same length of the input arrays, with their i-th entry conceptually defined, e.g., as `evaluate(du_array[i],qₖ[i])` in the case of the second array. To be "conceptually defined as" does not mean that they are actually computed as `evaluate(du_array[i],qₖ[i])`. Indeed they don't, this would not be high performant.
@@ -308,7 +308,7 @@ print(typeof(uₕ_array))
 # As mentioned above, `uₕ_array` can be conceptually seen as an array of `Field`s. Thus, if we access to a particular entry of it, we should get a `Field` object. (Although possible, this is not the way in which `uₕ_array` is conceived to be used, as was also mentioned in the previous section.) This is indeed confirmed when accessing, e.g., the third entry of `uₕ_array`:
 
 uₕ³ = uₕ_array[3]
-
+#
 @test isa(uₕ³,Field)
 
 # The concrete type of `uₕ³` is `LinearCombinationField`. This type represents a `Field` defined as a linear combination of an existing vector of `Field`s. This sort of `Field`s can be built using the `linear_combination` generic function. Among its methods, there is one which takes (1) a vector of scalars (i.e., Julia `Number`s) with the coefficients of the expansion and (2) a vector of `Field`s as its two arguments, and returns a `LinearCombinationField` object. As mentioned above, this is the exact mathematical definition of a FE function restricted to a cell.
@@ -320,7 +320,7 @@ Uₖ = get_cell_dof_values(uₕ)
 # (The returned array turns to be of concrete type `LazyArray`, again to keep memory allocation low, but let us skip this detail for the moment.) If we restrict `Uₖ` and `dv_array` to the third cell
 
 Uₖ³ = Uₖ[3]
-
+#
 ϕₖ³ = dv_array[3]
 
 # we get the two arguments that we need to invoke `linear_combination` in order to build our manually built version of uₕ³
@@ -374,15 +374,14 @@ end
 # If we @time the `smart_sum` function with `uₕ_array_at_qₖ` and `manual_uₕ_array_at_qₖ`
 
 smart_sum(uₕ_array_at_qₖ)        # Execute once before to neglect JIT-compilation time
-
 smart_sum(manual_uₕ_array_at_qₖ) # Execute once before to neglect JIT-compilation time
-
+#
 @time begin
         for i in 1:100_000
          smart_sum(uₕ_array_at_qₖ)
         end
       end
-
+#
 @time begin
         for i in 1:100_000
           smart_sum(manual_uₕ_array_at_qₖ)
@@ -396,7 +395,7 @@ smart_sum(manual_uₕ_array_at_qₖ) # Execute once before to neglect JIT-compil
 # Let us try to answer the question now qualitatively. In order to do so, we can take a look at the structure of both `LazyArray`s using the `print_op_tree` function provided by `Gridap`
 
 print_op_tree(uₕ_array_at_qₖ)
-
+#
 print_op_tree(manual_uₕ_array_at_qₖ)
 
 # We can observe from the output of these calls the following:
@@ -410,7 +409,7 @@ print_op_tree(manual_uₕ_array_at_qₖ)
 # Let us, e.g., build Uₖ manually using this idea. First, we extract out of uₕ and Uₕ two arrays with the free and fixed (due to strong Dirichlet boundary conditions) DOF values of uₕ
 
 uₕ_free_dof_values = get_free_values(uₕ)
-
+#
 uₕ_dirichlet_dof_values = get_dirichlet_values(Uₕ)
 
 # So far these are plain arrays, nothing is lazy. Then we extract out of Uₕ the global indices of the DOFs in each cell, the well-known local-to-global map in FE methods.
@@ -420,13 +419,13 @@ uₕ_dirichlet_dof_values = get_dirichlet_values(Uₕ)
 # Finally, we call lazy_map to build a `LazyArray`, whose entries, when computed, contain the global FE function DOFs restricted to each cell.
 
 m = Broadcasting(PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values))
-
+#
 manual_Uₖ = lazy_map(m,σₖ)
 
 # `PosNegReindex` is a `Map` that is built out of two vectors. We evaluate it at indices of array entries. When we give it a positive index, it returns the entry of the first vector corresponding to this index, and when we give it a negative index, it returns the entry of the second vector corresponding to the flipped-sign index. We can check this with the following expressions
 
 @test evaluate(PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values),3) == uₕ_free_dof_values[3]
-
+#
 @test evaluate(PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values),-7) == uₕ_dirichlet_dof_values[7]
 
 # The `Broadcasting(op)` `Map` lets us, in this particular example, broadcast the `PosNegReindex(uₕ_free_dof_values,uₕ_dirichlet_dof_values)` `Map` to an array a global DOF ids, to obtain the corresponding cell DOF values. As regular, `Broadcasting(op)` provides a cache with the work array required to store its result. `LazyArray` uses this cache to reduce the number of allocations while computing its entries just-in-time. Please note that in `Gridap` we put negative labels to fixed DOFs and positive to free DOFs in σₖ, thus we use an array that combines σₖ with the two arrays of free and fixed DOF values accessing the right one depending on the index. But everything is lazy, only computed when accessing the array. As mentioned multiple times, laziness is one f the leitmotifs in Gridap, the other being immutability.
@@ -498,9 +497,9 @@ Xₖ = lazy_map(Broadcasting(Reindex(X)),cell_node_ids)
 # Following the same ideas, we can compute the Jacobian of the geometrical map (cell-wise). The Jacobian of the transformation is simply its gradient. The gradient in the parametric space can be built using two equivalent approaches. On the one hand, we can apply the `Broadcasting(∇)` `Map` to the array of `Fields` with the local shape basis functions (i.e., `ϕrg`). This results in an array of `Field`s with the gradients, (Recall that `Map`s can be applied to array of `Field`s in order to get new array of `Field`s) that we use to build a `Fill` array with the result. Finally, we build the lazy array with the cell-wise Jacobians of the map as the linear combination of the node coordinates and the gradients of the local cell shape basis functions:
 
 ∇ϕrg  = Broadcasting(∇)(ϕrg)
-
+#
 ∇ϕrgₖ = Fill(∇ϕrg,num_cells(model))
-
+#
 J = lazy_map(linear_combination,Xₖ,∇ϕrgₖ)
 
 # We note that `lazy_map` is not required in the first expression, as we are not actually working with cell arrays. On the other hand, using `lazy_map`, we can apply `Broadcasting(∇)` to the cell array of `Field`s with the geometrical map.
@@ -510,7 +509,7 @@ lazy_map(Broadcasting(∇),ψₖ)
 # As mentioned above, those two approaches are equivalent
 
 @test typeof(J) == typeof(lazy_map(Broadcasting(∇),ψₖ))
-
+#
 @test lazy_map(evaluate,J,qₖ) == lazy_map(evaluate,lazy_map(Broadcasting(∇),ψₖ),qₖ)
 
 # ## Computing the gradients of the trial and test FE space bases
@@ -518,25 +517,25 @@ lazy_map(Broadcasting(∇),ψₖ)
 # Another salient feature of Gridap is that we can directly take the gradient of finite element bases. (In general, of any `CellField` object.) In the following code snippet, we do so for `dv` and `du`
 
 grad_dv = ∇(dv)
-
+#
 grad_du = ∇(du)
 
 # The result of this operation when applied to a `FEBasis` object is a new `FEBasis` object.
 
 @test isa(grad_dv, Gridap.FESpaces.FEBasis)
-
+#
 @test isa(grad_du, Gridap.FESpaces.FEBasis)
 
 # We can also extract an array of arrays of `Fields`, as we have done before with `FEBasis` objects.
 
 grad_dv_array = get_data(grad_dv)
-
+#
 grad_du_array = get_data(grad_du)
 
 # The resulting `LazyArray`s encode the so-called pull back transformation of the gradients. We need this transformation in order to compute the gradients in physical space. The gradients in physical space are indeed the ones that we need to integrate in the finite element method, not the reference ones, even if we always evaluate the integrals in the parametric space of the reference cell. We can also check that the `DomainStyle` trait of `grad_dv` and `grad_du` is `ReferenceDomain`
 
 @test DomainStyle(grad_dv) == ReferenceDomain()
-
+#
 @test DomainStyle(grad_du) == ReferenceDomain()
 
 # This should not come as a surprise, as this is indeed the nature of the pull back transformation of the gradients. We provide `Point`s in the parametric space of the reference cell, and we get back the gradients in physical space evaluated at the mapped `Point`s in physical space.
@@ -546,7 +545,7 @@ grad_du_array = get_data(grad_du)
 ∇ϕr                  = Broadcasting(∇)(ϕr)
 ∇ϕrₖ                 = Fill(∇ϕr,num_cells(Tₕ))
 manual_grad_dv_array = lazy_map(Broadcasting(push_∇),∇ϕrₖ,ξₖ)
-
+#
 ∇ϕrᵀ                 = Broadcasting(∇)(transpose(ϕr))
 ∇ϕrₖᵀ                = Fill(∇ϕrᵀ,num_cells(Tₕ))
 manual_grad_du_array = lazy_map(Broadcasting(push_∇),∇ϕrₖᵀ,ξₖ)
@@ -565,11 +564,11 @@ low_level_manual_gradient_dv_array = lazy_map(Broadcasting(Operation(⋅)),inv_J
 # As always, we check that all arrays built are are equivalent
 
 @test typeof(grad_dv_array) == typeof(manual_grad_dv_array)
-
+#
 @test lazy_map(evaluate,grad_dv_array,qₖ) == lazy_map(evaluate,manual_grad_dv_array,qₖ)
-
+#
 @test lazy_map(evaluate,grad_dv_array,qₖ) == lazy_map(evaluate,low_level_manual_gradient_dv_array,qₖ)
-
+#
 @test lazy_map(evaluate,grad_dv_array,qₖ) == evaluate(grad_dv,Qₕ_cell_point)
 
 # With the lessons learned so far in this section, it is left as an exercise for the reader to manually build the array that `get_data` returns when we call it with the `CellField` object resulting from taking the gradient of uₕ as an argument, i.e., `get_data(∇(uₕ))`.
@@ -579,11 +578,11 @@ low_level_manual_gradient_dv_array = lazy_map(Broadcasting(Operation(⋅)),inv_J
 # Let us now create manually an array of `Field`s uₖ that returns the FE function uₕ at each cell, and another array with its gradients, ∇uₖ. We hope that the next set of instructions can be already understood with the material covered so far
 
 ϕrₖ = Fill(ϕr,num_cells(Tₕ))
-
+#
 ∇ϕₖ = manual_grad_dv_array
-
+#
 uₖ  = lazy_map(linear_combination,Uₖ,ϕrₖ)
-
+#
 ∇uₖ = lazy_map(linear_combination,Uₖ,∇ϕₖ)
 
 # Let us consider now the integration of (bi)linear forms. The idea is to
@@ -610,7 +609,7 @@ res = integrate(∇(uₕ)⋅∇(dv),Qₕ)
 Jq = lazy_map(evaluate,J,qₖ)
 intq = lazy_map(evaluate,Iₖ,qₖ)
 iwq = lazy_map(IntegrationMap(),intq,Qₕ.cell_weight,Jq)
-
+#
 @test all(res .≈ iwq)
 
 # The result is the cell-wise residual (previous to assembly). This is a lazy array but you could collect the element residuals into a plain Julia array if you want
@@ -634,11 +633,11 @@ assem = SparseMatrixAssembler(Uₕ,Vₕ)
 # We create a tuple with 1-entry arrays with the cell-wise vectors and cell ids. If we had additional terms, we would have more entries in the array. You can take a look at the `SparseMatrixAssembler` struct.
 
 cellids = get_cell_to_bgcell(Tₕ) # == identity_vector(num_cells(trian))
-
+#
 rs = ([iwq],[cellids])
-
+#
 b = allocate_vector(assem,rs)
-
+#
 assemble_vector!(b,assem,rs)
 
 # ## A low-level implementation of the Jacobian integration and assembly
@@ -647,22 +646,22 @@ assemble_vector!(b,assem,rs)
 
 ∇ϕₖᵀ = manual_grad_du_array
 int = lazy_map(Broadcasting(Operation(⋅)),∇ϕₖ,∇ϕₖᵀ)
-
+#
 @test all(collect(lazy_map(evaluate,int,qₖ)) .==
             collect(lazy_map(evaluate,get_data(∇(du)⋅∇(dv)),qₖ)))
-
+#
 intq = lazy_map(evaluate,int,qₖ)
 Jq = lazy_map(evaluate,J,qₖ)
 iwq = lazy_map(IntegrationMap(),intq,Qₕ.cell_weight,Jq)
-
+#
 jac = integrate(∇(dv)⋅∇(du),Qₕ)
-
+#
 @test collect(iwq) == collect(jac)
-
+#
 rs = ([iwq],[cellids],[cellids])
-
+#
 A = allocate_matrix(assem,rs)
-
+#
 A = assemble_matrix!(A,assem,rs)
 
 # Now we can obtain the free DOFs and add the solution to the initial guess
@@ -670,7 +669,7 @@ A = assemble_matrix!(A,assem,rs)
 x = A \ b
 uf = sol = get_free_values(uₕ) - x
 ufₕ = FEFunction(Uₕ,uf)
-
+#
 @test sum(integrate((u-ufₕ)*(u-ufₕ),Qₕ)) <= 10^-8
 
 # or if you like Unicode symbols

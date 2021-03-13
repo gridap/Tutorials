@@ -3,8 +3,7 @@
 
 # This tutorial is advanced and you only need to go through this if you want to know the internals of `Gridap` and what it does under the hood. Even though you will likely want to use the high-level APIs in `Gridap`, this tutorial will (hopefully) help if you want to become a `Gridap` developer, not just a user. We also consider that this tutorial shows how powerful and expressive the `Gridap` kernel is, and how mastering it you can implement new algorithms not currently provided by the library.
 
-# It is highly recommended (if not essential) that the tutorial is followed together with a Julia debugger, e.g., the one which comes with the Visual Studio Code (VSCode) extension for the Julia programming language. Some of the observations that come along with the code snippets are quite subtle/technical and may require a deeper exploration of the underlying code using a debugger.
-
+# As any other Gridap tutorial, this tutorial is primarily designed to be executed in a Jupyter notebook environment. However, the usage of a Julia debugger (typically outside of a Jupyter notebook environment), such as, e.g., the Julia REPL-based [`Debugger.jl`](https://github.com/JuliaDebug/Debugger.jl) package, or the one which comes along with the Visual Studio Code (VSCode) extension for the Julia programming language, may help the reader eager to understand the full detail of the explanations given. Some of the observations that come along with the code snippets are quite subtle/technical and may require a deeper exploration of the underlying code using a debugger.
 
 # ## Including Gridap's low-level API
 

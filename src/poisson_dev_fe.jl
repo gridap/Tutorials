@@ -389,8 +389,6 @@ smart_sum(manual_uₕ_array_at_qₖ) # Execute once before to neglect JIT-compil
 
 # we can observe that the array returned by `Gridap` can be summed in significantly less time, using significantly less allocations.
 
-# <!-- [WHY THE SECOND PIECE OF CODE REQUIRES A NUMBER OF ALLOCATIONS THAT GROWS WITH THE NUMBER OF CELLS? I CAN UNDERSTAND THAT THE CACHE ARRAY of `manual_uₕ_array_at_qₖ` REQUIRES MORE MEMORY IN ABSOLUTE TERMS, BUT I AM NOT ABLE TO SEE WHY IT GROWS WITH THE NUMBER OF CELLS!!!! ANY HINT?] -->
-
 # Let us try to answer the question now qualitatively. In order to do so, we can take a look at the structure of both `LazyArray`s using the `print_op_tree` function provided by `Gridap`
 
 print_op_tree(uₕ_array_at_qₖ)

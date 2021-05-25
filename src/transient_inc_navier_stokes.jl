@@ -5,6 +5,85 @@
 #     This tutorial is under construction, but the code below is already functional.
 #
 
+# This tutorial builds on the steady Incompressible Navier-Stokes tutorial. Here we will learn
+# the following additional feature:
+#  - How to solve a transient nonlinear multi-field problem in Gridap
+#
+# ## Problem statement
+#
+# The goal of this tutorial is to solve a transient nonlinear multi-field PDE. As a model problem, we consider a well known benchmark in computational fluid dynamics, the flow around a cylinder. Formally, the PDE we want to solve is: find the velocity vector $u$ and the pressure $p$ such that
+#
+# ```math
+# \left\lbrace
+# \begin{aligned}
+# \partial_t u-2\nu\epsilon(u) + (u\cdot \nabla)\ u + \nabla p = 0 &\text{ in }\Omega,\\
+# \nabla\cdot u = 0 &\text{ in } \Omega,\\
+# u = u_{\text{\footnotesize in}} &\text{ on } \Gamma_{\text{\footnotesize in}},\\
+# u = 0 &\text{ on } \Gamma_{\text{\footnotesize wall}},\\
+# (2\nu\epsilon(u)-p\mathbf{I})⋅n_{\text{\footnotesize out}} = 0 &\text{ on } \Gamma_{\text{\footnotesize out}},\\
+# \end{aligned}
+# \right.
+# ```
+#
+# where $\epsilon(u)=\frac{1}{2}(\nabla u +\nabla u^T)$ is the symmetric gradient operator applied to the velocity vector. 
+# 
+# The computational domain, $\Omega$, is a channel of heigh $H=0.41$ and length $L=2.0$, with a cylinder of diameter $\varnothing=0.1$ and centre coordinates $(x_c,y_c)=(0.2,0.2)$ from the left-bottom corner. 
+# The left side of the channel is the inlet boundary, $\Gamma_{\text{\footnotesize in}}$, the right side of the channel is the outlet boundary, $\Gamma_{\text{\footnotesize out}}$, and the wall boundary, $\Gamma_{\text{\footnotesize wall}}$ is composed by the top and bottom sides, together with the cylinder.
+#
+
+# !!! todo
+#     Add figure
+#
+
+#
+# In this example, the driving force is given by the inlet Dirichlet boundary velocity $u_{\text{\footnotesize in}}$, which is defined by an horizontal velocity with a parabolic profile: $
+#
+# ```math
+# u_{\text{\footnotesize in}} = 1.5 U_m \frac{y (H - y)}{(H / 2)^2}.
+# ```
+#
+# Here $U_m$ is the mean flow velocity set to $U_m=1.0$. In this tutorial we select the benchmark case with a characteristic Reynolds number of $Re=100$, resulting in a viscosity value of $\nu=\frac{U_m\varnothing}{Re}$. All the problem parameters are set as constants in the tutorial.
+
+const Uₘ = 1.0
+const H = 0.41
+const ∅ = 0.1
+const ρ = 1.0
+const Re = 100.0
+const ν = Um * ∅ / Re 
+
+# ## Numerical Scheme
+#
+# In order to approximate this problem we chose a formulation based on inf-sub stable $Q_k/P_{k-1}$ elements with continuous velocities and discontinuous pressures (see, e.g., [1] for specific details). The interpolation spaces are defined as follows.  The velocity interpolation space is
+#
+# ```math
+# V \doteq \{ v \in [C^0(\Omega)]^d:\ v|_T\in [Q_k(T)]^d \text{ for all } T\in\mathcal{T} \},
+# ```
+# where $T$ denotes an arbitrary cell of the FE mesh $\mathcal{T}$, and $Q_k(T)$ is the local polynomial space in cell $T$ defined as the multi-variate polynomials in $T$ of order less or equal to $k$ in each spatial coordinate. Note that, this is the usual continuous vector-valued Lagrangian FE space of order $k$ defined on a mesh of quadrilaterals or hexahedra.  On the other hand, the space for the pressure is
+#
+# ```math
+# \begin{aligned}
+# Q_0 &\doteq \{ q \in Q: \  \int_\Omega q \ {\rm d}\Omega = 0\}, \text{ with}\\
+# Q &\doteq \{ q \in L^2(\Omega):\ q|_T\in P_{k-1}(T) \text{ for all } T\in\mathcal{T}\},
+# \end{aligned}
+# ```
+# where $P_{k-1}(T)$ is the polynomial space of multi-variate polynomials in $T$ of degree less or equal to $k-1$. Note that functions in $Q_0$ are strongly constrained to have zero mean value. This is achieved in the code by removing one degree of freedom from the (unconstrained) interpolation space $Q$ and  adding a constant to the computed pressure so that the resulting function has zero mean value.
+#
+# The weak form associated to these interpolation spaces reads: find $(u,p)\in U_g \times Q_0$ such that $[r(u,p)](v,q)=0$ for all $(v,q)\in V_0 \times Q_0$
+# where $U_g$ and $V_0$ are the set of functions in $V$ fulfilling the Dirichlet boundary condition $g$ and $0$  on $\partial\Omega$ respectively. The weak residual $r$ evaluated at a given pair $(u,p)$ is the linear form defined as
+#
+# ```math
+# [r(u,p)](v,q) \doteq a((u,p),(v,q))+ [c(u)](v),
+# ```
+# with
+# ```math
+# \begin{aligned}
+# a((u,p),(v,q)) &\doteq \int_{\Omega} \nabla v \cdot \nabla u \ {\rm d}\Omega - \int_{\Omega} (\nabla\cdot v) \ p \ {\rm d}\Omega + \int_{\Omega} q \ (\nabla \cdot u) \ {\rm d}\Omega,\\
+# [c(u)](v) &\doteq \int_{\Omega} v 	\cdot \left( (u\cdot\nabla)\ u \right)\ {\rm d}\Omega.\\
+# \end{aligned}
+# ```
+# Note that the bilinear form $a$ is associated with the linear part of the PDE, whereas $c$ is the contribution to the residual resulting from the convective term.
+#
+
 using Gridap
 using LinearAlgebra
 using GridapODEs.ODETools
@@ -17,13 +96,7 @@ import GridapODEs.TransientFETools: ∂t
 
 # ## Problem setting
 # Parameters
-const Um = 1.0
-const H = 0.41
-const ⌀ = 0.1
-const ρ = 1.0
 const t0 = 0.0
-const Re = 100.0
-const ν = Um * ⌀ / Re
 
 # Boundary conditions
 u_in(x, t) = VectorValue(1.5 * Um * x[2] * (H - x[2]) / ((H / 2)^2), 0.0)
@@ -136,7 +209,7 @@ function computeForces(model::DiscreteModel, sol, xh0)
     n_Γc = get_normal_vector(trian_Γc)
 
     ## Drag & Lift coefficients
-    coeff(F) = 2 * F / (ρ * Um^2 * ⌀)
+    coeff(F) = 2 * F / (ρ * Um^2 * ∅)
 
     ## Initialize arrays
     tpl = Real[]

@@ -12,12 +12,12 @@ import GridapODEs.TransientFETools: ∂t
 
 # ## Problem setting
 # ### Problem parameters
-const Um = 1.0
+const Um = 0.2
 const H = 0.41
 const ⌀ = 0.1
 const ρ = 1.0
 const t0 = 0.0
-const Re = 100.0
+const Re = 20.0
 
 # ### Boundary conditions
 u_in(x, t) = VectorValue(1.5 * Um * x[2] * (H - x[2]) / ((H / 2)^2), 0.0)
@@ -36,7 +36,7 @@ function lame_parameters(E,ν)
 	(λ, μ)
 end
 (λ_s,μ_s) = lame_parameters(1.4e6, 0.4)
-ρ_s = 1.0e4
+ρ_s = 1.0e3
 ρ_f = 1.0e3
 μ_f = ρ_f * Um * ⌀ / Re
 α_u = 1.0e-5
@@ -63,7 +63,7 @@ dΩf = Measure(Ωf,degree)
 dΓi = Measure(Γi,bdegree)
 dΛf = Measure(Λf,bdegree)
 nΓi = get_normal_vector(Γi)
-nΛs = get_normal_vector(Λf)
+nΛf = get_normal_vector(Λf)
 
 # ## Lagrangian / ALE map related quantities
 F(∇u) = ∇u + one(∇u)
@@ -127,20 +127,22 @@ hΛf = get_array(∫(1)dΛf)
 αΛf = CellField( lazy_map(h->γ*μ_f/(h.^dim),hΛf), Λf)
 
 # ### Residual
-function res(t,(u,v,p),(ut,vt,pt),(ϕ,φ,q))
-	∫( α_u*Δ(u)*Δ(ϕ) + 
+function res(t,((u,v,p),(ut,vt,pt)),(ϕ,φ,q))
+	#∫( α_u*Δ(u)⋅Δ(ϕ) + 
+	∫( α_u*∇(u)⊙∇(ϕ) + 
 		 ( (J∘∇(u)) * ρ_f * vt ) ⋅ φ + 
 		 ( (J∘∇(u)) * ρ_f * (conv∘((Finv∘∇(u))⋅(v-ut), ∇(v)) )) ⋅ φ +
 		 ( (J∘∇(u)) * (σ_dev∘(∇(v),Finv∘∇(u))) ⋅ (FinvT∘∇(u)) ) ⊙ ∇(φ) + 
 		 ( (J∘∇(u)) * p * tr(FinvT∘∇(u)) ) * (∇⋅φ) +
 		 ( (J∘∇(u)) * (∇(v)⊙(FinvT∘∇(u))) ) * q )dΩf +
-	∫( - mean(Δ(u))*jump(∇(ϕ)⋅nΛf) - jump(∇(u)⋅nΛf)*mean(Δ(ϕ)) + αΛf*jump(∇(u)⋅nΛf)*jump(∇(ϕ)⋅nΛf) )dΛf +
-	∫( (ut-v)⋅ϕ + 0.0*(u⋅ϕ) + ρ_s*(vt⋅φ) + 0.0*(φ⋅v) + ((F∘∇(u))⋅(S∘∇(u))) ⊙ ∇(φ) )dΩs
+	#∫( - mean(Δ(u))⋅jump(∇(ϕ)⋅nΛf) - jump(∇(u)⋅nΛf)⋅mean(Δ(ϕ)) + αΛf*jump(∇(u)⋅nΛf)⋅jump(∇(ϕ)⋅nΛf) )dΛf +
+	∫( (ut-v)⋅ϕ + ρ_s*(vt⋅φ) + ((F∘∇(u))⋅(S∘∇(u))) ⊙ ∇(φ) )dΩs
 end
 
 # ### Spatial Jacobian
-function jac(t,(u,v,p),(ut,vt,pt),(du,dv,dp),(ϕ,φ,q))
-	∫( α_u*Δ(du)*Δ(ϕ) + 
+function jac(t,((u,v,p),(ut,vt,pt)),(du,dv,dp),(ϕ,φ,q))
+	#∫( α_u*Δ(du)⋅Δ(ϕ) + 
+	∫( α_u*∇(du)⊙∇(ϕ) + 
 		 ( (dJ∘(∇(u),∇(du))) * ρ_f * vt ) ⋅ φ + 
 		 ( (dJ∘(∇(u),∇(du))) * ρ_f * (conv∘((Finv∘∇(u))⋅(v-ut), ∇(v)) )) ⋅ φ +
 		 ( (J∘∇(u)) * ρ_f * (conv∘((dFinv∘(∇(u),∇(du)))⋅(v-ut), ∇(v)) )) ⋅ φ +
@@ -155,12 +157,12 @@ function jac(t,(u,v,p),(ut,vt,pt),(du,dv,dp),(ϕ,φ,q))
 		 ( (dJ∘(∇(u),∇(du))) * (∇(v)⊙(FinvT∘∇(u))) ) * q  +
 		 ( (J∘∇(u)) * (∇(v)⊙(dFinvT∘(∇(u),∇(du)))) ) * q  +
 		 ( (J∘∇(u)) * (∇(dv)⊙(FinvT∘∇(u))) ) * q )dΩf +
-	∫( - mean(Δ(du))*jump(∇(ϕ)⋅nΛf) - jump(∇(du)⋅nΛf)*mean(Δ(ϕ)) + αΛf*jump(∇(du)⋅nΛf)*jump(∇(ϕ)⋅nΛf) )dΛf +
-	∫( -dv⋅ϕ + 0.0*(du⋅ϕ) + 0.0*(φ⋅dv) + ((dF∘(∇(u),∇(du)))⋅(S∘∇(u)) + (F∘∇(u))⋅(dS∘(∇(u),∇(du)))) ⊙ ∇(φ) )dΩs
+	#∫( - mean(Δ(du))⋅jump(∇(ϕ)⋅nΛf) - jump(∇(du)⋅nΛf)⋅mean(Δ(ϕ)) + αΛf*jump(∇(du)⋅nΛf)⋅jump(∇(ϕ)⋅nΛf) )dΛf +
+	∫( -dv⋅ϕ + ((dF∘∇(du))⋅(S∘∇(u)) + (F∘∇(u))⋅(dS∘(∇(u),∇(du)))) ⊙ ∇(φ) )dΩs
 end
 
 # ### Temporal Jacobian
-function jac_t(t,(u,v,p),(ut,vt,pt),(dut,dvt,dpt),(ϕ,φ,q))
+function jac_t(t,((u,v,p),(ut,vt,pt)),(dut,dvt,dpt),(ϕ,φ,q))
 	∫( ( (J∘∇(u)) * ρ_f * dvt ) ⋅ φ + 
 	 - ( (J∘∇(u)) * ρ_f * (conv∘((Finv∘∇(u))⋅dut, ∇(v)) )) ⋅ φ )dΩf +
 	∫( dut⋅ϕ + ρ_s*(dvt⋅φ) )dΩs
@@ -186,7 +188,7 @@ nls = NLSolver(
 Δt = 0.01
 θ = 0.5
 t₀ = 0.0
-tf = 0.02
+tf = 1.0
 odes =  ThetaMethod(nls, Δt, θ)
 solver = TransientFESolver(odes)
 
@@ -200,7 +202,7 @@ xhₜ = solve(solver, op, xh₀, t₀, tf)
 filePath = "FSI2"
 outfiles = paraview_collection(filePath, append=true) do pvd
 	for (i, (xh, t)) in enumerate(xhₜ)
-		pvd[t] = createvtk(Ω,filePath * "_$t.vtu",cellfields = ["uh" => uh, "vh" => vh, "ph" => ph])
+		pvd[t] = createvtk(Ω,filePath * "_$t.vtu",cellfields = ["uh" => xh[1], "vh" => xh[2], "ph" => xh[3]])
 	end
 end
 

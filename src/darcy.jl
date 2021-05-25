@@ -33,11 +33,11 @@
 # \ \text	{otherwise.}
 # ```
 #
-# In order to state this problem in weak form, we introduce the following Sobolev spaces. $H(\mathrm{div};\Omega)$ is the space of vector fields in $\Omega$, whose components and divergence are in $L^2(\Omega)$. On the other hand, $H_g(\mathrm{div};\Omega)$ and $H_0(\mathrm{div};\Omega)$ are the subspaces of functions in $H(\mathrm{div};\Omega)$ such that their normal traces are equal to $g$ and $0$ respectively almost everywhere in $\Gamma_{\rm D}$. With these notations, the weak form reads: find $(u,p)\in H_g(\mathrm{div};\Omega)\times L^2(\Omega)$ such that $a((u,q),(v,q)) = b(v,q)$ for all $(v,q)\in H_0(\mathrm{div};\Omega)\times L^2(\Omega)$, where
+# In order to state this problem in weak form, we introduce the following Sobolev spaces. $H(\mathrm{div};\Omega)$ is the space of vector fields in $\Omega$, whose components and divergence are in $L^2(\Omega)$. On the other hand, $H_g(\mathrm{div};\Omega)$ and $H_0(\mathrm{div};\Omega)$ are the subspaces of functions in $H(\mathrm{div};\Omega)$ such that their normal traces are equal to $g$ and $0$ respectively almost everywhere in $\Gamma_{\rm D}$. With these notations, the weak form reads: find $(u,p)\in H_g(\mathrm{div};\Omega)\times L^2(\Omega)$ such that $a((u,p),(v,q)) = b(v,q)$ for all $(v,q)\in H_0(\mathrm{div};\Omega)\times L^2(\Omega)$, where
 #
 # ```math
 # \begin{aligned}
-# a((u,q),(v,q)) &\doteq \int_{\Omega}  v \cdot \left(\kappa^{-1} u\right) \ {\rm d}\Omega - \int_{\Omega} (\nabla \cdot v)\ p \ {\rm d}\Omega + \int_{\Omega} q\ (\nabla \cdot u) \ {\rm d}\Omega,\\
+# a((u,p),(v,q)) &\doteq \int_{\Omega}  v \cdot \left(\kappa^{-1} u\right) \ {\rm d}\Omega - \int_{\Omega} (\nabla \cdot v)\ p \ {\rm d}\Omega + \int_{\Omega} q\ (\nabla \cdot u) \ {\rm d}\Omega,\\
 # b(v,q) &\doteq \int_{\Omega} q\ f \ {\rm  d}\Omega - \int_{\Gamma_{\rm N}} (v\cdot n)\ h  \ {\rm  d}\Gamma.
 # \end{aligned}
 # ```
@@ -45,7 +45,7 @@
 #
 #  ## Numerical scheme
 #
-# In this tutorial, we use the Raviart-Thomas (RT)  space for the flux approximation [1]. On a reference square with sides aligned with the Cartesian axes, the \ac{rt} space of order $k$ is represented as $Q_{(k+1,k)} \times Q_{(k,k+1)}$, being the polynomial space defined as follows. The component  $w_\alpha$ of a vector field $w$ in $Q_{(k+1,k)} \times Q_{(k,k+1)}$ is obtained as the tensor product of univariate polynomials of order $k+1$ in direction $\alpha$ times univariate polynomials of order $k$ on the other directions. That is, $\nabla\cdot w \in Q_k$, where $Q_k$ is the multivariate polynomial space of degree at most $k$ in each of the spatial coordinates. Note that the definition of the \ac{rt} space also applies to arbitrary dimensions. The global FE space for the flux $V$ is obtained by mapping the cell-wise RT space into the physical space using the Piola transformation and enforcing continuity of normal traces across cells (see [1] for specific details).
+# In this tutorial, we use the Raviart-Thomas (RT)  space for the flux approximation [1]. On a reference square with sides aligned with the Cartesian axes, the RT space of order $k$ is represented as $Q_{(k+1,k)} \times Q_{(k,k+1)}$, being the polynomial space defined as follows. The component  $w_\alpha$ of a vector field $w$ in $Q_{(k+1,k)} \times Q_{(k,k+1)}$ is obtained as the tensor product of univariate polynomials of order $k+1$ in direction $\alpha$ times univariate polynomials of order $k$ on the other directions. That is, $\nabla\cdot w \in Q_k$, where $Q_k$ is the multivariate polynomial space of degree at most $k$ in each of the spatial coordinates. Note that the definition of the RT space also applies to arbitrary dimensions. The global FE space for the flux $V$ is obtained by mapping the cell-wise RT space into the physical space using the Piola transformation and enforcing continuity of normal traces across cells (see [1] for specific details).
 #
 #  We consider the subspace  $V_0$ of functions in $V$ with zero normal trace on $\Gamma_{\rm D}$, and the subspace $V_g$ of functions in $V$ with normal trace equal to the projection of $g$ onto the space of traces of $V$ on $\Gamma_{\rm D}$. With regard to the pressure, we consider the discontinuous space of cell-wise polynomials in $Q_k$.
 #
@@ -117,7 +117,7 @@ px = get_physical_coordinate(trian)
 
 a((u,p), (v,q)) = ∫(v⋅(σ∘(px,u)) - (∇⋅v)*p + q*(∇⋅u))dΩ
 
-# The arguments `(u,p)` and `(v,q)` of previous function represent a trial and a test functions. Notice that we unpak the functions directly from the multi-field test and trial spaces `X` and `Y`. E.g., `v` represents a test function for the flux and `q` for the pressure, which correspond to the first and second entries of `Y`. From the single-field functions, we write the different terms of the bilinear form as we have done in previous tutorials.
+# The arguments `(u,p)` and `(v,q)` of function `a` represent a trial and a test function, respectively. Notice that we unpack the functions directly from the multi-field test and trial spaces `X` and `Y`. E.g., `v` represents a test function for the flux and `q` for the pressure, which correspond to the first and second entries of `Y`. From the single-field functions, we write the different terms of the bilinear form as we have done in previous tutorials.
 #
 # In a similar way, we can define the forcing term related to the Neumann boundary condition.
 

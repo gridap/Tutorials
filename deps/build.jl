@@ -17,6 +17,7 @@ files = [
   "Isotropic damage model" => "isotropic_damage.jl",
   "Fluid-Structure Interaction"=>"fsi_tutorial.jl",
   "Laminar flow around a cylinder"=>"transient_inc_navier_stokes.jl"]
+  "Low-level API Poisson equation"=>"poisson_dev_fe.jl"]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)
 for (i,(title,filename)) in enumerate(files)

@@ -5,3 +5,6 @@ Manifest.toml
 .ipynb_checkpoints/
 *.vtu
 *.pvd
+tmp/
+.vscode/
+*.code-workspace

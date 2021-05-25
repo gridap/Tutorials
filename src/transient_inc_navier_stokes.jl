@@ -44,10 +44,9 @@
 #
 # Here $U_m$ is the mean flow velocity set to $U_m=1.0$. In this tutorial we select the benchmark case with a characteristic Reynolds number of $Re=100$, resulting in a viscosity value of $\nu=\frac{U_m\varnothing}{Re}$. All the problem parameters are set as constants in the tutorial.
 
-const Uₘ = 1.0
+const Um = 1.0
 const H = 0.41
 const ∅ = 0.1
-const ρ = 1.0
 const Re = 100.0
 const ν = Um * ∅ / Re 
 

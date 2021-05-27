@@ -10,6 +10,7 @@
 #  - How to solve a transient nonlinear multi-field problem in Gridap
 #
 # ## Problem statement
+# ### Strong form
 #
 # The goal of this tutorial is to solve a transient nonlinear multi-field PDE. As a model problem, we consider a well known benchmark in computational fluid dynamics, the flow around a cylinder. Formally, the PDE we want to solve is: find the velocity vector $u$ and the pressure $p$ such that
 #
@@ -25,7 +26,9 @@
 # \right.
 # ```
 #
-# where $\epsilon(u)=\frac{1}{2}(\nabla u +\nabla u^T)$ is the symmetric gradient operator applied to the velocity vector. 
+# where $\epsilon(u)=\frac{1}{2}(\nabla u +\nabla u^T)$ is the symmetric gradient operator applied to the velocity vector.
+
+# ### Geometry and Discrete model
 # 
 # The computational domain, $\Omega$, is a channel of heigh $H=0.41$ and length $L=2.0$, with a cylinder of diameter $\varnothing=0.1$ and centre coordinates $(x_c,y_c)=(0.2,0.2)$ from the left-bottom corner. 
 # The left side of the channel is the inlet boundary, $\Gamma_{\text{\footnotesize in}}$, the right side of the channel is the outlet boundary, $\Gamma_{\text{\footnotesize out}}$, and the wall boundary, $\Gamma_{\text{\footnotesize wall}}$ is composed by the top and bottom sides, together with the cylinder.
@@ -35,11 +38,23 @@
 #     Add figure
 #
 
+# Before going further, let's load Gridap library so we can use some of the functionalities.
+
+using Gridap
+
+# The geometry for this problem has been generated using Gmsh and can be loaded by calling the `DiscreteModelFromFile` function and sending the file located at `"../models/cylinder_NSI.json"`.
+model = DiscreteModelFromFile("../models/cylinder_NSI.json")
+
+# We can inspect the loaded geometry and associated parts by printing to a `vtk` file:
+writevtk(model, "model")
+
+# ### Boundary conditions and problem parameters
+
 #
-# In this example, the driving force is given by the inlet Dirichlet boundary velocity $u_{\text{\footnotesize in}}$, which is defined by an horizontal velocity with a parabolic profile: $
+# In this example, the driving force is given by the inlet Dirichlet boundary velocity $u_{\text{\footnotesize in}}$, which is defined by an horizontal velocity with a constant parabolic profile:
 #
 # ```math
-# u_{\text{\footnotesize in}} = 1.5 U_m \frac{y (H - y)}{(H / 2)^2}.
+# u_{\text{\footnotesize in}}(x,y,t) = 1.5 U_m \frac{y (H - y)}{(H / 2)^2}.
 # ```
 #
 # Here $U_m$ is the mean flow velocity set to $U_m=1.0$. In this tutorial we select the benchmark case with a characteristic Reynolds number of $Re=100$, resulting in a viscosity value of $\nu=\frac{U_m\varnothing}{Re}$. All the problem parameters are set as constants in the tutorial.
@@ -50,22 +65,109 @@ const ∅ = 0.1
 const Re = 100.0
 const ν = Um * ∅ / Re 
 
+
+# The inlet condition, $u_{\text{\footnotesize in}}$, and the no-slip condition at the walls, $u_{\text{\footnotesize wall}}$, can be defined as a function of space and time as follows:
+
+u_in(x, t::Real) = VectorValue(1.5 * Um * x[2] * (H - x[2]) / ((H / 2)^2), 0.0)
+u_wall(x, t::Real) = VectorValue(0.0, 0.0)
+
+# To evaluate the boundary conditions at certain time instances, we also need a function that, given a fixed time $t$, it returns a function of space only. That is achieved exploiting julia's multiple-dispatch feature:
+
+u_in(t::Real) = x -> u_in(x, t)
+u_wall(t::Real) = x -> u_wall(x, t)
+
 # ## Numerical Scheme
+# ### FE spaces
 #
-# In order to approximate this problem we chose a formulation based on inf-sub stable $Q_k/P_{k-1}$ elements with continuous velocities and discontinuous pressures (see, e.g., [1] for specific details). The interpolation spaces are defined as follows.  The velocity interpolation space is
+# In order to approximate this problem we chose a formulation based on inf-sub stable $P_k/P_{k-1}$ elements with continuous velocities and pressures (see, e.g., [1] for specific details). The interpolation spaces are defined as follows.  
+
+# ##### Velocity FE space
+# The velocity interpolation space is
 #
 # ```math
-# V \doteq \{ v \in [C^0(\Omega)]^d:\ v|_T\in [Q_k(T)]^d \text{ for all } T\in\mathcal{T} \},
+# V \doteq \{ v \in [C^0(\Omega)]^d:\ v|_T\in [P_k(T)]^d \text{ for all } T\in\mathcal{T} \},
 # ```
-# where $T$ denotes an arbitrary cell of the FE mesh $\mathcal{T}$, and $Q_k(T)$ is the local polynomial space in cell $T$ defined as the multi-variate polynomials in $T$ of order less or equal to $k$ in each spatial coordinate. Note that, this is the usual continuous vector-valued Lagrangian FE space of order $k$ defined on a mesh of quadrilaterals or hexahedra.  On the other hand, the space for the pressure is
+# where $T$ denotes an arbitrary cell of the FE mesh $\mathcal{T}$, and $P_k(T)$ is the usual continuous vector-valued Lagrangian FE space of order $k$ defined on a mesh of triangles or tetrahedra. In this tutorial we will enforce the Dirichlet boundary conditions strongly, therefore the velocity test and trial spaces are given by 
 #
 # ```math
 # \begin{aligned}
-# Q_0 &\doteq \{ q \in Q: \  \int_\Omega q \ {\rm d}\Omega = 0\}, \text{ with}\\
-# Q &\doteq \{ q \in L^2(\Omega):\ q|_T\in P_{k-1}(T) \text{ for all } T\in\mathcal{T}\},
+# V_0 &\doteq \{ v \in V:\ v\vert_{\Gamma_{\text{\footnotesize in}}\cup\Gamma_{\text{\footnotesize wall}}}=0 \},\\
+# U &\doteq \{ v \in V:\ v\vert_{\Gamma_{\text{\footnotesize in}}}=u_{\text{\footnotesize in}},\ v\vert_{\Gamma_{\text{\footnotesize wall}}}=u_{\text{\footnotesize wall}} \}.
 # \end{aligned}
 # ```
-# where $P_{k-1}(T)$ is the polynomial space of multi-variate polynomials in $T$ of degree less or equal to $k-1$. Note that functions in $Q_0$ are strongly constrained to have zero mean value. This is achieved in the code by removing one degree of freedom from the (unconstrained) interpolation space $Q$ and  adding a constant to the computed pressure so that the resulting function has zero mean value.
+
+# After these definitions we are ready to define the velocity FE spaces. We start by defining the reference FE for the velocity field, which is defined by a 2-dimensional `VectorValue` type `lagrangian` reference FE element of order `k` (in that case $k=2$). 
+const k = 2
+reffeᵤ = ReferenceFE(lagrangian,VectorValue{2,Float64},k)
+
+# Now we have all the ingredients to define the velocity FE spaces. The test space $V_0$ is created by calling `TestFESpace` and sending the `model` containing the discretization information, `reffeᵤ` with the description of the reference FE space, `:H1` conformity and the set of labels for the Dirichlet boundaries.
+V₀ = TestFESpace(model, reffeᵤ, conformity=:H1, dirichlet_tags=["inlet", "noslip", "cylinder"])
+
+# The trial velocity FE space is constructed from the test space and sending the function to be enforced in the different Dirichlet boundaries. It is important to note that, since the problem is transient, the trial FE space is a `TransientTrialFESpace`. This type accomodates the fact that the Dirichlet boundary conditions can depend on time. In order to use the `TransientTrialFESpace` we first need to load the `TransientFETools` module of the `GridapODEs` package.
+using GridapODEs.TransientFETools
+U = TransientTrialFESpace(V₀, [u_in, u_wall, u_wall])
+
+# ##### Pressure FE space
+#
+# On the other hand, the FE space for the pressure is given by
+#
+# ```math
+# \begin{aligned}
+# Q &\doteq \{ q \in C^0(\Omega):\ q|_T\in P_{k-1}(T) \text{ for all } T\in\mathcal{T}\},
+# \end{aligned}
+# ```
+# where $P_{k-1}(T)$ is the polynomial space of multi-variate polynomials in $T$ of degree less or equal to $k-1$. Again, here we first define the reference FE for the pressure, which is given by a scalar value type `:Lagrangian` reference FE element of order `k-1`.
+reffe_p = ReferenceFE(lagrangian,Float64,k-1)
+
+# The test and trial spaces for the pressure field are regular static spaces constructed with the `TestFESpace` and `TrialFESpace` and the corresponding reference FE element.
+Q = TestFESpace(model, reffe_p, conformity=:C0)
+P = TrialFESpace(Q)
+
+# Finally, we glue the test and trial FE spaces together, defining a unique test and trial space for all the fields using the `MultiFieldFESpace` function. That is $Y=[V_0, Q]^T$ and $X=[U, P]^T$
+Y = MultiFieldFESpace([V₀,Q])
+X = MultiFieldFESpace([U,P])
+
+# ### Numerical integration
+# To define the quadrature rules used in the numerical integration of the different terms, we first need to generate the domain triangulation. Here we create the triangulation of the global domain, $\mathcal{T}$.
+Ω = Triangulation(model)
+
+# Once we have the triangulation, we can generate the quadrature rules. This will be generated by calling the `Measure` function, that given a triangulation and an integration degree, it returns the Lebesgue integral measure $d\Omega$.
+degree = 2*k
+dΩ = Measure(Ω,degree)
+
+# ### Weak form
+# The weak form of the transient Navier-Stokes problem reads: find $[\mathbf{u}^h, p^h]^T \in X$ such that
+# ```math
+# a([\mathbf{u}^h, p^h],[\mathbf{v}^h, q^h])=l([\mathbf{v}^h, q^h])\qquad\forall[\mathbf{v}^h, q^h]^T\in Y,
+# ```
+# where
+# ```math
+# \begin{aligned}
+# &a([\mathbf{u}^h, p^h],[\mathbf{v}^h, q^h])\doteq \int_{\Omega} \left[ \mathbf{v}\cdot\partial_t\mathbf{u}+ \mathbf{v}\cdot(\mathbf{u}\cdot\nabla)\mathbf{u} + 2\nu\epsilon(\mathbf{v}):\epsilon(\mathbf{u}) - (\nabla\cdot \mathbf{v}) \ p + q \ (\nabla \cdot \mathbf{u})\right] \ {\rm d}\Omega,\\
+# &l([\mathbf{v}^h, q^h])\doteq 0.
+# \end{aligned}
+# ```
+a((u,ut,p),(v,q)) = ∫( v⋅ut + v⋅((∇(u)')⋅u) + 2*ν*(ε(v)⊙ε(u)) - (∇⋅v)*p + q*(∇⋅u) )dΩ
+l((v,q)) = 0
+
+# Note that we keep the velocity time derivative as a variable. The main reason behind this approach is that in this way, the variational form is not tied to a particular time integrator. This allows to have a time discretization that is handled internally by `GridapODEs`. 
+
+# Due to the presence of the convective term, this problem is nonlinear. To solve a time-dependent nonlinear problem we define a transient nonlinear FE operator from the residual (`res`), jacobian with respect to the unknowns (`jac`) and jacobian with respect to the unknowns' time derivative (`jac_t`). The `TransientFEOperator` expects a residual function with three arguments: the time `t`, a Tuple with the unknowns and unknowns' time derivative `((u,p),(ut,))` and the test functions `(v,q)`. 
+res(t,((u,p),(ut,)),(v,q)) = a((u,ut,p),(v,q)) - l((v,q))
+
+# The Jacobian with respect to the unknowns expects: the time `t`, a Tuple with the unknowns and unknowns' time derivative `((u,p),(ut,))`, i.e. linearization point, the linearized unknowns `(du,dp)` and the test functions `(v,q)`. 
+jac(t,((u,p),(ut,)),(du,dp),(v,q)) = ∫( v⋅((∇(du)')⋅u) + v⋅((∇(u)')⋅du) + 2*ν*(ε(v)⊙ε(du)) - (∇⋅v)*dp + q*(∇⋅du) )dΩ
+
+# Finally, the Jacobian with respect to the unknowns' time derivative expects: the time `t`, a Tuple with the unknowns and unknowns' time derivative `((u,p),(ut,))`, i.e. linearization point, the linearized unknowns' time derivative `(dut,)` and the test functions `(v,q)`.
+jac_t(t,((u,p),(ut,)),(dut,),(v,q)) = ∫( v⋅dut )dΩ
+
+# With the residuals and jacobians defined, we can construct the FE operator.
+op = TransientFEOperator(res,jac,jac_t,X,Y)
+
+# One of the features of Gridap and GridapODEs is the ability to automatically derive the jacobians with respect to the unknowns and unknowns' time derivative, using automatic differentiation tools provided by `ForwardDiff`. This is achieved by simply calling the `TransientFEOperator` with the residual and the variational spaces as the only arguments.
+using ForwardDiff
+op_AD = TransientFEOperator(res,X,Y)
+
 #
 # The weak form associated to these interpolation spaces reads: find $(u,p)\in U_g \times Q_0$ such that $[r(u,p)](v,q)=0$ for all $(v,q)\in V_0 \times Q_0$
 # where $U_g$ and $V_0$ are the set of functions in $V$ fulfilling the Dirichlet boundary condition $g$ and $0$  on $\partial\Omega$ respectively. The weak residual $r$ evaluated at a given pair $(u,p)$ is the linear form defined as
@@ -83,10 +185,8 @@ const ν = Um * ∅ / Re
 # Note that the bilinear form $a$ is associated with the linear part of the PDE, whereas $c$ is the contribution to the residual resulting from the convective term.
 #
 
-using Gridap
 using LinearAlgebra
 using GridapODEs.ODETools
-using GridapODEs.TransientFETools
 using Gridap.FESpaces: get_algebraic_operator
 using WriteVTK
 using LineSearches: BackTracking
@@ -98,10 +198,7 @@ import GridapODEs.TransientFETools: ∂t
 const t0 = 0.0
 
 # Boundary conditions
-u_in(x, t) = VectorValue(1.5 * Um * x[2] * (H - x[2]) / ((H / 2)^2), 0.0)
-u_noSlip(x, t) = VectorValue(0.0, 0.0)
-u_in(t::Real) = x -> u_in(x, t)
-u_noSlip(t::Real) = x -> u_noSlip(x, t)
+
 ∂tu_in(t) = x -> VectorValue(0.0, 0.0)
 ∂tu_in(x, t) = ∂tu_in(t)(x)
 ∂t(::typeof(u_in)) = ∂tu_in
@@ -120,9 +217,8 @@ add_tag_from_tags!(labels0, "cylinder", [7])
 add_tag_from_tags!(labels0, "outlet", [8])
 
 # Model from GMSH
-model = DiscreteModelFromFile("../models/cylinder_NSI.json")
 labels = get_face_labeling(model)
-writevtk(model, "model")
+
 
 # ## Weak form
 # Laws
@@ -258,23 +354,6 @@ function runCylinder(model::DiscreteModel, labels)
     ## Test FE spaces
     D = 2
     order = 2
-    V = FESpace(
-        reffe = :Lagrangian,
-        conformity = :H1,
-        valuetype = VectorValue{D,Float64},
-        model = model,
-        labels = labels,
-        order = order,
-        dirichlet_tags = ["inlet", "noslip", "cylinder"],
-    )
-    Q = TestFESpace(
-        reffe = :Lagrangian,
-        conformity = :H1,
-        valuetype = Float64,
-        model = model,
-        order = order - 1,
-        constraint = :zeromean,
-    )
 
     ## Trial FE spaces
     U = TransientTrialFESpace(V, [u_in, u_noSlip, u_noSlip])

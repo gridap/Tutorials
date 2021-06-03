@@ -125,9 +125,9 @@ qₖ = get_data(Qₕ_cell_point)
 
 # Let us work with our first `CellField` objects, namely `FEBasis` objects, and its evaluation. In particular, let us extract out of the global test space, Vₕ, and trial space, Uₕ, a collection of local test and trial finite element shape basis functions, respectively.
 
-dv = get_cell_shapefuns(Vₕ)
+dv = get_fe_basis(Vₕ)
 #
-du = get_cell_shapefuns_trial(Uₕ)
+du = get_trial_fe_basis(Uₕ)
 
 # The objects returned are of `FEBasis` type, one of the subtypes of `CellField`. Apart from `DomainStyle`, `FEBasis` objects also have an additional trait, `BasisStyle`, which specifies whether the cell-local shape basis functions are either of test or trial type (in the Galerkin method). This information is consumed in different parts of the code.
 
@@ -405,9 +405,9 @@ print_op_tree(manual_uₕ_array_at_qₖ)
 
 # Let us, e.g., build Uₖ manually using this idea. First, we extract out of uₕ and Uₕ two arrays with the free and fixed (due to strong Dirichlet boundary conditions) DOF values of uₕ
 
-uₕ_free_dof_values = get_free_values(uₕ)
+uₕ_free_dof_values = get_free_dof_values(uₕ)
 #
-uₕ_dirichlet_dof_values = get_dirichlet_values(Uₕ)
+uₕ_dirichlet_dof_values = get_dirichlet_dof_values(Uₕ)
 
 # So far these are plain arrays, nothing is lazy. Then we extract out of Uₕ the global indices of the DOFs in each cell, the well-known local-to-global map in FE methods.
 
@@ -664,7 +664,7 @@ A = assemble_matrix!(A,assem,rs)
 # Now we can obtain the free DOFs and add the solution to the initial guess
 
 x = A \ b
-uf = sol = get_free_values(uₕ) - x
+uf = sol = get_free_dof_values(uₕ) - x
 ufₕ = FEFunction(Uₕ,uf)
 #
 @test sum(integrate((u-ufₕ)*(u-ufₕ),Qₕ)) <= 10^-8

@@ -294,11 +294,13 @@ uₕ_array = get_data(uₕ)
 
 # Its concrete type is, though, `LazyArray`
 
-@test isa(uₕ_array,LazyArray)
+@test isa(uₕ_array.parent,Gridap.Fields.LazyArray)
 
 # with full name, as above, of a certain complexity (to say the least):
 
-print(typeof(uₕ_array))
+print(typeof(uₕ_array.parent))
+
+## **NOTE**: The actual type of `uₕ_array` is `MemoArray`. A `MemoArray` is an array that implements a software pattern towards higher performance. It wraps another array (available at the `parent` property of `MemoArray`) while internally handling a cache in order to exploit temporal locality of references. For example, if one accesses twice to the same position of the array, then the entry is not recomputed along with the second access. We note that `MemoArray` is a data type that developers have to be aware of, but it is (has to be) completely hidden to users.
 
 # As mentioned above, `lazy_map` returns `LazyArray`s in the most general scenarios. Thus, it is reasonable to think that `get_data(uₕ)` returns an array that has been built via `lazy_map`. (We advance now that this is indeed the case.) On the other hand, as `uₕ_array` is (conceptually) a vector (i.e., rank-1 array) of `Field` objects, this also tells us that the `lazy_map`/`LazyArray` pair does not only play a fundamental role in the evaluation of (e.g., cell) arrays of `Field`s on (e.g., cell) arrays of arrays of `Point`s, but also in building new cell arrays of `Field`s (i.e., the local restriction of a FE function to each cell) out of existing ones (i.e., the cell array with the local shape functions). In the words of the previous section, we can use `lazy_map` to build complex operation trees among arrays of `Field`s, as required by the computer implementation of variational methods.
 
@@ -558,9 +560,8 @@ inv_Jt = lazy_map(Operation(inv),Jt)
 # Build array of arrays of `Field`s defined as the broadcasted single contraction of the Jacobian inverse transposed and the gradients of the shape functions in the reference space
 low_level_manual_gradient_dv_array = lazy_map(Broadcasting(Operation(⋅)),inv_Jt,∇ϕrₖ)
 
-# As always, we check that all arrays built are are equivalent
-
-@test typeof(grad_dv_array) == typeof(manual_grad_dv_array)
+# As always, we check that all arrays built are are equivalent (see note above on `MemoArray`s and the `parent` property)
+@test typeof(grad_dv_array.parent) == typeof(manual_grad_dv_array)
 #
 @test lazy_map(evaluate,grad_dv_array,qₖ) == lazy_map(evaluate,manual_grad_dv_array,qₖ)
 #
@@ -627,11 +628,10 @@ cellvals = ∫( ∇(dv)⋅∇(uₕ) )*Qₕ
 
 assem = SparseMatrixAssembler(Uₕ,Vₕ)
 
-# We create a tuple with 1-entry arrays with the cell-wise vectors and cell ids. If we had additional terms, we would have more entries in the array. You can take a look at the `SparseMatrixAssembler` struct.
+# We create a tuple with 1-entry arrays with the cell vectors (i.e., `iwq`) and cell-wise global DOF identifiers (i.e., `σₖ`). If we had additional terms, we would have more entries in the array. You can take a look at the `SparseMatrixAssembler` struct for more details.
 
-cellids = get_cell_to_bgcell(Tₕ) # == identity_vector(num_cells(trian))
 #
-rs = ([iwq],[cellids])
+rs = ([iwq],[σₖ])
 #
 b = allocate_vector(assem,rs)
 #
@@ -655,7 +655,7 @@ jac = integrate(∇(dv)⋅∇(du),Qₕ)
 #
 @test collect(iwq) == collect(jac)
 #
-rs = ([iwq],[cellids],[cellids])
+rs = ([iwq],[σₖ],[σₖ])
 #
 A = allocate_matrix(assem,rs)
 #
@@ -664,7 +664,7 @@ A = assemble_matrix!(A,assem,rs)
 # Now we can obtain the free DOFs and add the solution to the initial guess
 
 x = A \ b
-uf = sol = get_free_dof_values(uₕ) - x
+uf = get_free_dof_values(uₕ) - x
 ufₕ = FEFunction(Uₕ,uf)
 #
 @test sum(integrate((u-ufₕ)*(u-ufₕ),Qₕ)) <= 10^-8

@@ -98,7 +98,7 @@ function run(x0,disp_x,step,nsteps,cache)
 
   writevtk(Ω,"results_$(lpad(step,3,'0'))",cellfields=["uh"=>uh,"sigma"=>σ∘∇(uh)])
 
-  return get_free_values(uh), cache
+  return get_free_dof_values(uh), cache
 
 end
 

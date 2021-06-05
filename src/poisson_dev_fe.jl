@@ -125,9 +125,9 @@ qₖ = get_data(Qₕ_cell_point)
 
 # Let us work with our first `CellField` objects, namely `FEBasis` objects, and its evaluation. In particular, let us extract out of the global test space, Vₕ, and trial space, Uₕ, a collection of local test and trial finite element shape basis functions, respectively.
 
-dv = get_cell_shapefuns(Vₕ)
+dv = get_fe_basis(Vₕ)
 #
-du = get_cell_shapefuns_trial(Uₕ)
+du = get_trial_fe_basis(Uₕ)
 
 # The objects returned are of `FEBasis` type, one of the subtypes of `CellField`. Apart from `DomainStyle`, `FEBasis` objects also have an additional trait, `BasisStyle`, which specifies whether the cell-local shape basis functions are either of test or trial type (in the Galerkin method). This information is consumed in different parts of the code.
 
@@ -294,11 +294,13 @@ uₕ_array = get_data(uₕ)
 
 # Its concrete type is, though, `LazyArray`
 
-@test isa(uₕ_array,LazyArray)
+@test isa(uₕ_array.parent,Gridap.Fields.LazyArray)
 
 # with full name, as above, of a certain complexity (to say the least):
 
-print(typeof(uₕ_array))
+print(typeof(uₕ_array.parent))
+
+## **NOTE**: The actual type of `uₕ_array` is `MemoArray`. A `MemoArray` is a low-level data type that is conceived for increased performance. In particular, together with other mechanisms (which we do not cover to keep the presentation simple), it guarantees that a `LazyArray` which appears several times as an operand in an operation tree (e.g., the Jacobian matrix appears 3x in the operation tree corresponding to the Laplacian stiffness matrix) is only evaluated once the first time it is accessed. We note that `MemoArray` is a data type that developers have to be aware of, but it is (has to be) completely hidden to users.
 
 # As mentioned above, `lazy_map` returns `LazyArray`s in the most general scenarios. Thus, it is reasonable to think that `get_data(uₕ)` returns an array that has been built via `lazy_map`. (We advance now that this is indeed the case.) On the other hand, as `uₕ_array` is (conceptually) a vector (i.e., rank-1 array) of `Field` objects, this also tells us that the `lazy_map`/`LazyArray` pair does not only play a fundamental role in the evaluation of (e.g., cell) arrays of `Field`s on (e.g., cell) arrays of arrays of `Point`s, but also in building new cell arrays of `Field`s (i.e., the local restriction of a FE function to each cell) out of existing ones (i.e., the cell array with the local shape functions). In the words of the previous section, we can use `lazy_map` to build complex operation trees among arrays of `Field`s, as required by the computer implementation of variational methods.
 
@@ -405,9 +407,9 @@ print_op_tree(manual_uₕ_array_at_qₖ)
 
 # Let us, e.g., build Uₖ manually using this idea. First, we extract out of uₕ and Uₕ two arrays with the free and fixed (due to strong Dirichlet boundary conditions) DOF values of uₕ
 
-uₕ_free_dof_values = get_free_values(uₕ)
+uₕ_free_dof_values = get_free_dof_values(uₕ)
 #
-uₕ_dirichlet_dof_values = get_dirichlet_values(Uₕ)
+uₕ_dirichlet_dof_values = get_dirichlet_dof_values(Uₕ)
 
 # So far these are plain arrays, nothing is lazy. Then we extract out of Uₕ the global indices of the DOFs in each cell, the well-known local-to-global map in FE methods.
 
@@ -558,9 +560,8 @@ inv_Jt = lazy_map(Operation(inv),Jt)
 # Build array of arrays of `Field`s defined as the broadcasted single contraction of the Jacobian inverse transposed and the gradients of the shape functions in the reference space
 low_level_manual_gradient_dv_array = lazy_map(Broadcasting(Operation(⋅)),inv_Jt,∇ϕrₖ)
 
-# As always, we check that all arrays built are are equivalent
-
-@test typeof(grad_dv_array) == typeof(manual_grad_dv_array)
+# As always, we check that all arrays built are are equivalent (see note above on `MemoArray`s and the `parent` property)
+@test typeof(grad_dv_array.parent) == typeof(manual_grad_dv_array)
 #
 @test lazy_map(evaluate,grad_dv_array,qₖ) == lazy_map(evaluate,manual_grad_dv_array,qₖ)
 #
@@ -627,11 +628,10 @@ cellvals = ∫( ∇(dv)⋅∇(uₕ) )*Qₕ
 
 assem = SparseMatrixAssembler(Uₕ,Vₕ)
 
-# We create a tuple with 1-entry arrays with the cell-wise vectors and cell ids. If we had additional terms, we would have more entries in the array. You can take a look at the `SparseMatrixAssembler` struct.
+# We create a tuple with 1-entry arrays with the cell vectors (i.e., `iwq`) and cell-wise global DOF identifiers (i.e., `σₖ`). If we had additional terms, we would have more entries in the array. You can take a look at the `SparseMatrixAssembler` struct for more details.
 
-cellids = get_cell_to_bgcell(Tₕ) # == identity_vector(num_cells(trian))
 #
-rs = ([iwq],[cellids])
+rs = ([iwq],[σₖ])
 #
 b = allocate_vector(assem,rs)
 #
@@ -655,7 +655,7 @@ jac = integrate(∇(dv)⋅∇(du),Qₕ)
 #
 @test collect(iwq) == collect(jac)
 #
-rs = ([iwq],[cellids],[cellids])
+rs = ([iwq],[σₖ],[σₖ])
 #
 A = allocate_matrix(assem,rs)
 #
@@ -664,7 +664,7 @@ A = assemble_matrix!(A,assem,rs)
 # Now we can obtain the free DOFs and add the solution to the initial guess
 
 x = A \ b
-uf = sol = get_free_values(uₕ) - x
+uf = get_free_dof_values(uₕ) - x
 ufₕ = FEFunction(Uₕ,uf)
 #
 @test sum(integrate((u-ufₕ)*(u-ufₕ),Qₕ)) <= 10^-8

@@ -197,7 +197,7 @@ ode_scheme_1 = ThetaMethod(nl_solver, Δt₁, θ)
 
 # #### Transient FE solver
 # With the information of the ODE discretization scheme, we can define the transient FE solver by calling the `TransientFESolver` function of `GridapODEs`.
-solver = TransientFESolver(ode_scheme)
+solver_1 = TransientFESolver(ode_scheme_1)
 
 # #### Transient FE solution
 # Finally, the FE solution is constructed by calling the function `solve` with the transient solver, the FE operator, the initial solution, initial time and final time. In this tutorial we consider two different stages:
@@ -206,7 +206,7 @@ solver = TransientFESolver(ode_scheme)
 # 2. A second stage to compute statistics, from $t_0=8.0$ to $T=10.0$, with the last step from the initial stage as initial solution and time step size $\Delta t=0.005$.
 t₀ = 0.0
 T = 8.0
-xh_1 = solve(solver, op, xh₀, t₀, T)
+xh_1 = solve(solver_1, op, xh₀, t₀, T)
 
 # We get last solution step from $xh_1$ as initial condition (this will be done overwriting Base.last in a near future)
 for (xh_tn, tn) in xh_1
@@ -219,7 +219,8 @@ t₀ = 8.0
 T = 10.0
 Δt₂= 0.005
 ode_scheme_2 = ThetaMethod(nl_solver, Δt₂, θ)
-xh_2 = solve(solver, op, xh₀, t₀, T)
+solver_2 = TransientFESolver(ode_scheme_2)
+xh_2 = solve(solver_2, op, xh₀, t₀, T)
 
 # ## PostProcessing
 # 
@@ -243,11 +244,13 @@ coeff(F) = 2 * F / (Um^2 * ∅)
 Γc = BoundaryTriangulation(model, tags="cylinder")
 dΓc = Measure(Γc, degree)
 nΓc = get_normal_vector(Γc)
+writevtk(Γc,"tmp.vtu")
 
 # Given a solution vector $x_h$ at a given time, the coefficients computation function can be defined as
 function compute_coefficients(xh)
     uh, ph = xh
     F_drag, F_lift = ∑( ∫( nΓc⋅(2*ν*ε(uh)) - ph*nΓc )dΓc )
+    #F_drag, F_lift = ∑( ∫( - ph*nΓc )dΓc )
     C_d = coeff(F_drag)
     C_l = coeff(F_lift)
     return C_d, C_l

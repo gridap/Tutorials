@@ -191,7 +191,7 @@ nl_solver = NLSolver(show_trace = false,method = :newton,linesearch = BackTracki
 # #### Time integrator
 # Once we have the nonlinear solver defined, we construct the time integrator scheme to be used to solve the ODE resulting after discretizing in space. In this case we use the $\theta$-method, defined in  the `ODETools` module of `GridapODEs`. Here we use $\theta=0.51$ and a constant time step size of $\Delta t = 0.05$. The choice of $\theta=0.51$ in this tutorial is two-fold: first, to showcase that the `ThetaMethod` function can be used with any value of $\theta$ provided that $0<\theta\leq 1$; and second, to introduce dissipation to avoid high-frequency oscillations in time for the pressure. Note that the case $\theta=0.5$ can also be called through the function `MidPoint` and the case $\theta=1.0$ through the function `BackwardEuler`. Other implemented ODE solvers are: `RungeKutta`, based on the Runge-Kutta method with implemented schemes up to 3rd order, and `Newmark`, that implements the Newmark-beta method for 2nd order ODEs.  
 using GridapODEs.ODETools
-const θ = 0.51
+const θ = 0.5
 Δt₁= 0.05
 ode_scheme_1 = ThetaMethod(nl_solver, Δt₁, θ)
 
@@ -205,7 +205,7 @@ solver_1 = TransientFESolver(ode_scheme_1)
 # 1. An initial stage to let the flow develop, from $t_0=0.0$ to $T=8.0$, with the Stokes solution as initial solution and time step size $\Delta t=0.05$.
 # 2. A second stage to compute statistics, from $t_0=8.0$ to $T=10.0$, with the last step from the initial stage as initial solution and time step size $\Delta t=0.005$.
 t₀ = 0.0
-T = 8.0
+T = 10.0
 xh_1 = solve(solver_1, op, xh₀, t₀, T)
 
 # We get last solution step from $xh_1$ as initial condition (this will be done overwriting Base.last in a near future)
@@ -242,9 +242,9 @@ coeff(F) = 2 * F / (Um^2 * ∅)
 
 # Let's first define the boundary triangulation around the cylinder, $\Gamma_c$, the normal to the boundary, $\mathbf{n}_{\Gamma_c}$, and the integration measure $d\Gamma_c$
 Γc = BoundaryTriangulation(model, tags="cylinder")
-dΓc = Measure(Γc, degree)
+dΓc = Measure(Γc, k)
 nΓc = get_normal_vector(Γc)
-writevtk(Γc,"tmp.vtu")
+#writevtk(Γc,"tmp.vtu")
 
 # Given a solution vector $x_h$ at a given time, the coefficients computation function can be defined as
 function compute_coefficients(xh)
@@ -267,14 +267,17 @@ using WriteVTK
 filePath = "results"
 output_files = paraview_collection(filePath, append=false) do pvd
     for (i, (xh, t)) in enumerate(xh_2)
+        global xh₀
 
         uh, ph = xh
-        CD, CL = compute_coefficients(xh)
+        CD, CL = θ.*compute_coefficients(xh)+(1-θ).*compute_coefficients(xh₀)
         push!(ts,t)
         push!(CDs,-CD)
         push!(CLs,CL)
         
         pvd[t] = createvtk(Ω, filePath * "_$t.vtu", cellfields = ["uh" => uh, "ph" => ph])
+
+        xh₀ = interpolate_everywhere(xh,X(t))
     end
 end
 

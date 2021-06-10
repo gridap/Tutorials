@@ -2,23 +2,20 @@
 
 Welcome to the tutorial pages of the [Gridap.jl](https://github.com/gridap/Gridap.jl) project.
 
-## How to start
-
-The easiest way to start using the tutorials is to click in one of the following links to start reading the html version of the tutorial you want.
+## Contents
 
 ```@contents
 Depth = 1
 ```
 
-## Jupyter notebooks
+## How to start
 
-In addition, the tutorials are available as jupyter notebooks. You can access them in three different ways:
+There are different ways to use the tutorials:
 
-- By running the notebooks locally. A working installation of Julia in the system is required. See instructions below. **This is the recommended way to follow the tutorials**. In particular, it allows to inspect the generated results with Paraview.
-
-- By running the notebook remotely via [binder](https://mybinder.org). In that case, go to the desired tutorial and click the icon ![](https://mybinder.org/badge_logo.svg). No local installation of Julia needed.
-
-- By reading a non-interactive version of the notebook via [nbviewer](https://nbviewer.jupyter.org/). In that case, go to the desired tutorial and click the icon ![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)
+- **[Recommended]** Reading the html version of the tutorials. This is the recommended way if you want rapid access to the material with no setup steps. Simply click in one of the links in the [Contents](@ref) section.
+- **[Recommended]** Running the Jupyter notebooks locally. A working installation of Julia in the system is required. See instructions in the [How to run the notebooks locally](@ref) section. This is the recommended way to follow the tutorials if you want to run the code and inspect the generated results with Paraview.
+- Running the notebook remotely via [binder](https://mybinder.org). In that case, go to the desired tutorial and click the icon ![](https://mybinder.org/badge_logo.svg). No local installation of Julia needed.
+- Reading a non-interactive version of the notebook via [nbviewer](https://nbviewer.jupyter.org/). In that case, go to the desired tutorial and click the icon ![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)
 
 ## How to run the notebooks locally
 

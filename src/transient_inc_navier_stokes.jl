@@ -40,8 +40,8 @@
 # where $\epsilon(u)=\frac{1}{2}(\nabla u +\nabla u^T)$ is the symmetric gradient operator applied to the velocity vector.
 
 # #### Geometry and Discrete model
-# 
-# The computational domain, $\Omega$, is a channel of heigh $H=0.41$ and length $L=2.0$, with a cylinder of diameter $\varnothing=0.1$ and centre coordinates $(x_c,y_c)=(0.2,0.2)$ from the left-bottom corner. 
+#
+# The computational domain, $\Omega$, is a channel of heigh $H=0.41$ and length $L=2.0$, with a cylinder of diameter $\varnothing=0.1$ and centre coordinates $(x_c,y_c)=(0.2,0.2)$ from the left-bottom corner.
 # The left side of the channel is the inlet boundary, $\Gamma_{\text{\footnotesize in}}$, the right side of the channel is the outlet boundary, $\Gamma_{\text{\footnotesize out}}$, and the wall boundary, $\Gamma_{\text{\footnotesize wall}}$ is composed by the top and bottom sides, together with the cylinder.
 #
 # ![](../assets/cylinder_ins/cylinder_geometry.png)
@@ -88,7 +88,7 @@ u_wall(t::Real) = x -> u_wall(x, t)
 # ## Numerical Scheme
 # #### FE spaces
 #
-# In order to approximate this problem we chose a formulation based on inf-sub stable $P_k/P_{k-1}$ elements with continuous velocities and pressures (see, e.g., [1] for specific details). The interpolation spaces are defined as follows.  
+# In order to approximate this problem we chose a formulation based on inf-sub stable $P_k/P_{k-1}$ elements with continuous velocities and pressures (see, e.g., [1] for specific details). The interpolation spaces are defined as follows.
 
 # ###### Velocity FE space
 # The velocity interpolation space is
@@ -96,7 +96,7 @@ u_wall(t::Real) = x -> u_wall(x, t)
 # ```math
 # V \doteq \{ v \in [C^0(\Omega)]^d:\ v|_T\in [P_k(T)]^d \text{ for all } T\in\mathcal{T} \},
 # ```
-# where $T$ denotes an arbitrary cell of the FE mesh $\mathcal{T}$, and $P_k(T)$ is the usual continuous vector-valued Lagrangian FE space of order $k$ defined on a mesh of triangles or tetrahedra. In this tutorial we will enforce the Dirichlet boundary conditions strongly, therefore the velocity test and trial spaces are given by 
+# where $T$ denotes an arbitrary cell of the FE mesh $\mathcal{T}$, and $P_k(T)$ is the usual continuous vector-valued Lagrangian FE space of order $k$ defined on a mesh of triangles or tetrahedra. In this tutorial we will enforce the Dirichlet boundary conditions strongly, therefore the velocity test and trial spaces are given by
 #
 # ```math
 # \begin{aligned}
@@ -105,7 +105,7 @@ u_wall(t::Real) = x -> u_wall(x, t)
 # \end{aligned}
 # ```
 
-# After these definitions we are ready to define the velocity FE spaces. We start by defining the reference FE for the velocity field, which is defined by a 2-dimensional `VectorValue` type `lagrangian` reference FE element of order `k` (in that case $k=2$). 
+# After these definitions we are ready to define the velocity FE spaces. We start by defining the reference FE for the velocity field, which is defined by a 2-dimensional `VectorValue` type `lagrangian` reference FE element of order `k` (in that case $k=2$).
 const k = 2
 reffeᵤ = ReferenceFE(lagrangian,VectorValue{2,Float64},k)
 
@@ -159,12 +159,12 @@ dΩ = Measure(Ω,degree)
 a((u,ut,p),(v,q)) = ∫( v⋅ut + v⋅((∇(u)')⋅u) + 2*ν*(ε(v)⊙ε(u)) - (∇⋅v)*p + q*(∇⋅u) )dΩ
 l((v,q)) = ∫(v⋅f)dΩ
 
-# Note that we keep the velocity time derivative as a variable. The main reason behind this approach is that in this way, the variational form is not tied to a particular time integrator. This allows to have a time discretization that is handled internally by `GridapODEs`. 
+# Note that we keep the velocity time derivative as a variable. The main reason behind this approach is that in this way, the variational form is not tied to a particular time integrator. This allows to have a time discretization that is handled internally by `GridapODEs`.
 
-# Due to the presence of the convective term, this problem is nonlinear. To solve a time-dependent nonlinear problem we define a transient nonlinear FE operator from the residual (`res`), jacobian with respect to the unknowns (`jac`) and jacobian with respect to the unknowns' time derivative (`jac_t`). The `TransientFEOperator` expects a residual function with three arguments: the time `t`, a Tuple with the unknowns and unknowns' time derivative `((u,p),(ut,))` and the test functions `(v,q)`. 
+# Due to the presence of the convective term, this problem is nonlinear. To solve a time-dependent nonlinear problem we define a transient nonlinear FE operator from the residual (`res`), jacobian with respect to the unknowns (`jac`) and jacobian with respect to the unknowns' time derivative (`jac_t`). The `TransientFEOperator` expects a residual function with three arguments: the time `t`, a Tuple with the unknowns and unknowns' time derivative `((u,p),(ut,))` and the test functions `(v,q)`.
 res(t,((u,p),(ut,)),(v,q)) = a((u,ut,p),(v,q)) - l((v,q))
 
-# The Jacobian with respect to the unknowns expects: the time `t`, a Tuple with the unknowns and unknowns' time derivative `((u,p),(ut,))`, i.e. linearization point, the linearized unknowns `(du,dp)` and the test functions `(v,q)`. 
+# The Jacobian with respect to the unknowns expects: the time `t`, a Tuple with the unknowns and unknowns' time derivative `((u,p),(ut,))`, i.e. linearization point, the linearized unknowns `(du,dp)` and the test functions `(v,q)`.
 jac(t,((u,p),(ut,)),(du,dp),(v,q)) = ∫( v⋅((∇(du)')⋅u) + v⋅((∇(u)')⋅du) + 2*ν*(ε(v)⊙ε(du)) - (∇⋅v)*dp + q*(∇⋅du) )dΩ
 
 # Finally, the Jacobian with respect to the unknowns' time derivative expects: the time `t`, a Tuple with the unknowns and unknowns' time derivative `((u,p),(ut,))`, i.e. linearization point, the linearized unknowns' time derivative `(dut,)` and the test functions `(v,q)`.
@@ -189,7 +189,7 @@ using LineSearches: BackTracking
 nl_solver = NLSolver(show_trace = false,method = :newton,linesearch = BackTracking())
 
 # #### Time integrator
-# Once we have the nonlinear solver defined, we construct the time integrator scheme to be used to solve the ODE resulting after discretizing in space. In this case we use the $\theta$-method, defined in  the `ODETools` module of `GridapODEs`. Here we use $\theta=0.51$ and a constant time step size of $\Delta t = 0.05$. The choice of $\theta=0.51$ in this tutorial is two-fold: first, to showcase that the `ThetaMethod` function can be used with any value of $\theta$ provided that $0<\theta\leq 1$; and second, to introduce dissipation to avoid high-frequency oscillations in time for the pressure. Note that the case $\theta=0.5$ can also be called through the function `MidPoint` and the case $\theta=1.0$ through the function `BackwardEuler`. Other implemented ODE solvers are: `RungeKutta`, based on the Runge-Kutta method with implemented schemes up to 3rd order, and `Newmark`, that implements the Newmark-beta method for 2nd order ODEs.  
+# Once we have the nonlinear solver defined, we construct the time integrator scheme to be used to solve the ODE resulting after discretizing in space. In this case we use the $\theta$-method, defined in  the `ODETools` module of `GridapODEs`. Here we use $\theta=0.5$ and a constant time step size of $\Delta t = 0.05$. Note that the case $\theta=0.5$ can also be called through the function `MidPoint` and the case $\theta=1.0$ through the function `BackwardEuler`. Other implemented ODE solvers are: `RungeKutta`, based on the Runge-Kutta method with implemented schemes up to 3rd order, and `Newmark`, that implements the Newmark-beta method for 2nd order ODEs.
 using GridapODEs.ODETools
 const θ = 0.5
 Δt₁= 0.05
@@ -205,7 +205,7 @@ solver_1 = TransientFESolver(ode_scheme_1)
 # 1. An initial stage to let the flow develop, from $t_0=0.0$ to $T=8.0$, with the Stokes solution as initial solution and time step size $\Delta t=0.05$.
 # 2. A second stage to compute statistics, from $t_0=8.0$ to $T=10.0$, with the last step from the initial stage as initial solution and time step size $\Delta t=0.005$.
 t₀ = 0.0
-T = 10.0
+T = 8.0
 xh_1 = solve(solver_1, op, xh₀, t₀, T)
 
 # We get last solution step from $xh_1$ as initial condition (this will be done overwriting Base.last in a near future)
@@ -223,7 +223,7 @@ solver_2 = TransientFESolver(ode_scheme_2)
 xh_2 = solve(solver_2, op, xh₀, t₀, T)
 
 # ## PostProcessing
-# 
+#
 # #### Force coefficients
 # We start the post-processing by defining a function that, given the solution at a given time, it returns the drag and lift coefficients. The coefficients are defined by the following function
 # ```math
@@ -244,13 +244,11 @@ coeff(F) = 2 * F / (Um^2 * ∅)
 Γc = BoundaryTriangulation(model, tags="cylinder")
 dΓc = Measure(Γc, k)
 nΓc = get_normal_vector(Γc)
-#writevtk(Γc,"tmp.vtu")
 
 # Given a solution vector $x_h$ at a given time, the coefficients computation function can be defined as
 function compute_coefficients(xh)
     uh, ph = xh
     F_drag, F_lift = ∑( ∫( nΓc⋅(2*ν*ε(uh)) - ph*nΓc )dΓc )
-    #F_drag, F_lift = ∑( ∫( - ph*nΓc )dΓc )
     C_d = coeff(F_drag)
     C_l = coeff(F_lift)
     return C_d, C_l
@@ -261,8 +259,8 @@ ts = Real[]
 CDs = Real[]
 CLs = Real[]
 
-# We encapsulate the post-processing of the results in a `do` block in which a .pvd file is created (Paraview file with information of the solution at different time steps). This is done by calling the 
-# `paraview_collection` function of the `WriteVTK` package.
+# We encapsulate the post-processing of the results in a `do` block in which a .pvd file is created (Paraview file with information of the solution at different time steps). This is done by calling the
+# `paraview_collection` function of the `WriteVTK` package. Note that we compute the coefficients at $t^{n+\theta}$, where velocities and pressure are in equilibrium.
 using WriteVTK
 filePath = "results"
 output_files = paraview_collection(filePath, append=false) do pvd
@@ -270,11 +268,11 @@ output_files = paraview_collection(filePath, append=false) do pvd
         global xh₀
 
         uh, ph = xh
-        CD, CL = θ.*compute_coefficients(xh)+(1-θ).*compute_coefficients(xh₀)
+        CD, CL = θ.*compute_coefficients(xh) .+ (1-θ).*compute_coefficients(xh₀)
         push!(ts,t)
         push!(CDs,-CD)
         push!(CLs,CL)
-        
+
         pvd[t] = createvtk(Ω, filePath * "_$t.vtu", cellfields = ["uh" => uh, "ph" => ph])
 
         xh₀ = interpolate_everywhere(xh,X(t))
@@ -298,7 +296,7 @@ display(plot(p1,p2,layout=(1,2)))
 println("CDmax: ", maximum(CDs), ", CLmax: ", maximum(CLs))
 # | QoI | CD_max | CL_max |
 # | :---: | :---:| :---: |
-# | Computed | 3.171 | 1.003 |
+# | Computed | 3.182 | 1.011 |
 # | Reference range | [3.220, 3.24] | [0.990,1.010] |
 #
 

@@ -289,7 +289,9 @@ end
 using Plots
 p1 = plot(ts, CDs, label="CD")
 p2 = plot(ts, CLs, label="CL")
-display(plot(p1,p2,layout=(1,2)))
+plt = plot(p1,p2,layout=(1,2))
+display(plt)
+# `savefig(plt,"../assets/cylinder_ins/cylinder_coeff.png")`
 # ![](../assets/cylinder_ins/cylinder_coeff.png)
 
 # One can also compute the maximum drag and lift and compare it to the reference results.

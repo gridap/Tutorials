@@ -16,7 +16,8 @@ files = [
   "Stokes equation" => "stokes.jl",
   "Isotropic damage model" => "isotropic_damage.jl",
   "Fluid-Structure Interaction"=>"fsi_tutorial.jl",
-  "Low-level API Poisson equation"=>"poisson_dev_fe.jl"]
+  "Low-level API Poisson equation"=>"poisson_dev_fe.jl",
+  "Electromagnetic scattering in 2D"=>"emscatter.jl"]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)
 for (i,(title,filename)) in enumerate(files)

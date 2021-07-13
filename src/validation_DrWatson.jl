@@ -43,8 +43,8 @@ import Gridap: ∇
 # We first group all parameters and parameter values in a single ditionary
 
 params = Dict(
-  :cells_per_axis => [8,16,32,64],
-  :fe_order => [1,2]
+  "cells_per_axis" => [8,16,32,64],
+  "fe_order" => [1,2]
 )
 
 # and then we use DrWatson's `dict_list` to expand all the parameters into a vector of dictionaries. Each dictionary contains the parameter-value combinations corresponding to a single simulation case.
@@ -103,7 +103,7 @@ function run(case::Dict)
   @unpack cells_per_axis, fe_order = case
   el2, eh1 = run(cells_per_axis,fe_order)
   h = 1.0/cells_per_axis
-  results = @dict el2 eh1 h
+  results = @strdict el2 eh1 h
   merge(case,results)
 end
 

@@ -1,24 +1,26 @@
 # In this tutorial, we will learn:
 # 
-#   * How to formulate the weak form for time-harmonic electromagnetic problem
+#   * How to formulate the weak form for a scalar time-harmonic electromagnetic problem
 #   * How to implement perfectly matched layers (PML)
 #   * How does periodic boundary condition work in Gridap
 # 
 # # Problem statement
 # 
-# The problem that we are trying to solve is the plane wave (TM-polarized $H_{inc}$) scattering of a cylinder dielectric (of radius $R$ and permittivity $\varepsilon$), as illustrated below. The computational cell is of height $H$ and length $L$, and we designate a perfectly matched layer (PML) thickness of $d_{pml}$.
+# We are going to solve a scalar electromagnetic wave scattering problem: a plane wave (Hz-polarized $H_{inc}$) scattering of a cylinder dielectric (of radius $R$ and permittivity $\varepsilon$), as illustrated below. The computational cell is of height $H$ and length $L$, and we designate a perfectly matched layer (PML) thickness of $d_{pml}$.
 # 
 # ![](../assets/emscatter/Illustration.png)
 # 
-# The governing equation of this scaler electromagnetic problem in 2D is the Helmholtz equation: 
+# From Maxwell's equations, considering a time-harmonic electromagnetic field, we can derive the governing equation of this problem in 2D (Helmholtz equation) [1]: 
 #
 # ```math
 # \left[-\nabla\cdot\frac{1}{\varepsilon(x)}\cdot\nabla -k^2\mu(x)\right] H = f(x),
 # ```
 #
-# where $k=\omega/c$ is the wave number in free space and $f(x)$ is the source term
+# where $k=\omega/c$ is the wave number in free space and $f(x)$ is the source term (which corresponds to a magnetic current density in Maxwell's equations).
 # 
-# The boundary conditions are zero Dirichlet boundary on the top and bottom side $\Gamma_D$ and periodic boundary condition on the left ($\Gamma_L$) and right side ($\Gamma_R$). The PML is implemented by a coordinate streching: 
+# In order to simulate this scattering problem in a finite computation cell, we need outgoing (radiation) boundary conditions such that all waves at the boundary would not be reflected back since we are simulating an infinite space. 
+# One commonly used technique to simulate such infinite space is through the so called "perfectly matched layers" (PML) [2]. Actually, PML is not a boundary condition but an artificial absorbing "layer" that absorbs waves with minimal reflections (going to zero as the resolution increases). 
+# There are many formulations of PML. Here, we use one of the most flexible formulations, the "stretched-coordinate" formulation, which takes the following replace in the PDE [3]:
 #
 # ```math
 # \frac{\partial}{\partial x}\rightarrow \frac{1}{1+\mathrm{i}\sigma(u)/\omega}\frac{\partial}{\partial x},
@@ -28,9 +30,13 @@
 # \frac{\partial}{\partial y}\rightarrow \frac{1}{1+\mathrm{i}\sigma(u)/\omega}\frac{\partial}{\partial y},
 # ```
 #
-# where $u$ is the depth into the PML, $\sigma$ is a profile function (here we chose $\sigma(u)=\sigma_0u^2$) and different derivative denotes different absorption direction. 
+# where $u$ is the depth into the PML, $\sigma$ is a profile function (here we chose $\sigma(u)=\sigma_0(u/d_{pml})^2$) and different derivative corresponds to different absorption directions. 
+# Note that at a finite mesh resolution, PML reflects some waves, and the standard technique to mitigate this is to "turn on" the PML absorption gradually—in this case we use a quadratic profile. The amplitude $\sigma_0$ is chosen so that in the limit of infinite resolution the "round-trip" normal-incidence is some small number. 
 # 
-# Consider $\mu(x)=1$ and denote $\Lambda=\frac{1}{1+\mathrm{i}\sigma(u)/\omega}$, we can formulate the problem as 
+# Since PML absorbs all waves in $x(y)$ direction, the associated boundary condition is then usually the zero Dirichlet boundary condition. Here, the boundary conditions are zero Dirichlet boundary on the top and bottom side $\Gamma_D$ but periodic boundary condition on the left ($\Gamma_L$) and right side ($\Gamma_R$). 
+# The reason that we use a periodic boundary condition for the left and right side instead of zero Dirichlet boundary condition is that we want to simulate a plane wave exicitation, which then requires a periodic boundary condition.
+#
+# Consider $\mu(x)=1$ (which is mostly the case in electromagnetic problems) and denote $\Lambda=\frac{1}{1+\mathrm{i}\sigma(u)/\omega}$, we can formulate the problem as 
 #
 # ```math
 # \left\{ \begin{aligned} 
@@ -42,7 +48,7 @@
 # 
 # # Numerical scheme
 # 
-# Similar to the previous tutorials, we can construct the weak form for this PDE: 
+# Similar to the previous tutorials, we need to construct the weak form for the above PDEs. After integral by part and removing the zero boundary integral term, we get:
 #
 # ```math
 # a(u,v) = \int_\Omega \left[\nabla(\Lambda v)\cdot\frac{1}{\varepsilon(x)}\Lambda\nabla u-k^2uv\right]\mathrm{d}\Omega
@@ -75,7 +81,7 @@ k = 2*π/λ        # Wave number
 
 # # Discrete Model
 # 
-# We import the model from the `geometry.msh` mesh file using the `GmshDiscreteModel` function defined in `GridapGmsh`. The mesh file is created with the GMSH (see the file ../assets/emscatter/MeshGenerator.jl). Note that this mesh file already contains periodic boundary information for the left and right side, and that is enough for gridap to implement the periodic boundary condition. 
+# We import the model from the `geometry.msh` mesh file using the `GmshDiscreteModel` function defined in `GridapGmsh`. The mesh file is created with GMSH in Julia (see the file ../assets/emscatter/MeshGenerator.jl). Note that this mesh file already contains periodic boundary information for the left and right side, and that is enough for gridap to realize a periodic boundary condition should be implemented. 
 # 
 
 model = GmshDiscreteModel("../models/geometry.msh")
@@ -106,22 +112,23 @@ dΓ = Measure(Γ,degree)
 
 # # PML formulation
 # 
-# More detailed demonstration of the PML formulation can be found in Ref [1]. Here we first define a `s_PML` function: $s(x)=1+\mathrm{i}\sigma(u)/\omega,$ and its derivative `ds_PML`. The parameter `LH` indicates the size of the inner boundary of the PML regions. Finally, we create a function-like object `Λ` that returns the PML factors and define its derivative in gridap. 
+# Here we first define a `s_PML` function: $s(x)=1+\mathrm{i}\sigma(u)/\omega,$ and its derivative `ds_PML`. The parameter `LH` indicates the size of the inner boundary of the PML regions. Finally, we create a function-like object `Λ` that returns the PML factors and define its derivative in gridap. 
+# Note that here we are defining a "callable object" of type `Λ` that encapsulates all of the PML parameters. This is convenient, both because we can pass lots of parameters around easily and also because we can define additional methods on `Λ`, e.g. to express the `∇(Λv)` operation.
 # 
 
 # PML parameters
-R = 1e-4      # Tolerence for PML reflection 
-σ = -3/4*log(R)/d_pml
+Rpml = 1e-12      # Tolerence for PML reflection 
+σ = -3/4*log(Rpml)/d_pml # σ_0
 LH = [L,H]
 
 # PML coordinate streching functions
 function s_PML(x,σ,k,LH,d_pml)
-    u = abs.(Tuple(x)).-LH./2
+    u = abs.(Tuple(x)).-LH./2  # get the depth into PML
     return @. ifelse(u > 0,  1+(1im*σ/k)*(u/d_pml)^2, $(1.0+0im))
 end
 
 function ds_PML(x,σ,k,LH,d_pml)
-    u = abs.(Tuple(x)).-LH./2
+    u = abs.(Tuple(x)).-LH./2 # get the depth into PML
     ds = @. ifelse(u > 0, (2im*σ/k)*(1/d_pml)^2*u, $(0.0+0im))
     return ds.*sign.(Tuple(x))
 end
@@ -178,8 +185,8 @@ u_vec = A_mat\b_vec
 uh = FEFunction(U,u_vec)
 
 # # Analytical solution
-# 
-# In 2D cylinder coordinates, we can expand the plane wave in terms of Bessel functions: Plane wave: 
+# In this section, we construct the semi-analytical solution to this scattering problem, for comparison to the numerical solution. This is possible because of the symmetry of the cylinder, which allows us to expand the solutions of the Helmoltz equation in Bessel functions and match boundary conditions at the cylinder interface. (In 3d, the analogous process with spherical harmonics is known as "Mie scattering".) For more information on this technique, see Ref [4].
+# In 2D cylinder coordinates, we can expand the plane wave in terms of Bessel functions (this is the Jacobi–Anger identity [5]):
 #
 # ```math
 # H_0=\sum_m i^mJ_m(kr)e^{im\theta},
@@ -187,27 +194,27 @@ uh = FEFunction(U,u_vec)
 #
 # where $m=0,\pm 1,\pm 2,\dots$ and $J_m(z)$ is the Bessel function of the fisrt kind. 
 # 
-# Consider the $m$-th component, the incident part is: 
+# For simplicity, we start with only the $m$-th component and take it as the incident part: 
 #
 # ```math
-# H_{inc}=J_m(kr),
+# H_{inc}=J_m(kr).
 # ```
 #
-# the scattered field is : 
+# For the scattered field, since the scattered wave should be going out, we can then expand it in terms of the Hankel function of the first kind (outgoing and incoming cylindrical waves are Hankel functions of the first and second kind [6]): 
 #
 # ```math
-# H_1=\alpha_mH_m^1(kr),
+# H_1=\alpha_mH_m^1(kr).
 # ```
 #
-# and the fields inside the cylinder is: 
+# For the fields inside the cylinder, we require the field to be finite at $r=0$, which then constrains the field to be only the expansion of the Bessel functions: 
 #
 # ```math
-# H_2=\beta_mJ_m(nkr).
+# H_2=\beta_mJ_m(nkr),
 # ```
 # 
-# Here, $H_m^1$ is the Bessel function of the third kind (Hankel function of the first kind) that denotes a outgoing cylindrical wave, $n=\sqrt{\varepsilon}$ is the refractive index. 
+# where $n=\sqrt{\varepsilon}$ is the refractive index. 
 # 
-# Applyin the boundary condition: 
+# Applying the boundary conditions (tangential part of the electri and magnetic field to be continuous): 
 #
 # ```math
 # H_{inc}+H_1=H_2|_{r=R},
@@ -217,7 +224,7 @@ uh = FEFunction(U,u_vec)
 # \frac{\partial H_{inc}}{\partial r}+\frac{\partial H_1}{\partial r}=\frac{1}{\epsilon}\frac{\partial H_2}{\partial r}|_{r=R}.
 # ```
 # 
-# We get: 
+# After some math, we get: 
 #
 # ```math
 # \alpha_m=\frac{J_m(nkR)J_m(kR)^\prime-\frac{1}{n}J_m(kR)J_m(nkR)^\prime}{\frac{1}{n}H_m^1(kR)J_m(nkr)^\prime-J_m(nkr)H_m^1(kr)^\prime},
@@ -227,16 +234,16 @@ uh = FEFunction(U,u_vec)
 # \beta_m = \frac{H_m^1(kR)J_m(kR)^\prime-J_m(kR)H_m^1(kR)^\prime}{\frac{1}{n}J_m(nkR)^\prime H_m^1(kR)-J_m(nkR)H_m^1(kR)^\prime},
 # ```
 # 
-# where $^\prime$ denotes the derivative, and it is obtained by the recurrent relation of the Bessel functions: 
+# where $^\prime$ denotes the derivative, and the derivatives of the Bessel functions are obtained with the recurrent relations: 
 #
 # ```math
 # Y_m(z)^\prime=\frac{Y_{m-1}(z)-Y_{m+1}(z)}{2}
 # ```
 #
-# with $Y_m$ denotes any Bessel functions.
+# where $Y_m$ denotes any Bessel functions (Hankel functions).
 #
 # 
-# Finally, the analytical field is ($2k$ comes from the unit source excitation):
+# Finally, the analytical field is ($1/2k$ is the amplitude that comes from the unit line source excitation):
 # ```math
 # H(r>R)=\frac{1}{2k}\sum_m\left[\alpha_mi^mH_m^1(kr)+J_m(kr)\right]e^{im\theta}
 # ```
@@ -279,7 +286,7 @@ uh_t = FEFunction(U,u_t)
 
 # # Output and compare results
 # 
-# The simulated field is shown below. We can also see that the difference between the simulated fields and the analytical solution is almost zero near the cylidner region, which validates the simulation. The difference is larger far away from the cylinder center, that is because we only used M=20 to approximate the sum, the larger M, the smaller difference.
+# The simulated field is shown below. We can see that the difference between the simulated fields and the analytical solution is almost zero near the cylidner region, which validates the simulation. The difference is larger far away from the cylinder center, that is because we only used M=20 to approximate the sum. As we increase M as well as the resolution, this difference should decrease (until it becomes limited by the PML reflection coefficient from $\sigma_0$ or by floating-point error.)
 # ![](../assets/emscatter/Results.png)
 
 # Save to file and view
@@ -292,5 +299,9 @@ writevtk(Ω,"demo",cellfields=["Real"=>real(uh),
         "Difference"=>abs2(uh_t-uh)])
 #
 # ## References
-#
-# [1] A. F. Oskooi, L. Zhang, Y. Avniel, and S. G. Johnson, “The failure of perfectly matched layers, and towards their redemption by adiabatic absorbers,” Optics Express, vol. 16, pp. 11376–11392, July 2008.
+# [1] https://en.wikipedia.org/wiki/Electromagnetic_wave_equation
+# [2] https://en.wikipedia.org/wiki/Perfectly_matched_layer
+# [3] A. Oskooi and S. G. Johnson, “Distinguishing correct from incorrect PML proposals and a corrected unsplit PML for anisotropic, dispersive media,” Journal of Computational Physics, vol. 230, pp. 2369–2377, April 2011.
+# [4] Stratton, J. A. (1941). Electromagnetic Theory. New York: McGraw-Hill.
+# [5] https://en.wikipedia.org/wiki/Jacobi%E2%80%93Anger_expansion
+# [6] https://en.wikipedia.org/wiki/Bessel_function

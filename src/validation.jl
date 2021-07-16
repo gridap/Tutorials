@@ -19,7 +19,7 @@
 # \right.
 # ```
 #
-# We are going to consider two different manufactured solutions. On the one hand, we consider function $u(x)=x_1+x_2$, which can be exactly represented by the FE interpolation that we construct below. Thus, one expects that the obtained approximation error is near the machine precision. We are going to check that this is true in the code. On the other hand, we consider a function that cannot be captured exactly by the interpolation, namely $u(x)=x_2 \sin(2 \pi\ x_1)$. Here, our goal is to confirm that the convergence order of the discretization error is the optimal one.
+# We are going to consider two different manufactured solutions. On the one hand, we consider function $u(x)=x_1+x_2$, which can be exactly represented by the FE interpolation that we construct below. Thus, one expects that the obtained approximation error is near the machine precision. We are going to check that this is true in the code. On the other hand, we consider a function that cannot be captured exactly by the interpolation, namely $u(x)=x_1^3 + x_2^3$. Here, our goal is to confirm that the convergence order of the discretization error is the optimal one.
 #
 #
 # ## Manufactured solution

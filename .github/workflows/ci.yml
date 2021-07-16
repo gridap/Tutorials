@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.5'
+          - '1.6'
         os:
           - ubuntu-latest
         arch:
@@ -41,7 +41,7 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.5'
+          - '1.6'
         os:
           - ubuntu-latest
         arch:
@@ -71,7 +71,7 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.5'
+          - '1.6'
         os:
           - ubuntu-latest
         arch:
@@ -93,7 +93,7 @@ jobs:
             ${{ runner.os }}-test-
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@v1
-      - run: cd test/; julia --project=.. --color=yes --check-bounds=yes runtests.jl darcy.jl  inc_navier_stokes.jl stokes.jl  
+      - run: cd test/; julia --project=.. --color=yes --check-bounds=yes runtests.jl darcy.jl  inc_navier_stokes.jl stokes.jl poisson_dev_fe.jl 
   tutorials_set_4:
     name: Tutorials4 ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
@@ -101,7 +101,7 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.5'
+          - '1.6'
         os:
           - ubuntu-latest
         arch:
@@ -131,7 +131,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
         with:
-          version: '1.5'
+          version: '1.6'
       - run: |
           julia --project=docs -e '
             using Pkg

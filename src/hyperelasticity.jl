@@ -126,6 +126,6 @@ runs()
 #
 # ##  Extension to 3D
 #
-# Extending this tutorial to the 3D case is straightforward. It is leaved as an exercise.
+# Extending this tutorial to the 3D case is straightforward. It is left as an exercise.
 #
 # ![](../assets/hyperelasticity/neo_hook_3d.png)

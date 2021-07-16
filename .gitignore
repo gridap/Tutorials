@@ -4,3 +4,6 @@ notebooks
 Manifest.toml
 .ipynb_checkpoints/
 *.vtu
+tmp/
+.vscode/
+*.code-workspace

@@ -294,13 +294,11 @@ uₕ_array = get_data(uₕ)
 
 # Its concrete type is, though, `LazyArray`
 
-@test isa(uₕ_array.parent,Gridap.Fields.LazyArray)
+@test isa(uₕ_array,Gridap.Fields.LazyArray)
 
 # with full name, as above, of a certain complexity (to say the least):
 
-print(typeof(uₕ_array.parent))
-
-## **NOTE**: The actual type of `uₕ_array` is `MemoArray`. A `MemoArray` is a low-level data type that is conceived for increased performance. In particular, together with other mechanisms (which we do not cover to keep the presentation simple), it guarantees that a `LazyArray` which appears several times as an operand in an operation tree (e.g., the Jacobian matrix appears 3x in the operation tree corresponding to the Laplacian stiffness matrix) is only evaluated once the first time it is accessed. We note that `MemoArray` is a data type that developers have to be aware of, but it is (has to be) completely hidden to users.
+print(typeof(uₕ_array))
 
 # As mentioned above, `lazy_map` returns `LazyArray`s in the most general scenarios. Thus, it is reasonable to think that `get_data(uₕ)` returns an array that has been built via `lazy_map`. (We advance now that this is indeed the case.) On the other hand, as `uₕ_array` is (conceptually) a vector (i.e., rank-1 array) of `Field` objects, this also tells us that the `lazy_map`/`LazyArray` pair does not only play a fundamental role in the evaluation of (e.g., cell) arrays of `Field`s on (e.g., cell) arrays of arrays of `Point`s, but also in building new cell arrays of `Field`s (i.e., the local restriction of a FE function to each cell) out of existing ones (i.e., the cell array with the local shape functions). In the words of the previous section, we can use `lazy_map` to build complex operation trees among arrays of `Field`s, as required by the computer implementation of variational methods.
 
@@ -560,8 +558,8 @@ inv_Jt = lazy_map(Operation(inv),Jt)
 # Build array of arrays of `Field`s defined as the broadcasted single contraction of the Jacobian inverse transposed and the gradients of the shape functions in the reference space
 low_level_manual_gradient_dv_array = lazy_map(Broadcasting(Operation(⋅)),inv_Jt,∇ϕrₖ)
 
-# As always, we check that all arrays built are are equivalent (see note above on `MemoArray`s and the `parent` property)
-@test typeof(grad_dv_array.parent) == typeof(manual_grad_dv_array)
+# As always, we check that all arrays built are are equivalent
+@test typeof(grad_dv_array) == typeof(manual_grad_dv_array)
 #
 @test lazy_map(evaluate,grad_dv_array,qₖ) == lazy_map(evaluate,manual_grad_dv_array,qₖ)
 #

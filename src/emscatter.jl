@@ -1,13 +1,13 @@
 # In this tutorial, we will learn:
 # 
 #   * How to formulate the weak form for a scalar time-harmonic electromagnetic problem
-#   * How to implement perfectly matched layers (PML)
-#   * How does periodic boundary condition work in Gridap
-#   * How to discretize PDEs with complex-valued solution
+#   * How to implement a perfectly matched layer (PML) to absorb outgoing waves
+#   * How to impose periodic boundary conditions in Gridap
+#   * How to discretize PDEs with complex-valued solutions
 # 
 # ## Problem statement
 # 
-# We are going to solve a scalar electromagnetic wave scattering problem: a plane wave (Hz-polarized $H_{inc}$) scattering of a cylinder dielectric (of radius $R$ and permittivity $\varepsilon$), as illustrated below. The computational cell is of height $H$ and length $L$, and we designate a perfectly matched layer (PML) thickness of $d_{pml}$.
+# We are going to solve a scalar electromagnetic wave scattering problem: a plane wave (Hz-polarized $H_{inc}$) scattering of a dielectric cylinder (of radius $R$ and permittivity $\varepsilon$), as illustrated below. The computational cell is of height $H$ and length $L$, and we employ a perfectly matched layer (PML) thickness of $d_{pml}$ to implement outgoing (radiation) boundary conditions for this finite domain.
 # 
 # ![](../assets/emscatter/Illustration.png)
 # 
@@ -312,14 +312,14 @@ Difference=sqrt(sum(∫(abs2(uh_t-uh)*AnalyticalBox)*dΩ)/sum(∫(abs2(uh_t)*Ana
 @assert Difference < 0.1
 #
 # ## References
-# [1] https://en.wikipedia.org/wiki/Electromagnetic_wave_equation
+# [1] [Wikipedia: Electromagnetic wave equation](https://en.wikipedia.org/wiki/Electromagnetic_wave_equation)
 #
-# [2] https://en.wikipedia.org/wiki/Perfectly_matched_layer
+# [2] [Wikipedia: Perfectly matched layer](https://en.wikipedia.org/wiki/Perfectly_matched_layer)
 #
-# [3] A. Oskooi and S. G. Johnson, “Distinguishing correct from incorrect PML proposals and a corrected unsplit PML for anisotropic, dispersive media,” Journal of Computational Physics, vol. 230, pp. 2369–2377, April 2011.
+# [3] A. Oskooi and S. G. Johnson, “[Distinguishing correct from incorrect PML proposals and a corrected unsplit PML for anisotropic, dispersive media](http://math.mit.edu/~stevenj/papers/OskooiJo11.pdf),” Journal of Computational Physics, vol. 230, pp. 2369–2377, April 2011.
 #
 # [4] Stratton, J. A. (1941). Electromagnetic Theory. New York: McGraw-Hill.
 #
-# [5] https://en.wikipedia.org/wiki/Jacobi%E2%80%93Anger_expansion
+# [5] [Wikipedia: Jacobi–Anger expansion](https://en.wikipedia.org/wiki/Jacobi%E2%80%93Anger_expansion)
 #
 # [6] https://en.wikipedia.org/wiki/Bessel_function

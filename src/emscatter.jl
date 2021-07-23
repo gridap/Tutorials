@@ -322,4 +322,4 @@ Difference=sqrt(sum(∫(abs2(uh_t-uh)*AnalyticalBox)*dΩ)/sum(∫(abs2(uh_t)*Ana
 #
 # [5] [Wikipedia: Jacobi–Anger expansion](https://en.wikipedia.org/wiki/Jacobi%E2%80%93Anger_expansion)
 #
-# [6] https://en.wikipedia.org/wiki/Bessel_function
+# [6] [Wikipedia: Bessel function](https://en.wikipedia.org/wiki/Bessel_function)

@@ -16,6 +16,7 @@ files = [
   "Stokes equation" => "stokes.jl",
   "Isotropic damage model" => "isotropic_damage.jl",
   "Fluid-Structure Interaction"=>"fsi_tutorial.jl",
+  "Electromagnetic scattering in 2D"=>"emscatter.jl",
   "Low-level API Poisson equation"=>"poisson_dev_fe.jl",
   "On using DrWatson.jl"=>"validation_DrWatson.jl"]
 

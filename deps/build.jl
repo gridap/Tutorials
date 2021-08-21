@@ -18,7 +18,8 @@ files = [
   "Fluid-Structure Interaction"=>"fsi_tutorial.jl",
   "Electromagnetic scattering in 2D"=>"emscatter.jl",
   "Low-level API Poisson equation"=>"poisson_dev_fe.jl",
-  "On using DrWatson.jl"=>"validation_DrWatson.jl"]
+  "On using DrWatson.jl"=>"validation_DrWatson.jl",
+  "Interpolation"=>"interpolation_fe.jl"]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)
 for (i,(title,filename)) in enumerate(files)

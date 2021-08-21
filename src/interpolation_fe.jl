@@ -173,5 +173,5 @@ gₕ = interpolate_everywhere(ifₕ, V₂)
 
 # Like earlier we can check our results
 
-@test fₕ(pt) ≈ gₕ(pt) ≈ f₁(pt)
-@test fₕ.(pts) ≈ gₕ.(pts) ≈ f₁.(pts)
+@test fₕ(pt) ≈ gₕ(pt) ≈ f₂(pt)
+@test fₕ.(pts) ≈ gₕ.(pts) ≈ f₂.(pts)

@@ -154,7 +154,7 @@ Fields.∇(Λf::Λ) = x->TensorValue{2,2,ComplexF64}(-(Λf(x)[1])^2*ds_PML(x,Λf
 # In the mesh file, we labeled the cylinder region with `Cylinder` to distinguish it from other regions. Using this tag, we can assign material properties correspondingly (basically a function with different value in different regions). The weak form is very similar to its mathematical form in gridap.
 # 
 
-# ### Intermdediate varaibles
+# ### Intermediate variables
 labels = get_face_labeling(model)
 dimension = num_cell_dims(model)
 tags = get_face_tag(labels,dimension)

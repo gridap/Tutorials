@@ -43,20 +43,13 @@ partition = (5,5)
 # obtain the `FEFunction` in the new space from the old one by
 # evaluating the appropriate degrees of freedom. Interpolation works
 # using the composite type `Interpolable` to tell `Gridap` that the
-# argument can be interpolated between triangulations. This can be
-# done using any of the methods
-# ```julia
-# interpolate(ifₕ::Interpolable, new_fe_space::FESpace)
-# interpolate_everywhere(ifₕ::Interpolable, new_fe_space::FESpace)
-# interpolate_dirichlet(ifₕ::Interpolable, new_fe_space::FESpace)
-# ```
-# available in `Gridap`
+# argument can be interpolated between triangulations.
 
 # ## Interpolating between Lagrangian FE Spaces
 
 # Let us define the infinite dimensional function
 
-f₁(x) = x[1] + x[2]
+f(x) = x[1] + x[2]
 
 # This function will be interpolated to the source `FESpace`
 # $V_1$. The space can be built using
@@ -66,7 +59,7 @@ V₁ = FESpace(𝒯₁, reffe₁)
 
 # Finally to build the function $f_h$, we do
 
-fₕ = interpolate_everywhere(f₁,V₁)
+fₕ = interpolate_everywhere(f,V₁)
 
 # To construct arbitrary points in the domain, we use `Random` package:
 
@@ -81,8 +74,8 @@ fₕ(pt), fₕ.(pts)
 
 # We can also check our results using
 
-@test fₕ(pt) ≈ f₁(pt)
-@test fₕ.(pts) ≈ f₁.(pts)
+@test fₕ(pt) ≈ f(pt)
+@test fₕ.(pts) ≈ f.(pts)
 
 # Now let us define the new triangulation $\mathcal{T}_2$ of
 # $\Omega$. We define the map
@@ -119,10 +112,31 @@ ifₕ = Interpolable(fₕ)
 
 gₕ = interpolate_everywhere(ifₕ, V₂)
 
-# Like earlier we can check our results
+# We can also use
+# `interpolate` if interpolating only on the free dofs or
+# `interpolate_dirichlet` if interpolating the Dirichlet dofs of the
+# `FESpace`.
 
-@test fₕ(pt) ≈ gₕ(pt) ≈ f₁(pt)
-@test fₕ.(pts) ≈ gₕ.(pts) ≈ f₁.(pts)
+ḡₕ = interpolate(ifₕ, V₂)
+
+# The finite element function $\bar{g}_h$ is the same as $g_h$ in this
+# example since all the dofs are free.
+
+@test gₕ.cell_dof_values ==  ḡₕ.cell_dof_values
+
+# Now we obtain a finite element function using `interpolate_dirichlet`
+
+g̃ₕ = interpolate_dirichlet(ifₕ, V₂)
+
+# Now $\tilde{g}_h$ will be equal to 0 since there are
+# no Dirichlet nodes defined in the `FESpace`. We can check by running
+
+g̃ₕ.cell_dof_values
+
+# Like earlier we can check our results for `gₕ`:
+
+@test fₕ(pt) ≈ gₕ(pt) ≈ f(pt)
+@test fₕ.(pts) ≈ gₕ.(pts) ≈ f.(pts)
 
 # We can visualize the results using Paraview
 
@@ -131,7 +145,7 @@ writevtk(get_triangulation(gₕ), "target", cellfields=["gₕ"=>gₕ])
 
 # which produces the following output
 
-# ![Target](../assets/interpolation/target.png)
+# ![Target](../assets/interpolation_fe/source_and_target.png)
 
 # ## Interpolating between Raviart-Thomas FESpaces
 
@@ -146,14 +160,14 @@ writevtk(get_triangulation(gₕ), "target", cellfields=["gₕ"=>gₕ])
 
 # Assuming a function
 
-f₂(x) = VectorValue([x[1], x[2]])
+f(x) = VectorValue([x[1], x[2]])
 
 # on the domain, we build the associated finite dimensional version
 # $f_h \in V_1$.
 
 reffe₁ = ReferenceFE(raviart_thomas, Float64, 1) # RT space of order 1
 V₁ = FESpace(𝒯₁, reffe₁)
-fₕ = interpolate_everywhere(f₂, V₁)
+fₕ = interpolate_everywhere(f, V₁)
 
 # As before, we can evaluate the RT function on any arbitrary point in
 # the domain.
@@ -163,7 +177,7 @@ fₕ(pt), fₕ.(pts)
 # Constructing the target RT space and building the `Interpolable`
 # object,
 
-reffe₂ = ReferenceFE(raviart_thomas, Float64, 2) # RT space of order 2
+reffe₂ = ReferenceFE(raviart_thomas, Float64, 1) # RT space of order 1
 V₂ = FESpace(𝒯₂, reffe₂)
 ifₕ = Interpolable(fₕ)
 
@@ -173,4 +187,4 @@ gₕ = interpolate_everywhere(ifₕ, V₂)
 
 # Like earlier we can check our results
 
-gₕ(pt), f₂(pt)
+gₕ(pt), f(pt)

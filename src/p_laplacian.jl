@@ -96,7 +96,7 @@ flux(∇u) = norm(∇u)^(p-2) * ∇u
 f(x) = 1
 res(u,v) = ∫( ∇(v)⊙(flux∘∇(u)) - v*f )*dΩ
 
-# Function `res` is the one representing the integrand of the weak residual $[r(u)](v)$. The first argument of function `res` stands for the function $u\in U_g$, where the residual is evaluated, and the second argument stands for a generic test function $v\in V_0$. Note that we have used the macro `@law` to construct the "constitutive  law" that relates the nonlinear flux with the gradient of the solution.
+# Function `res` is the one representing the integrand of the weak residual $[r(u)](v)$. The first argument of function `res` stands for the function $u\in U_g$, where the residual is evaluated, and the second argument stands for a generic test function $v\in V_0$.
 #
 # On the other hand,  we (optionally) implement a function `jac` representing the Jacobian.
 dflux(∇du,∇u) = (p-2)*norm(∇u)^(p-4)*(∇u⊙∇du)*∇u+norm(∇u)^(p-2)*∇du

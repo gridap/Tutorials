@@ -188,3 +188,10 @@ gₕ = interpolate_everywhere(ifₕ, V₂)
 # Like earlier we can check our results
 
 gₕ(pt), f(pt)
+
+# ## Acknowledgements
+
+# Gridap contributors acknowledge support received from Google,
+# Inc. through the Google Summer of Code 2021 project [A fast finite
+# element interpolator in
+# Gridap.jl](https://summerofcode.withgoogle.com/projects/#6175012823760896).

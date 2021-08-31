@@ -3,8 +3,8 @@
 # - Interpolate finite element functions defined on different
 # triangulations. We will consider examples for
 #    - Lagrangian finite element spaces
-#    - Vector-Valued Spaces
 #    - Raviart Thomas finite element spaces
+#    - Vector-Valued Spaces
 #    - Multifield finite element spaces
 
 # ## Problem Statement
@@ -78,22 +78,13 @@ fₕ(pt), fₕ.(pts)
 @test fₕ.(pts) ≈ f.(pts)
 
 # Now let us define the new triangulation $\mathcal{T}_2$ of
-# $\Omega$. We define the map
-
-function sinusoidal(p::Point)
-  r, s = p
-  x = r + 0.05*sin(2π*r)*sin(2π*s)
-  y = s + 0.05*sin(2π*r)*sin(2π*s)
-  Point(x,y)
-end
-
-# to build the new triangulation using a partition of 20 cells per
+# $\Omega$. We build the new triangulation using a partition of 20 cells per
 # direction. The map can be passed as an argument to
 # `CartesianDiscreteModel` to define the position of the vertices in
 # the new mesh.
 
 partition = (20,20)
-𝒯₂ = CartesianDiscreteModel(domain,partition; map=sinusoidal)
+𝒯₂ = CartesianDiscreteModel(domain,partition)
 
 # As before, we define the new `FESpace` consisting of second order
 # elements
@@ -187,7 +178,86 @@ gₕ = interpolate_everywhere(ifₕ, V₂)
 
 # Like earlier we can check our results
 
-gₕ(pt), f(pt)
+@test gₕ(pt) ≈ f(pt) ≈ fₕ(pt)
+
+# ## Interpolating vector-valued functions
+
+# We can also interpolate vector-valued functions across
+# triangulations. First, we define a vector-valued function on a
+# two-dimensional mesh.
+
+f(x) = VectorValue([x[1], x[1]+x[2]])
+
+# We then create a vector-valued reference element containing linear
+# elements along with the source finite element space $V_1$.
+
+reffe₁ = ReferenceFE(lagrangian, VectorValue{2,Float64}, 1)
+V₁ = FESpace(𝒯₁, reffe₁)
+fₕ = interpolate_everywhere(f, V₁)
+
+# The target finite element space $V_2$ can be defined in a similar manner.
+
+reffe₂ = ReferenceFE(lagrangian, VectorValue{2,Float64}, 2)
+V₂ = FESpace(𝒯₂, reffe₂)
+
+# The rest of the process is similar to the previous sections, i.e.,
+# define the `Interpolable` version of $f_h$ and use
+# `interpolate_everywhere` to find $g_h \in V₂$.
+
+ifₕ = Interpolable(fₕ)
+gₕ = interpolate_everywhere(ifₕ, V₂)
+
+# We can then check the results
+
+@test gₕ(pt) ≈ f(pt) ≈ fₕ(pt)
+
+
+# ## Interpolating Multi-field Functions
+
+# Similarly, it is possible to interpolate between multi-field finite element
+# functions. First, we define the components $h_1(x), h_2(x)$ of a
+# multi-field function $h(x)$ as follows.
+
+h₁(x) = x[1]+x[2]
+h₂(x) = x[1]
+
+# Next we create a Lagrangian finite element space containing linear
+# elements.
+
+reffe₁ = ReferenceFE(lagrangian, Float64, 1)
+V₁ = FESpace(𝒯₁, reffe₁)
+
+# Next we create a `MultiFieldFESpace` $V_1 \times V_1$ and
+# interpolate the function $h(x)$ to the source space $V_1$.
+
+V₁xV₁ = MultiFieldFESpace([V₁,V₁])
+fₕ = interpolate_everywhere([h₁, h₂], V₁xV₁)
+
+# Similarly, the target multi-field finite element space is created
+# using $\Omega_2$.
+
+reffe₂ = ReferenceFE(lagrangian, Float64, 2)
+V₂ = FESpace(𝒯₂, reffe₂)
+V₂xV₂ = MultiFieldFESpace([V₂,V₂])
+
+# Now, to find $g_h \in V_2 \times V_2$, we first extract the components of
+# $f_h$ and obtain the `Interpolable` version of the components.
+
+fₕ¹, fₕ² = fₕ
+ifₕ¹ = Interpolable(fₕ¹)
+ifₕ² = Interpolable(fₕ²)
+
+# We can then use `interpolate_everywhere` on the `Interpolable`
+# version of the components and obtain $g_h \in V_2 \times V_2$ as
+# follows.
+
+gₕ = interpolate_everywhere([ifₕ¹,ifₕ²], V₂xV₂)
+
+# We can then check the results of the interpolation, component-wise.
+
+gₕ¹, gₕ² = gₕ
+@test fₕ¹(pt) ≈ gₕ¹(pt)
+@test fₕ²(pt) ≈ gₕ²(pt)
 
 # ## Acknowledgements
 

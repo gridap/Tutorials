@@ -1,5 +1,4 @@
-using Gmsh
-import Gmsh: gmsh
+import GridapGmsh: gmsh
 function MeshGenerator(L,H,xc,r,hs,d_pml,lc)
     gmsh.initialize()
     gmsh.option.setNumber("General.Terminal", 1)
@@ -73,6 +72,6 @@ hs = 2.0         # y-position of the source (plane wave)
 d_pml = 0.8      # Thickness of the PML
 
 resol = 20.0      # Number of points per wavelength
-lc = λ/resol      # Characteristic length
+lc = 10*λ/resol      # Characteristic length
 
 MeshGenerator(L,H,xc,r,hs,d_pml,lc)

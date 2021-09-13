@@ -309,7 +309,7 @@ end
 
 Difference=sqrt(sum(∫(abs2(uh_t-uh)*AnalyticalBox)*dΩ)/sum(∫(abs2(uh_t)*AnalyticalBox)*dΩ))
 
-@assert Difference < 0.1
+@show Difference < 0.1
 #
 # ## References
 # [1] [Wikipedia: Electromagnetic wave equation](https://en.wikipedia.org/wiki/Electromagnetic_wave_equation)

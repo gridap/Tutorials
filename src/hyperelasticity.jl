@@ -67,7 +67,7 @@ jac_mat(u,du,v) =  ∫( (dE∘(∇(v),∇(u))) ⊙ (dS∘(∇(du),∇(u))) )*dΩ
 
 jac_geo(u,du,v) = ∫( ∇(v) ⊙ ( (S∘∇(u))⋅∇(du) ) )*dΩ
 
-jac(u,du,v) = jac_mat(u,v,du) + jac_geo(u,v,du)
+jac(u,du,v) = jac_mat(u,du,v) + jac_geo(u,du,v)
 
 # Construct the FEspace
 reffe = ReferenceFE(lagrangian,VectorValue{2,Float64},1)

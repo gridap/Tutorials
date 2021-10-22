@@ -7,3 +7,4 @@ Manifest.toml
 tmp/
 .vscode/
 *.code-workspace
+*.DS_Store

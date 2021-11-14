@@ -14,7 +14,7 @@
 # interpolation problem is to find $g_h \in V_2$ such that
 #
 # ```math
-# dof_k^{V_2}(g_h) = dof_k^{V_2}(f_h),\quad \forall k \in
+# dof_k^{V_2}(g_h) = dof_k^{V_1}(f_h),\quad \forall k \in
 # \{1,\dots,N_{dof}^{V_2}\}
 # ```
 

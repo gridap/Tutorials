@@ -571,6 +571,8 @@ low_level_manual_gradient_dv_array = lazy_map(Broadcasting(Operation(⋅)),inv_J
 
 # ## A low-level implementation of the residual integration and assembly
 
+# **TODO** To explain with words and associated equations the strategy followed in order to solve the Poisson problems with non-homogeneous Dirichlet boundary conditions without modifying the global assembly process
+
 # Let us now create manually an array of `Field`s uₖ that returns the FE function uₕ at each cell, and another array with its gradients, ∇uₖ. We hope that the next set of instructions can be already understood with the material covered so far
 
 ϕrₖ = Fill(ϕr,num_cells(Tₕ))

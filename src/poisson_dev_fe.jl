@@ -571,7 +571,28 @@ low_level_manual_gradient_dv_array = lazy_map(Broadcasting(Operation(⋅)),inv_J
 
 # ## A low-level implementation of the residual integration and assembly
 
-# The discretized variational form of the Poisson problem reads as :<br>Find $u_h \in V_h^{\Gamma_D}=\{v_h \in V_h:v_h=g_0 \; on \; \Gamma_D\}$ such that$$a(u_h,v_h)=l(v_h)\quad \forall v_h \in V_h^0$$where $V_h^0=\{v_h \in V_h:v_h=0 \; on \; \Gamma_D\}$.<br> Take $u_h = \hat{u}_h-w_h$ where $w_h \in V_h^0$ and $\hat{u}_h \in V_h^{\Gamma_D}$, then $$a(w_h,v_h)=a(\hat{u}_h,v_h)-l(v_h)\quad \forall v_h,w_h \in V_h^0.$$ Find some $\hat{u}_h$, solve that eqation for $w_h$, then the solution is $$ u_h=\hat{u}_h-w_h. $$ In the integration and assembly process, we first use the `rand` function to assign random values to the free DoFs to form $\hat{u}_h$ (name the randomly fixed DoFs as $\vec{\hat{u}}$). In this particular problem, $l(v_h)$ is obviously zero, so just compute $a(\hat{u}_h,v_h)$ for each element, then assemble the results to obtain the global force vector $\vec{b}$. On the left hand side, compute every element-wise $a(w_h,v_h)$, and assemble them to form global stiffness matrix $\textbf{A}$. Solve the linear system $\textbf{A}\vec{x}=\vec{b}$ for $\vec{x}$, then the final solution for the free DoFs is $$\vec{u}=\vec{\hat{u}}-\vec{x}.$$
+# The discretized variational form of the Poisson problem reads as:
+# >Find $u_h \in V_h^{\Gamma_D}=\{v_h \in V_h:v_h=g_0 \; on \; \Gamma_D\}$ such that
+# >```math
+# >(u_h,v_h)=l(v_h)\quad \forall v_h \in V_h^0
+# >```
+# >where $V_h^0=\{v_h \in V_h:v_h=0 \; on \; \Gamma_D\}$.
+#
+# Take $u_h = \hat{u}_h-w_h$ where $w_h \in V_h^0$ and $\hat{u}_h \in V_h^{\Gamma_D}$, then
+# ```math
+# a(w_h,v_h)=a(\hat{u}_h,v_h)-l(v_h)\quad \forall v_h,w_h \in V_h^0.
+# ```
+#
+# Find some $\hat{u}_h$, solve that eqation for $w_h$, then the solution is
+# ```math
+# u_h=\hat{u}_h-w_h.
+# ```
+#
+# In the integration and assembly process, we first use the `rand` function to assign random values to the free DoFs to form $\hat{u}_h$ (name the randomly fixed DoFs as $\vec{\hat{u}}$). In this particular problem, $l(v_h)$ is obviously zero, so just compute $a(\hat{u}_h,v_h)$ for each element, then assemble the results to obtain the global force vector $\vec{b}$. On the left hand side, compute every element-wise $a(w_h,v_h)$, and assemble them to form global stiffness matrix $\textbf{A}$. Solve the linear system $\textbf{A}\vec{x}=\vec{b}$ for $\vec{x}$, then the final solution for the free DoFs is
+
+# ```math
+# \vec{u}=\vec{\hat{u}}-\vec{x}.
+# ```
 
 # Let us now create manually an array of `Field`s uₖ that returns the FE function uₕ at each cell, and another array with its gradients, ∇uₖ. We hope that the next set of instructions can be already understood with the material covered so far
 

@@ -578,7 +578,7 @@ low_level_manual_gradient_dv_array = lazy_map(Broadcasting(Operation(⋅)),inv_J
 # >```math
 # >a(u_h,v_h)=l(v_h)\quad \forall v_h \in V_h^0
 # >```
-# >where $V_h^0=\{v_h \in V_h:v_h=0 \; on \; \Gamma_D\}$.
+# >where $V_h^0=\{v_h \in V_h:v_h=0 \; on \; \Gamma_D\}$ and $g^h_0$ is the interpolation of $g_0$ on the Dirichlet boundary.
 #
 # If we take an arbitrary function $\hat{u}_h \in V_h^{\Gamma_D}$, and compute $w_h \in V_h^0$ as the solution of the following discrete variational problem:
 # ```math

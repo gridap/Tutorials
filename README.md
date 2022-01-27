@@ -33,6 +33,28 @@ Visit one of the following pages, depending of your needs, and start enjoying!
 - [**STABLE**](https://gridap.github.io/Tutorials/stable) &mdash; **Tutorials for the most recently tagged version of Gridap.jl.**
 - [**DEVEL**](https://gridap.github.io/Tutorials/dev) &mdash; *Tutorials for the in-development version of Gridap.jl.*
 
+## Generating tutorials locally 
+
+Note: **only if you intend to contribute to the tutorials as an advanced user/developer**
+
+If you want to contribute to the tutorials, e.g., to make changes in their sources, you might need to generate (render) them locally to see whether the changes in the sources produce the expected outcome in the output (i.e., Jupyter notebooks + HTML pages). To this end, you have to follow the following instructions once:
+
+```
+julia --project=docs   # From the Unix shell, located at the root of Tutorials repo 
+develop .              # From the Julia package manager prompt
+instantiate            # "" 
+build                  # "" 
+exit()                 # From the Julia REPL
+```
+
+and then, each time that you perform a change on the tutorial sources, you have to execute the following command:
+
+```
+julia --project=docs docs/make.jl # From the Unix shell, located at the root of Tutorials repo 
+```
+
+to generate the tutorials. The files generated are available at `Tutorials/docs/build/`. 
+
 
 ## Gridap community
 
@@ -61,4 +83,5 @@ In order to give credit to the `Gridap` contributors, we simply ask you to cite 
 
 
 Please, contact the project administrators, [Santiago Badia](mailto:santiago.badia@monash.edu) and [Francesc Verdugo](mailto:fverdugo@cimne.upc.edu), for further questions about licenses and terms of use.
+
 

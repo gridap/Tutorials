@@ -571,6 +571,21 @@ low_level_manual_gradient_dv_array = lazy_map(Broadcasting(Operation(⋅)),inv_J
 
 # ## A low-level implementation of the residual integration and assembly
 
+# In the rest of the tutorial we aim to solve a Poisson equation with homogeneous source term, i.e., $f=0$ and non-homogeneous Dirichlet boundary conditions $u=g_0$ on $\Gamma_D$, with  $\Gamma_D$ being the whole boundary of the model. While the strong imposition of non-homogeneous Dirichlet boundary conditions in Gridap is done under the hood by modifying the global assembly process by subtracting the contributions of boundary conditions to the right hand side of the linear system, in this tutorial, for simplicity, we follow a different approach. This approach requires: (1) to be able to assemble the residual of the PDE for an arbitrary finite element function $\hat{u}_h$ (current section); (2) to be able to assemble the coefficient matrix of the finite element linear system (next section). We briefly outline this solution approach in the sequel.
+
+# The discretized variational form of the Poisson problem reads as:
+# >Find $u_h \in V_h^{\Gamma_D}=\{v_h \in V_h:v_h=g^h_0 \; on \; \Gamma_D\}$ such that
+# >```math
+# >a(u_h,v_h)=l(v_h)\quad \forall v_h \in V_h^0
+# >```
+# >where $V_h^0=\{v_h \in V_h:v_h=0 \; on \; \Gamma_D\}$ and $g^h_0$ is the interpolation of $g_0$ on the Dirichlet boundary.
+#
+# If we take an arbitrary function $\hat{u}_h \in V_h^{\Gamma_D}$, and compute $w_h \in V_h^0$ as the solution of the following discrete variational problem:
+# ```math
+# a(w_h,v_h)=a(\hat{u}_h,v_h)-l(v_h)\quad \forall v_h,w_h \in V_h^0,
+# ```
+# then, it is easy to see that $\mathbf{ u_h=\hat{u}_h-w_h }$. This is the strategy that we implement in the sequel. Note that, in previous section, we created a FE function using `rand` for initializing the values of the degrees of freedom. This function indeed plays the role of $\hat{u}_h$.
+
 # Let us now create manually an array of `Field`s uₖ that returns the FE function uₕ at each cell, and another array with its gradients, ∇uₖ. We hope that the next set of instructions can be already understood with the material covered so far
 
 ϕrₖ = Fill(ϕr,num_cells(Tₕ))
@@ -659,7 +674,7 @@ A = allocate_matrix(assem,rs)
 #
 A = assemble_matrix!(A,assem,rs)
 
-# Now we can obtain the free DOFs and add the solution to the initial guess
+# Now we can obtain the free DOFs by subtracting the solution from the initial guess
 
 x = A \ b
 uf = get_free_dof_values(uₕ) - x

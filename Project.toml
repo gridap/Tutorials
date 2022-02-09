@@ -16,6 +16,7 @@ IJulia = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
 LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
+MPI = "da04e1cc-30fd-572f-bb4f-1f8673147195"
 NLsolve = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
 PartitionedArrays = "5a9dfac6-5c52-46f7-8278-5e2210713be9"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
@@ -25,12 +26,11 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [compat]
 Gridap = "0.17"
-#GridapGmsh = "0.6"
+MPI = "0.19"
 GridapDistributed = "0.2"
-GridapP4est = "0.1" 
+GridapP4est = "0.1"
 GridapPETSc = "0.4"
 PartitionedArrays = "0.2"
-
 SpecialFunctions = "1"
 julia = "1.3"
 

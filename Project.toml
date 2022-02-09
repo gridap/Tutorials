@@ -25,7 +25,7 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [compat]
 Gridap = "0.17"
-GridapGmsh = "0.6"
+#GridapGmsh = "0.6"
 GridapDistributed = "0.2"
 GridapP4est = "0.1" 
 GridapPETSc = "0.4"

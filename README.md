@@ -18,7 +18,9 @@
 
 ## What
 
-This repo contains a set of tutorials to learn how to solve partial differential equations (PDEs) in Julia with the [Gridap.jl](https://github.com/gridap/Gridap.jl) library.
+This repo contains a set of tutorials to learn how to solve partial differential equations (PDEs) in Julia with the Gridap ecosystem of packages. At the root of this ecosystem is the [Gridap.jl](https://github.com/gridap/Gridap.jl) library. The initial tutorials illustrate the usage of the tools in [Gridap.jl](https://github.com/gridap/Gridap.jl), and these are the tutorials new users should focus on.
+
+Within the Gridap ecosystem there are several [satellite/plugin packages](https://github.com/gridap/Gridap.jl#plugins) that serve different purposes. Some of the tutorials focus on the combined usage of [Gridap.jl](https://github.com/gridap/Gridap.jl) and the plugin packages. For example, [this tutorial](https://gridap.github.io/Tutorials/dev/pages/t016_poisson_distributed/) illustrates the usage of [GridapDistributed.jl](https://github.com/gridap/GridapDistributed.jl) for the solution of PDEs on parallel distributed-memory supercomputers.
 
 The tutorials are available in two formats:
 

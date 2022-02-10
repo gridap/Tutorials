@@ -1,12 +1,12 @@
 # ## Introduction
 
-# In this tutorial we will learn how to use [`GridapODEs.jl`](https://github.com/gridap/GridapODEs.jl) to solve the transient PDEs by solving the *heat equation*, equivalent to the transient Poisson equation.
+# In this tutorial we will learn how to use [`GridapODEs.jl`](https://github.com/gridap/GridapODEs.jl) for approximating transient PDEs by using time marching schemes (method of lines). We consider the *heat equation*, a.k.a. the transient Poisson equation.
 
-# We will focus on the time discretization on the equations, assuming that the reader is familiar with the spatial Finite Element discretization given in [tutorial 1](https://gridap.github.io/Tutorials/stable/pages/t001_poisson/).
+# We will focus on the time discretization on the equations, assuming that the reader is familiar with the `Gridap` API for spatial finite element discretizations. See, e.g., [tutorial 1](https://gridap.github.io/Tutorials/stable/pages/t001_poisson/) for more details.
 
 # ## Problem statement
 
-# We solve the heat equation in a 2-dimensional domain defined by a square with Homogenous Dirichlet boundaries, $\Gamma_D$. We consider a time-dependent conductivity $\kappa(t)=1.0 + 0.95\sin(2\pi t)$, a time-dependent volumetric forcing term $f(t) = \sin(\pi t)$ and a constant Homogenous boundary condition $g = 0.0$. The initial solution is $u(x,0) = u_0 = 0$. With these definitions, the strong form of the problem reads:
+# We solve the heat equation in a 2-dimensional domain $\Omega$, the unit square, with Homogenous Dirichlet boundaries on the whole boundary $\partial \Omega$. We consider a time-dependent conductivity $\kappa(t)=1.0 + 0.95\sin(2\pi t)$, a time-dependent volumetric forcing term $f(t) = \sin(\pi t)$ and a constant Homogenous boundary condition $g = 0.0$. The initial solution is $u(x,0) = u_0 = 0$. With these definitions, the strong form of the problem reads:
 
 # ```math
 # \left\lbrace
@@ -18,13 +18,13 @@
 # \right.
 # ```
 
-# The weak form of the problem will read: find $u(t)\in U_g(t)$ such that
+# The weak form of the problem reads: find $u(t)\in U_g(t)$ such that
 
 # ```math
 # m(t,u,v) + a(t,u,v) = b(t,v)\quad \forall v\in \ V
 # ```
 
-# Note that $U_g(t)$ is a transient FE space, in the sense that Dirichlet boundary value of functions in $U_g$ can change in time. The definition of $m(u,v)$, $a(u,v)$ and $b(v)$ is as follows:
+# Note that $U_g(t)$ is a transient FE space, in the sense that Dirichlet boundary value of functions in $U_g$ _can_ change in time (even though this is not the case in this tutorial). The definition of $m(u,v)$, $a(u,v)$ and $b(v)$ is as follows:
 
 # ```math
 # \begin{aligned}
@@ -42,7 +42,7 @@ using GridapODEs
 using GridapODEs.ODETools
 using GridapODEs.TransientFETools
 
-# Without going into the details we define the `DiscreteModel` and the `Triangulation`, as it is detailed in [tutorial 2](https://gridap.github.io/Tutorials/stable/pages/t002_validation/).
+# First, we define the `DiscreteModel` and the `Triangulation`. More details on this can be found in [tutorial 2](https://gridap.github.io/Tutorials/stable/pages/t002_validation/).
 
 
 𝒯 = CartesianDiscreteModel((0,1,0,1),(20,20))
@@ -64,7 +64,7 @@ U = TransientTrialFESpace(V,g)
 
 # ## Weak form
 
-# The weak form of the problem follows the same structure as other `Gridap` tutorials, where we define the bilinear and linear forms to define the `FEOperator`. In this case we need to deal with time-dependent quantities and with the presence of time derivatives. The former is handled by passing the time, $t$, as an additional argument to the form, i.e. $a(t,u,v)$. The later is defined using the time derivative operator `∂t`.
+# The weak form of the problem follows the same structure as other `Gridap` tutorials, where we define the bilinear and linear forms to define the `FEOperator`. In this case we need to deal with time-dependent quantities and with the presence of time derivatives. The former is handled by passing the time, $t$, as an additional argument to the form, i.e. $a(t,u,v)$. The latter is defined using the time derivative operator `∂t`.
 
 # The most general way of constructing a transient FE operator is by using the `TransientFEOperator` function, which receives a residual, a jacobian with respect to the unknown and a jacobian with respect to the time derivative.
 κ(t) = 1.0 + 0.95*sin(2π*t)
@@ -74,7 +74,7 @@ jac(t,u,du,v) = ∫( κ(t)*(∇(du)⋅∇(v)) )dΩ
 jac_t(t,u,duₜ,v) = ∫( duₜ*v )dΩ
 op = TransientFEOperator(res,jac,jac_t,U,V)
 
-# We can also take advantage of automatic differentitation techniques and use the `TransientFEOperator` function sending only the residual.
+# We can also take advantage of automatic differentiation techniques to compute both Jacobians and use the `TransientFEOperator` function sending just the residual.
 op_AD = TransientFEOperator(res,U,V)
 
 # Alternatively, we can exploit the fact that the problem is linear and use the transient Affine FE operator signature `TransientAffineFEOperator`. In that case, we send a form for the mass contribution, $m$, a form for the stiffness contribution, $a$, and the forcing term, $b$.
@@ -96,7 +96,7 @@ op_C = TransientConstantFEOperator(m,a,b,U,V)
 
 # ## Transient solver
 
-# Once we have the FE operator defined, we proceed with the definition of the transient solver. First, we define a linear solver to be used at each time step. Here we use the `LUSolver`, but other choices could be made.
+# Once we have the FE operator defined, we proceed with the definition of the transient solver. First, we define a linear solver to be used at each time step. Here we use the `LUSolver`, but other choices are possible.
 linear_solver = LUSolver()
 
 # Then, we define the ODE solver. That is, the scheme that will be used for the time integration. In this tutorial we use the `ThetaMethod` with $\theta = 0.5$, resulting in a 2nd order scheme. The `ThetaMethod` function receives the linear solver, the time step size $\Delta t$ (constant) and the value of $\theta $.
@@ -112,7 +112,7 @@ uₕₜ = solve(ode_solver,op,u₀,t₀,T)
 
 # ## Postprocessing
 
-# We should highlight that `uₕₜ` is just an iterable function and the results at each time steps are only computed when iterating over it. We can post-process the results and generate the corresponding `vtk` files using the `createpvd` and `createvtk` functions. The former will create a `.pvd` file with the collection of `.vtu` files saved at each time step by `createvtk`. This can be done as follows:
+# We should highlight that `uₕₜ` is just an _iterable_ function and the results at each time steps are only computed when iterating over it, i.e., lazily. We can post-process the results and generate the corresponding `vtk` files using the `createpvd` and `createvtk` functions. The former will create a `.pvd` file with the collection of `.vtu` files saved at each time step by `createvtk`. The computation of the problem solutions will be triggered in the following loop:
 createpvd("poisson_transient_solution") do pvd
   for (uₕ,t) in uₕₜ
     pvd[t] = createvtk(Ω,"poisson_transient_solution_$t"*".vtu",cellfields=["u"=>uₕ])

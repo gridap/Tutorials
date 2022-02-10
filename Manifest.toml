@@ -387,6 +387,12 @@ git-tree-sha1 = "a36d6867fba68d49354a939e19543a0dd670e73c"
 uuid = "bcdc36c2-0c3e-11ea-095a-c9dadae499f1"
 version = "0.4.1"
 
+[[GridapODEs]]
+deps = ["ForwardDiff", "Gridap", "LineSearches", "LinearAlgebra", "Sundials", "Test"]
+git-tree-sha1 = "82593e80bc6517dd5fa9e48554df2b8859e3cbc8"
+uuid = "55e38337-5b6e-4c7c-9cfc-e00dd49102e6"
+version = "0.8.0"
+
 [[Grisu]]
 git-tree-sha1 = "53bb909d1151e57e2484c3d1b53e19552b887fb2"
 uuid = "42e2da0e-8278-4e71-bc24-59509adca0fe"

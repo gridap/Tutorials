@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>16 Poisson equation on parallel distributed-memory computers · Gridap tutorials</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="Gridap tutorials logo"/></a><div class="docs-package-name"><span class="docs-autofit">Gridap tutorials</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><a class="tocitem" href="../t001_poisson/">1 Poisson equation</a></li><li><a class="tocitem" href="../t002_validation/">2 Code validation</a></li><li><a class="tocitem" href="../t003_elasticity/">3 Linear elasticity</a></li><li><a class="tocitem" href="../t004_p_laplacian/">4 p-Laplacian</a></li><li><a class="tocitem" href="../t005_hyperelasticity/">5 Hyper-elasticity</a></li><li><a class="tocitem" href="../t006_dg_discretization/">6 Poisson equation (with DG)</a></li><li><a class="tocitem" href="../t007_darcy/">7 Darcy equation (with RT)</a></li><li><a class="tocitem" href="../t008_inc_navier_stokes/">8 Incompressible Navier-Stokes</a></li><li><a class="tocitem" href="../t009_stokes/">9 Stokes equation</a></li><li><a class="tocitem" href="../t010_isotropic_damage/">10 Isotropic damage model</a></li><li><a class="tocitem" href="../t011_fsi_tutorial/">11 Fluid-Structure Interaction</a></li><li><a class="tocitem" href="../t012_emscatter/">12 Electromagnetic scattering in 2D</a></li><li><a class="tocitem" href="../t013_poisson_dev_fe/">13 Low-level API Poisson equation</a></li><li><a class="tocitem" href="../t014_validation_DrWatson/">14 On using DrWatson.jl</a></li><li><a class="tocitem" href="../t015_interpolation_fe/">15 Interpolation of CellFields</a></li><li class="is-active"><a class="tocitem" href>16 Poisson equation on parallel distributed-memory computers</a><ul class="internal"><li><a class="tocitem" href="#Introduction-1"><span>Introduction</span></a></li><li><a class="tocitem" href="#First-example:-GridapDistributed.jl-built-in-tools-1"><span>First example: <code>GridapDistributed.jl</code> built-in tools</span></a></li><li><a class="tocitem" href="#Second-example:-GridapDistributed.jl-GridapPETSc.jl-for-the-linear-solver-1"><span>Second example: <code>GridapDistributed.jl</code> + <code>GridapPETSc.jl</code> for the linear solver</span></a></li><li><a class="tocitem" href="#Third-example:-second-example-GridapP4est.jl-for-mesh-generation-1"><span>Third example: second example + <code>GridapP4est.jl</code> for mesh generation</span></a></li><li><a class="tocitem" href="#Fourth-example:-second-example-GridapGmsh.jl-for-mesh-generation-1"><span>Fourth example: second example + <code>GridapGmsh.jl</code> for mesh generation</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>16 Poisson equation on parallel distributed-memory computers</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>16 Poisson equation on parallel distributed-memory computers</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/gridap/Tutorials/blob/master/src/poisson_distributed.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Tutorial-16:-Poisson-equation-on-parallel-distributed-memory-computers-1"><a class="docs-heading-anchor" href="#Tutorial-16:-Poisson-equation-on-parallel-distributed-memory-computers-1">Tutorial 16: Poisson equation on parallel distributed-memory computers</a><a class="docs-heading-anchor-permalink" href="#Tutorial-16:-Poisson-equation-on-parallel-distributed-memory-computers-1" title="Permalink"></a></h1><p><a href="https://mybinder.org/v2/gh/gridap/Tutorials/gh-pages?filepath=dev/notebooks/t016_poisson_distributed.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt/></a> <a href="https://nbviewer.jupyter.org/github/gridap/Tutorials/blob/gh-pages/dev/notebooks/t016_poisson_distributed.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt/></a></p><h2 id="Introduction-1"><a class="docs-heading-anchor" href="#Introduction-1">Introduction</a><a class="docs-heading-anchor-permalink" href="#Introduction-1" title="Permalink"></a></h2><p>In this tutorial we will learn how to use <a href="https://github.com/gridap/GridapDistributed.jl"><code>GridapDistributed.jl</code></a> and its satellite packages, <a href="https://github.com/gridap/GridapP4est.jl"><code>GridapP4est.jl</code></a>, <a href="https://github.com/gridap/GridapGmsh.jl"><code>GridapGmsh.jl</code></a>, and <a href="https://github.com/gridap/GridapPETSc.jl"><code>GridapPETSc.jl</code></a>, in order to solve a Poisson PDE problem  on the unit square using grad-conforming Lagrangian Finite Elements for numerical discretization.</p><p>We will first solve the problem using solely the built-in tools in <code>GridapDistributed.jl</code>. While this is very useful for testing and debugging purposes, <code>GridapDistributed.jl</code> is <em>not</em> a library of parallel solvers. Indeed, the built-in linear solver kernel within <code>GridapDistributed.jl</code>, defined with the backslash operator <code>\</code>, is just a sparse LU solver applied to the global system gathered on a master task (thus not scalable). To address this, we will then illustrate which changes are required in the program to replace the built-in solver in <code>GridapDistributed.jl</code> by <code>GridapPETSc.jl</code>. This latter package provides the full set of scalable linear and nonlinear solvers in the <a href="https://petsc.org/release/">PETSc</a> numerical package.</p><p>On the other hand, in real-world applications, one typically needs to solve PDEs on more complex domains than simple boxes. To this end, we can leverage either <code>GridapGmsh.jl</code>, in order to partition and distribute automatically unstructured meshes read from disk in gmsh format, or <code>GridapP4est.jl</code>, which allows one to mesh in a very scalable way computational domains which can be decomposed as forests of octrees. The last part of the tutorial will present the necessary changes in the program in order to use these packages.</p><p><strong>IMPORTANT NOTE</strong>: the parallel codes in this tutorial depend on the Message Passing Interface (MPI). Thus, they cannot be easily executed interactively, e.g., in a Jupyter notebook. Instead, one has to run them from a terminal using the <a href="https://juliaparallel.github.io/MPI.jl/stable/configuration/#Julia-wrapper-for-mpiexec"><code>mpiexecjl</code></a> script as provided by <a href="https://github.com/JuliaParallel/MPI.jl">MPI.jl</a>, e.g., with the command <code>mpiexecjl --project=. -n 4 julia src/poisson_distributed.jl</code> run from the root directory of the Tutorials git repository.</p><h2 id="First-example:-GridapDistributed.jl-built-in-tools-1"><a class="docs-heading-anchor" href="#First-example:-GridapDistributed.jl-built-in-tools-1">First example: <code>GridapDistributed.jl</code> built-in tools</a><a class="docs-heading-anchor-permalink" href="#First-example:-GridapDistributed.jl-built-in-tools-1" title="Permalink"></a></h2><pre><code class="language-julia">using Gridap
+using GridapDistributed
+using PartitionedArrays</code></pre><p>The first step in any <code>GridapDistributed.jl</code> program is to define a function (named <code>main_ex1</code> below) to be executed on each part on which the domain is distributed. This function receives a single argument (named <code>parts</code> below). The body of this function is equivalent to a sequential <code>Gridap</code> script, except for the <code>CartesianDiscreteModel</code> call, which in <code>GridapDistributed</code> also requires the <code>parts</code> argument passed to the <code>main_ex1</code> function. The domain is discretized using the parallel Cartesian-like mesh generator built-in in <code>GridapDistributed</code>.</p><pre><code class="language-julia">function main_ex1(parts)
+  domain = (0,1,0,1)
+  mesh_partition = (4,4)
+  model = CartesianDiscreteModel(parts,domain,mesh_partition)
+  order = 2
+  u((x,y)) = (x+y)^order
+  f(x) = -Δ(u,x)
+  reffe = ReferenceFE(lagrangian,Float64,order)
+  V = TestFESpace(model,reffe,dirichlet_tags=&quot;boundary&quot;)
+  U = TrialFESpace(u,V)
+  Ω = Triangulation(model)
+  dΩ = Measure(Ω,2*order)
+  a(u,v) = ∫( ∇(v)⋅∇(u) )dΩ
+  l(v) = ∫( v*f )dΩ
+  op = AffineFEOperator(a,l,U,V)
+  uh = solve(op)
+  writevtk(Ω,&quot;results_ex1&quot;,cellfields=[&quot;uh&quot;=&gt;uh,&quot;grad_uh&quot;=&gt;∇(uh)])
+end</code></pre><p>Once the <code>main_ex1</code> function has been defined, we have to trigger its execution on the different parts. To this end, one calls the <code>prun</code> function of <a href="https://github.com/fverdugo/PartitionedArrays.jl"><code>PartitionedArrays.jl</code></a> right at the beginning of the program.</p><pre><code class="language-julia">partition = (2,2)
+prun(main_ex1, mpi, partition)</code></pre><p>With this function, the programmer sets up the <code>PartitionedArrays.jl</code> communication backend (i.e., MPI in the example), specifies the number of parts and their layout (i.e., 2x2 Cartesian-like mesh partition in the example), and provides the <code>main_ex1</code> function to be run on each part.</p><p>Although not illustrated in this tutorial, we note that one may also use the <code>sequential</code> <code>PartitionedArrays.jl</code> backend, instead of <code>mpi</code>. With this backend, the code executes serially on a single process (and there is thus no need to use <code>mpiexecjl</code> to launch the program), although  the data structures are still partitioned into parts. This is very useful, among others, for interactive execution of the code, and debugging, before moving to MPI parallelism.</p><h2 id="Second-example:-GridapDistributed.jl-GridapPETSc.jl-for-the-linear-solver-1"><a class="docs-heading-anchor" href="#Second-example:-GridapDistributed.jl-GridapPETSc.jl-for-the-linear-solver-1">Second example: <code>GridapDistributed.jl</code> + <code>GridapPETSc.jl</code> for the linear solver</a><a class="docs-heading-anchor-permalink" href="#Second-example:-GridapDistributed.jl-GridapPETSc.jl-for-the-linear-solver-1" title="Permalink"></a></h2><pre><code class="language-julia">using GridapPETSc</code></pre><p>In this example we use <code>GridapPETSc.jl</code> to have access to a scalable linear solver. The code is almost identical as the one above (see below). The main difference is that now we are wrapping most of the code of the <code>main_ex2</code> function within a do-block syntax function call to the <code>GridapPETSc.with(args=split(options))</code> function. The <code>with</code> function receives as a first argument a function with no arguments with the instructions to be executed on each MPI task/subdomain (that we pass to it as an anonymous function with no arguments), along with the <code>options</code> to be passed to the PETSc linear solver. For a detailed explanation of possible options we refer to the PETSc library documentation. Note that the call to <code>PETScLinearSolver()</code> initializes the PETSc solver with these <code>options</code> (even though <code>options</code> is not actually passed to the linear solver constructor). Besides, we have to pass the created linear solver object <code>solver</code> to the <code>solve</code> function to override the default linear solver (i.e., a call to the backslash <code>\</code> Julia operator).</p><pre><code class="language-julia">function main_ex2(parts)
+  options = &quot;-ksp_type cg -pc_type gamg -ksp_monitor&quot;
+  GridapPETSc.with(args=split(options)) do
+    domain = (0,1,0,1)
+    mesh_partition = (4,4)
+    model = CartesianDiscreteModel(parts,domain,mesh_partition)
+    order = 2
+    u((x,y)) = (x+y)^order
+    f(x) = -Δ(u,x)
+    reffe = ReferenceFE(lagrangian,Float64,order)
+    V = TestFESpace(model,reffe,dirichlet_tags=&quot;boundary&quot;)
+    U = TrialFESpace(u,V)
+    Ω = Triangulation(model)
+    dΩ = Measure(Ω,2*order)
+    a(u,v) = ∫( ∇(v)⋅∇(u) )dΩ
+    l(v) = ∫( v*f )dΩ
+    op = AffineFEOperator(a,l,U,V)
+    solver = PETScLinearSolver()
+    uh = solve(solver,op)
+    writevtk(Ω,&quot;results_ex2&quot;,cellfields=[&quot;uh&quot;=&gt;uh,&quot;grad_uh&quot;=&gt;∇(uh)])
+  end
+end
+
+partition = (2,2)
+prun(main_ex2, mpi, partition)</code></pre><h2 id="Third-example:-second-example-GridapP4est.jl-for-mesh-generation-1"><a class="docs-heading-anchor" href="#Third-example:-second-example-GridapP4est.jl-for-mesh-generation-1">Third example: second example + <code>GridapP4est.jl</code> for mesh generation</a><a class="docs-heading-anchor-permalink" href="#Third-example:-second-example-GridapP4est.jl-for-mesh-generation-1" title="Permalink"></a></h2><p>In this example, we define the Cartesian mesh using <code>GridapP4est.jl</code> via recursive uniform refinement starting with a single cell. It only involves minor modifications compared to the previous example. First, one has to generate a coarse mesh of the domain. As the domain is a just a simple box in the example, it suffices to use a coarse mesh with a single quadrilateral fitted to the box in order to capture the geometry of the domain with no geometrical error (see how the <code>coarse_discrete_model</code> object is generated). In more complex scenarios, one can read an unstructured coarse mesh from disk, generated, e.g., with an unstructured brick mesh generator. Second, when building the fine mesh of the domain (see <code>UniformlyRefinedForestOfOctreesDiscreteModel</code> call), one has to specify the number of uniform refinements to be performed on the coarse mesh in order to generate the fine mesh. Finally, when calling <code>prun</code>, we do not longer specify a Cartesian partition but just the number of parts.</p><pre><code class="language-julia">using GridapP4est
+
+function main_ex3(parts)
+  options = &quot;-ksp_type cg -pc_type gamg -ksp_monitor&quot;
+  GridapPETSc.with(args=split(options)) do
+    domain = (0,1,0,1)
+    coarse_mesh_partition = (1,1)
+    num_uniform_refinements=2
+    coarse_discrete_model=CartesianDiscreteModel(domain,coarse_mesh_partition)
+    model=UniformlyRefinedForestOfOctreesDiscreteModel(parts,
+                                                       coarse_discrete_model,
+                                                       num_uniform_refinements)
+    order = 2
+    u((x,y)) = (x+y)^order
+    f(x) = -Δ(u,x)
+    reffe = ReferenceFE(lagrangian,Float64,order)
+    V = TestFESpace(model,reffe,dirichlet_tags=&quot;boundary&quot;)
+    U = TrialFESpace(u,V)
+    Ω = Triangulation(model)
+    dΩ = Measure(Ω,2*order)
+    a(u,v) = ∫( ∇(v)⋅∇(u) )dΩ
+    l(v) = ∫( v*f )dΩ
+    op = AffineFEOperator(a,l,U,V)
+    solver = PETScLinearSolver()
+    uh = solve(solver,op)
+    writevtk(Ω,&quot;results_ex3&quot;,cellfields=[&quot;uh&quot;=&gt;uh,&quot;grad_uh&quot;=&gt;∇(uh)])
+  end
+end
+
+nparts = 4
+prun(main_ex3, mpi, nparts)</code></pre><h2 id="Fourth-example:-second-example-GridapGmsh.jl-for-mesh-generation-1"><a class="docs-heading-anchor" href="#Fourth-example:-second-example-GridapGmsh.jl-for-mesh-generation-1">Fourth example: second example + <code>GridapGmsh.jl</code> for mesh generation</a><a class="docs-heading-anchor-permalink" href="#Fourth-example:-second-example-GridapGmsh.jl-for-mesh-generation-1" title="Permalink"></a></h2><p>In this example, we want to use an unstructured mesh. The mesh is read from disk and partitioned/distributed automatically by <code>GridapGmsh</code> inside the call to the <code>GmshDiscreteModel</code> constructor.</p><pre><code class="language-julia">using GridapGmsh
+function main_ex4(parts)
+  options = &quot;-ksp_type cg -pc_type gamg -ksp_monitor&quot;
+  GridapPETSc.with(args=split(options)) do
+    model = GmshDiscreteModel(parts,&quot;../models/demo.msh&quot;)
+    order = 2
+    u((x,y)) = (x+y)^order
+    f(x) = -Δ(u,x)
+    reffe = ReferenceFE(lagrangian,Float64,order)
+    V = TestFESpace(model,reffe,dirichlet_tags=[&quot;boundary1&quot;,&quot;boundary2&quot;])
+    U = TrialFESpace(u,V)
+    Ω = Triangulation(model)
+    dΩ = Measure(Ω,2*order)
+    a(u,v) = ∫( ∇(v)⋅∇(u) )dΩ
+    l(v) = ∫( v*f )dΩ
+    op = AffineFEOperator(a,l,U,V)
+    solver = PETScLinearSolver()
+    uh = solve(solver,op)
+    writevtk(Ω,&quot;results_ex4&quot;,cellfields=[&quot;uh&quot;=&gt;uh,&quot;grad_uh&quot;=&gt;∇(uh)])
+  end
+end
+
+nparts = 4
+prun(main_ex4, mpi, nparts)</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../t015_interpolation_fe/">« 15 Interpolation of CellFields</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 10 February 2022 02:04">Thursday 10 February 2022</span>. Using Julia version 1.6.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

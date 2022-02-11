@@ -20,7 +20,8 @@ files = [
   "Low-level API Poisson equation"=>"poisson_dev_fe.jl",
   "On using DrWatson.jl"=>"validation_DrWatson.jl",
   "Interpolation of CellFields"=>"interpolation_fe.jl",
-  "Poisson equation on parallel distributed-memory computers"=>"poisson_distributed.jl"]
+  "Poisson equation on parallel distributed-memory computers"=>"poisson_distributed.jl",
+  "Transient Poisson equation"=>"poisson_transient.jl"]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)
 for (i,(title,filename)) in enumerate(files)

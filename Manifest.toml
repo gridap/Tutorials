@@ -445,9 +445,7 @@ version = "0.2.4"
 
 [[GridapGmsh]]
 deps = ["Gridap", "GridapDistributed", "Libdl", "Metis", "PartitionedArrays", "gmsh_jll"]
-git-tree-sha1 = "e92a784824c334a2df32c19e8b820ee41986e1a9"
-repo-rev = "gridap_distributed"
-repo-url = "https://github.com/gridap/GridapGmsh.jl"
+git-tree-sha1 = "d7e4e6b11b44a99aa400871e5f89be1be23814d2"
 uuid = "3025c34a-b394-11e9-2a55-3fee550c04c8"
 version = "0.6.0"
 

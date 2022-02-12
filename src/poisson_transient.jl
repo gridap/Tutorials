@@ -29,7 +29,7 @@
 # ```math
 # \begin{aligned}
 # m(t,u,v) = \int_\Omega v\frac{\partial u}{\partial t} d\Omega, \\
-# a(t,u,v) = \int_\Omega \kappa(t) \nalba v\cdot \nabla u d\Omega, \\
+# a(t,u,v) = \int_\Omega \kappa(t) \nabla v\cdot \nabla u d\Omega, \\
 # b(t,v) = \int_\Omega v\ f(t) d\Omega
 # \end{aligned}
 # ```

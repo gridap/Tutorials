@@ -27,6 +27,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [compat]
+Gridap = "0.17"
 GridapDistributed = "0.2"
 GridapODEs = "0.8"
 GridapP4est = "0.1"

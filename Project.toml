@@ -1,7 +1,7 @@
 name = "Tutorials"
 uuid = "ab87341f-2653-5384-8dc6-691ea82e91b3"
 authors = ["Santiago Badia <santiago.badia@monash.edu>", "Francesc Verdugo <fverdugo@cimne.upc.edu>"]
-version = "0.16.0"
+version = "0.17.0"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"

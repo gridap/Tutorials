@@ -38,9 +38,6 @@
 
 # Let us load the two packages that we will use in this tutorial `Gridap` and `GridapODEs`.
 using Gridap
-using GridapODEs
-using GridapODEs.ODETools
-using GridapODEs.TransientFETools
 
 # First, we define the `DiscreteModel` and the `Triangulation`. More details on this can be found in [tutorial 2](https://gridap.github.io/Tutorials/stable/pages/t002_validation/).
 

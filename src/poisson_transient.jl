@@ -36,7 +36,7 @@
 
 # ## Discrete model and Triangulation
 
-# Let us load the two packages that we will use in this tutorial `Gridap` and `GridapODEs`.
+# As usual, let us first load `Gridap`.
 using Gridap
 
 # First, we define the `DiscreteModel` and the `Triangulation`. More details on this can be found in [tutorial 2](https://gridap.github.io/Tutorials/stable/pages/t002_validation/).

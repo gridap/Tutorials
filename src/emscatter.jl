@@ -120,7 +120,7 @@ dΓ = Measure(Γ,degree)
 # ### PML parameters
 Rpml = 1e-12      # Tolerence for PML reflection 
 σ = -3/4*log(Rpml)/d_pml # σ_0
-LH = [L,H] # Size of the PML inner boundary (a rectangular centere at (0,0))
+LH = (L,H) # Size of the PML inner boundary (a rectangular centere at (0,0))
 
 # ### PML coordinate streching functions
 function s_PML(x,σ,k,LH,d_pml)
@@ -137,7 +137,7 @@ end
 struct Λ<:Function
     σ::Float64
     k::Float64
-    LH::Vector{Float64}
+    LH::NTuple{2,Float64}
     d_pml::Float64
 end
 

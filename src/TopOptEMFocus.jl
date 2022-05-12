@@ -2,12 +2,12 @@
 
 # In this tutorial, we will learn:
 # 
-#   * How to apply adjoint method in Gridap
+#   * How to apply the adjoint method for sensitivity analysis in Gridap
 #   * How to do topology optimization in Gridap
 # 
-# We recommend you first read the [Electromagnetic scattering tutorial](https://gridap.github.io/Tutorials/dev/pages/t012_emscatter/#Tutorial-12:-Electromagnetic-scattering-in-2D-1) to make sure you understand the following points:
+# We recommend that you first read the [Electromagnetic scattering tutorial](https://gridap.github.io/Tutorials/dev/pages/t012_emscatter/#Tutorial-12:-Electromagnetic-scattering-in-2D-1) to make sure you understand the following points:
 # 
-#   * How to formulate the weak form for a scalar time-harmonic electromagnetic problem
+#   * How to formulate the weak form for a 2d time-harmonic electromagnetic problem (a scalar Helmholtz equation)
 #   * How to implement a perfectly matched layer (PML) to absorb outgoing waves
 #   * How to impose periodic boundary conditions in Gridap
 #   * How to discretize PDEs with complex-valued solutions
@@ -46,10 +46,11 @@
 # Consider $\mu(x)=1$ (which is mostly the case in electromagnetic problems) and denote $\Lambda=\operatorname{diagm}(\Lambda_x,\Lambda_y)$ where $\Lambda_{x/y}=\frac{1}{1+\mathrm{i}\sigma(u_{x/y})/\omega}$, we can formulate the problem as 
 # 
 # ```math
-# \left{ \begin{aligned}  \left[-\Lambda\nabla\cdot\frac{1}{\varepsilon(x)}\Lambda\nabla -k^2\right] H &= f(x) & \text{ in } \Omega,\
-# H&=0 & \text{ on } \Gamma*D,\
-# H|*{\Gamma*L}&=H|*{\Gamma_R},&\
-# \end{aligned}\right. 
+# \left\{ \begin{aligned} 
+# \left[-\Lambda\nabla\cdot\frac{1}{\varepsilon(x)}\Lambda\nabla -k^2\right] H &= f(x) & \text{ in } \Omega,\\
+# H&=0 & \text{ on } \Gamma_D,\\
+# H|_{\Gamma_L}&=H|_{\Gamma_R},&\\
+# \end{aligned}\right.
 # ```
 # 
 # For convenience, in the weak form and Julia implementation below we represent $\Lambda$ as a vector instead of a diagonal $2 \times 2$ matrix, in which case $\Lambda\nabla$ becomes the elementwise product.
@@ -59,28 +60,30 @@
 # We use the density-based topology optimizaiton (TO) to optimize the electric field intensity at center. In TO, every point in the design domain is a design degree of freedom, which we discretize into a piece-wise constant parameter space $P$ for the design parameter $p\in [0,1]$. The material electric permittivity can then be determined by
 # 
 # ```math
-# \varepsilon(p) = \left[n*{air}+p(n*{metal}-n*{air})\right]^2, 
+# \varepsilon(p) = \left[n_{air}+p(n_{metal}-n_{air})\right]^2, 
 # ```
-# where :n*{air}=1$ and $n_{metal}$ is the refractive index of the air and metal. Note that we do not directly interpolate the electric permittivity in the design region using the electric permittivity of air and metal, because the metal permittivity is negative and the direct interpolate might yield some divergence [4]. 
+# where $n_{air}=1$ and $n_{metal}$ is the refractive index of the air and metal. Note that we do not directly interpolate the electric permittivity in the design region using the electric permittivity of air and metal, because the metal permittivity is negative and the direct interpolate might yield some divergence [4]. 
 # 
 # In practice, to avoid obtaining arbitrarily fine features as the spatial resolution is increased, one needs to impose a non-strict minimum lengthscale $r_f$. There are two schemes for this smoothing filter [5], here we perform the smoothing by solving a simple "damped diffusion" PDE, also called a Helmholtz filter [5]: 
-# \begin{align}    
-# -r*f^2\nabla^2p*f+p*f&=p\, ,\nonumber\
-# \left. \frac{\partial p*f}{\partial \vec{n}} \right\vert*{\partial\Omega*D} & =0 . 
-# \end{align} 
+# ```math
+# \begin{aligned}    
+# -r_f^2\nabla^2p_f+p_f&=p\, ,\\
+# \left. \frac{\partial p_f}{\partial \vec{n}} \right\vert_{\partial\Omega_D} & =0 . 
+# \end{aligned} 
+# ```
 #
 # In this setup, we would have $r_f=R_f/(2\sqrt{3})$ where $R_f$ is the filter radius in another scheme used in the paper that we would want to compare with eventually [6]. 
 # 
 # Next, one employs a smooth threshold projection on the intermediate variable $p_f$ to obtain a "binarized" density parameter $p_t$ that tends towards values of $0$ or $1$ almost everywhere [6]: 
 # ```math
-# p*t = \frac{\tanh(\beta\eta)+\tanh\left[\beta(p*f-\eta)\right]}{\tanh(\beta\eta)+\tanh\left[\beta(1-\eta)\right]}. 
+# p_t = \frac{\tanh(\beta\eta)+\tanh\left[\beta(p_f-\eta)\right]}{\tanh(\beta\eta)+\tanh\left[\beta(1-\eta)\right]}. 
 # ```
 # Note that as $\beta\to\infty$, this threshold procedure goes to a step function, which would make the optimization problem non-differentiable. In consequence, the standard approach is to gradually increase $\beta$ to slowly binarize the design as the optimization progresses [6]. We will show how this is done below.  
 # 
 # Finally, we replace $p$ with the filtered and thresholded new parameter $p_t$ in the material permittivity expression above:
 # 
 # ```math
-# \varepsilon(p*t) = \left[n*{air}+p*t(n*{metal}-n_{air})\right]^2,
+# \varepsilon(p_t) = \left[n_{air}+p_t(n_{metal}-n_{air})\right]^2,
 # ```
 # 
 # ## Weak form
@@ -278,9 +281,22 @@ uh = FEFunction(fem_params.U, u_vec)
 
 # ## Objective
 # 
-# The problem is maximizing the electric field intensity at the center. Recall that the electric field can be retrieved from the magnetic field by :$ \vec{E}(\vec{x})=\frac{\mathrm{i}}{\omega\varepsilon(\vec{x})}\nabla\times\vec{H}(\vec{x}), :$ and our objective is the field intensity at center $\vert\vec{E}(\vec{x}_0)\vert^2$. 
+# The problem is maximizing the electric field intensity at the center. Recall that the electric field can be retrieved from the magnetic field by 
+#
+# ```math
+# \mathbf{E}(\mathbf{x})=\frac{\mathrm{i}}{\omega\varepsilon(\mathbf{x})}\nabla\times\mathbf{H}(\mathbf{x}),
+# ``` 
+# and our objective is the field intensity at center $\vert\mathbf{E}(\mathbf{x}_0)\vert^2$. 
 # 
-# In the 2D formulation, this objective can be simplified to  :$ g = \int \vert\nabla H\vert^2\delta(x-x*0)\mathrm{d}\Omega = u^\dagger Ou, :$ where $u$ is the magnetic field vector and  :$ O = \int (\nabla \hat{v}\cdot\nabla\hat{u})\delta(x-x*0)\mathrm{d}\Omega, :$ with $\hat{v}$ and $\hat{u}$ are the finite element basis functions. 
+# In the 2D formulation, this objective can be simplified to  
+# ```math
+# g = \int \vert\nabla H\vert^2\delta(x-x_0)\mathrm{d}\Omega = u^\dagger Ou,
+# ```
+# where $u$ is the magnetic field vector and  
+# ```math
+# O = \int (\nabla \hat{v}\cdot\nabla\hat{u})\delta(x-x_0)\mathrm{d}\Omega,
+# ```
+# with $\hat{v}$ and $\hat{u}$ are the finite element basis functions. 
 # 
 # In practice, the delta function can be approximated by a concentrated Gaussian function. Note that we use `dΩ_c` here in order to reduce computation costs. 
 # 
@@ -302,7 +318,14 @@ using ChainRulesCore, Zygote
 import ChainRulesCore: rrule
 NO_FIELDS = ZeroTangent()
 
-# Recall that our objective is $g=u^\dagger Ou$ and only $u=A(p)^{-1} b$ depends on the design parameters. The derivative of $g$ with respect to $p_t$ can be obtained via [adjoint method](https://math.mit.edu/~stevenj/18.336/adjoint.pdf): :$ \frac{\mathrm{d} g}{\mathrm{d}p*t}= -2\Re\left[w^\dagger\left(\frac{\mathrm{d}A}{\mathrm{d}p*t}u\right)\right], :$ where $w$ comes from the adjoint solve $A^\dagger w = Ou$. The final derivative with respect to $p$ can then be obtained via chain rules: :$ \frac{\mathrm{d} g}{\mathrm{d}p}=\frac{\mathrm{d} g}{\mathrm{d}p*f}\cdot\frac{\mathrm{d} p*t}{\mathrm{d}p*f}\cdot\frac{\mathrm{d} p*f}{\mathrm{d}p} :$
+# Recall that our objective is $g=u^\dagger Ou$ and only $u=A(p)^{-1} b$ depends on the design parameters. The derivative of $g$ with respect to $p_t$ can be obtained via [adjoint method](https://math.mit.edu/~stevenj/18.336/adjoint.pdf): 
+# ```math
+# \frac{\mathrm{d} g}{\mathrm{d}p_t}= -2\Re\left[w^\dagger\left(\frac{\mathrm{d}A}{\mathrm{d}p_t}u\right)\right], 
+# ``` 
+# where $w$ comes from the adjoint solve $A^\dagger w = Ou$. The final derivative with respect to $p$ can then be obtained via chain rules: 
+# ```math
+# \frac{\mathrm{d} g}{\mathrm{d}p}=\frac{\mathrm{d} g}{\mathrm{d}p_t}\cdot\frac{\mathrm{d} p_t}{\mathrm{d}p_f}\cdot\frac{\mathrm{d} p_f}{\mathrm{d}p} 
+# ```
 # 
 # First we define some relative derivative functions:
 # 
@@ -352,7 +375,7 @@ function Dgfdpf(pf_vec; β, η, phys_params, fem_params)
     return dgfdpf
 end
 
-# Next we define the relation between $p_f$ and $p$, get the derivative of the filter also using adjoint method.
+# Next we define the relation between $p_f$ and $p$, and get the derivative of the filter also using adjoint method.
 # 
 
 function pf_p0(p0; r, fem_params)

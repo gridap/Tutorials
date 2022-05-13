@@ -23,7 +23,7 @@
 # radius $r_d=100$nm.  The computational cell is of height $H$ and length $L$, and we employ a perfectly matched layer (PML) thickness of $d_{pml}$ to implement outgoing (radiation) boundary conditions for this finite domain.
 # ![](../assets/TopOptEMFocus/Illustration.png)
 # 
-# The goal is find the arrangment of the silver material in the gray region that maximize the electric field magnitude at the center point. Every "pixel" in the gray region would be a degree of freedom that can vary between silver (shown in black below) and air (shown in white below). This is called density-based [topology optimization (TO)](https://en.wikipedia.org/wiki/Topology_optimization). 
+# The goal is find the arrangement of the silver material in the gray region that maximizes the |electric field|² at the center (the focal point). Every "pixel" in the gray region is effectively treated as a degree of freedom that can vary continuously between silver (shown in black below) and air (shown in white below). This is called density-based [topology optimization (TO)](https://en.wikipedia.org/wiki/Topology_optimization), and leads to a tractable optimization problem despite the huge number of parameters. A standard "projection" technique, described below, is used to "binarize" the structure by eventually forcing the material to be either silver or air almost everywhere.
 # 
 # ## Formulation
 # 

@@ -35,7 +35,7 @@
 # 
 # where $k=\omega/c$ is the wave number in free space and $f(x)$ is the source term (which corresponds to a magnetic current density in Maxwell's equations).
 # 
-# In order to simulate this scattering problem in a finite computation cell, we need outgoing (radiation) boundary conditions such that all waves at the boundary would not be reflected back since we are simulating an infinite space.  One commonly used technique to simulate such infinite space is through the so called "perfectly matched layers" (PML) [2]. Actually, PML is not a boundary condition but an artificial absorbing "layer" that absorbs waves with minimal reflections (going to zero as the resolution increases).  There are many formulations of PML. Here, we use one of the most flexible formulations, the "stretched-coordinate" formulation, which takes the following replace in the PDE [3]:
+# In order to simulate this scattering problem in a finite computational domain, we need outgoing (radiation) boundary conditions to prevent waves from reflecting back from the boundaries of the domain.  We employ the well-known technique of "perfectly matched layers" (PML) [2], which are an an artificial absorbing layer adjacent to the boundaries that absorbs waves with minimal reflections (going to zero as the resolution increases). The "stretched-coordinate" formulation of PML correspond to a simple transformation of the PDE [3]:
 # 
 # ```math
 # \frac{\partial}{\partial x}\rightarrow \frac{1}{1+\mathrm{i}\sigma(u_x)/\omega}\frac{\partial}{\partial x},

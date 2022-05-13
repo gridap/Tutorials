@@ -493,7 +493,7 @@ end
 
 # ## Results and plot
 # 
-# We use the GLMakie.jl and GridapMakie.jl packages to plot the field as well as the optimized shape. Note that there might be multiple local optima for this problem, so different initial guess might result in different optimized shape.
+# We use the GLMakie.jl and GridapMakie.jl packages to plot the field as well as the optimized shape. Note that there might be multiple local optima for this problem, so different initial guesses might result in different optimized shapes.
 # 
 
 using GLMakie, GridapMakie

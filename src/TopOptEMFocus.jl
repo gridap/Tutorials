@@ -68,7 +68,7 @@
 # ```math
 # \varepsilon(p) = \left[n_{air}+p(n_{metal}-n_{air})\right]^2, 
 # ```
-# where $n_{air}=1$ and $n_{metal}$ is the refractive index of the air and metal. Note that we do not directly interpolate the electric permittivity in the design region using the electric permittivity of air and metal, because the metal permittivity is negative and the direct interpolate might yield some divergence [4]. 
+# where $n_{air}=1$ and $n_{metal}$ are the refractive indices ($\sqrt{\varepsilon}$) of the air and metal, respectively. (It is tempting to simply linearly interpolate the permittivities ε, rather than the refractive indices, but this turns out to lead to artificial singularities in the case of metals where ε can pass through zero [4].) 
 # 
 # In practice, to avoid obtaining arbitrarily fine features as the spatial resolution is increased, one needs to impose a non-strict minimum lengthscale $r_f$. There are two schemes for this smoothing filter [5], here we perform the smoothing by solving a simple "damped diffusion" PDE, also called a Helmholtz filter [5]: 
 # ```math

@@ -14,7 +14,13 @@
 # 
 # ## Problem statement
 # 
-# We are optimizing the electric field at the center of a $r_d=100$ nm design region with a Hz-polarized plane wave and  smallest distance constraint at $r_s = 10$ nm. The computational cell is of height $H$ and length $L$, and we employ a perfectly matched layer (PML) thickness of $d_{pml}$ to implement outgoing (radiation) boundary conditions for this finite domain. 
+# Consider the following optimization problem adapted from [Christiansen et al. (2020)](http://doi.org/10.1364/OE.28.004444):
+# We want to design a metallic (silver) nanoparticle to focus an incident $H_z$-polarized planewave on
+# a single spot, maximizing the electric-field intensity at this focal spot.   The metallic
+# structure can be *any shape* of *any topology* (any connectivity, number of holes, etcetera)
+# surrounding the focal spot, as long as the metal lies within an annular "design region" $\Omega_d$:
+# between a minimum radius $r_s = 10$nm (the minimum distance from the focal spot) and an outer
+# radius $r_d=100$nm.  The computational cell is of height $H$ and length $L$, and we employ a perfectly matched layer (PML) thickness of $d_{pml}$ to implement outgoing (radiation) boundary conditions for this finite domain.
 # ![](../assets/TopOptEMFocus/Illustration.png)
 # 
 # The goal is find the arrangment of the silver material in the gray region that maximize the electric field magnitude at the center point. Every "pixel" in the gray region would be a degree of freedom that can vary between silver (shown in black below) and air (shown in white below). This is called density-based [topology optimization (TO)](https://en.wikipedia.org/wiki/Topology_optimization). 

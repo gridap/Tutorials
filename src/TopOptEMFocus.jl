@@ -126,7 +126,7 @@ k = 2*π/λ    # Wavenumber (nm^-1)
 
 # ## Discrete Model
 # 
-# We import the model from the `RecCirGeometry.msh` mesh file using the `GmshDiscreteModel` function defined in `GridapGmsh`. The mesh file is created with GMSH in Julia (see the file ../assets/TopOptEMFocus/MeshGenerator.jl). Note that this mesh file already contains periodic boundary information for the left and right side, and that is enough for gridap to realize a periodic boundary condition should be implemented. Also, the center smallest distance circle region is labeled with `Center` and the "donut" design region is labeled with `Design`. 
+# We import the model from the `RecCirGeometry.msh` mesh file using the `GmshDiscreteModel` function defined in `GridapGmsh`. The mesh file is created with GMSH in Julia (see the file ../assets/TopOptEMFocus/MeshGenerator.jl). Note that this mesh file already specifies periodic boundaries for the left and right sides, which will cause Gridap to implement periodic boundary conditions. Also, the center smallest-distance circle region is labeled with `Center` and the annular design region is labeled with `Design` in the mesh file. 
 # 
 
 model = GmshDiscreteModel("../models/RecCirGeometry.msh")

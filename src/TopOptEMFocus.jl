@@ -409,7 +409,7 @@ function Dgdp(dgdpf; r, fem_params)
     return assemble_vector(l_temp, fem_params.P)
 end
 
-# Finally, we pack up everything and rewrite it as a compact form. We also record every optimization step values.
+# Finally, we pack up into a single function that takes `p` and returns our objective function, and which can optionally take a `grad` vector into which the gradient (computed by Zygote by composing our rules above) can be written in-place (as required for use in the NLopt optimization package). We also optionally record the value of the objective function from every call in order to save a record of the optimization process.
 # 
 
 function gf_p(p0::Vector; r, β, η, phys_params, fem_params)

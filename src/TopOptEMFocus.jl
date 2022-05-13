@@ -450,10 +450,8 @@ using NLopt, DelimitedFiles
 function gf_p_optimize(p_init, r, β, η, TOL = 1e-4, MAX_ITER = 500; phys_params, fem_params)
     ##################### Optimize #################
     opt = Opt(:LD_MMA, fem_params.np)
-    lb = zeros(fem_params.np)
-    ub = ones(fem_params.np)
-    opt.lower_bounds = lb
-    opt.upper_bounds = ub
+    opt.lower_bounds = 0
+    opt.upper_bounds = 1
     opt.ftol_rel = TOL
     opt.maxeval = MAX_ITER
     opt.max_objective = (p0, grad) -> gf_p(p0, grad; r, β, η, phys_params, fem_params)

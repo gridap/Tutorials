@@ -468,7 +468,7 @@ function gf_p_optimize(p_init, r, β, η, TOL = 1e-4, MAX_ITER = 500; phys_param
     return g_opt, p_opt
 end
 
-p_init = ones(fem_params.np) * 0.4   # Initial guess
+p_init = fill(0.4, fem_params.np)   # Initial guess
 β_list = [8.0, 16.0, 32.0]
 
 g_opt = 0

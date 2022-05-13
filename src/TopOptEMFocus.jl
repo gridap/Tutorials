@@ -153,7 +153,7 @@ dΩ = Measure(Ω, degree)
 Γ_s = BoundaryTriangulation(model; tags = ["Source"]) # Source line 
 dΓ_s = Measure(Γ_s, degree)
 
-# In addition to the numerical integration to the total computation cell, we also want to define the numerical integration on some particular part of the computation cell: the design domain and the central smallest distance circle. The reason is that we want the design parameters only affecting the design domain and the targeted electric field only locates at the center. Basically $\Omega_d$ is used for optimization parameters and $\Omega_c$ is used for objective function. 
+# We also want to construct quadrature meshes for the numerical integration over two subsets of the computational cell: the design domain (annulus) $\Omega_d$ and the central "hole" $\Omega_c$ surrounding the focal point. The former is used to localize the design optimization to $\Omega_d$, and the latter is used to define the objective function (which only depends on the field at the center).
 # 
 
 Ω_d = Triangulation(model, tags="Design")

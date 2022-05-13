@@ -91,6 +91,7 @@
 # ```math
 # \varepsilon(p_t) = \left[n_{air}+p_t(n_{metal}-n_{air})\right]^2,
 # ```
+# This is the quantity that will be used for the $1/\varepsilon(x)$ coefficient in our Helmholtz PDE.
 # 
 # ## Weak form
 # 

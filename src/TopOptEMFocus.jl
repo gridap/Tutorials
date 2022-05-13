@@ -63,7 +63,7 @@
 # 
 # ## Topology Optimization
 # 
-# We use the density-based topology optimizaiton (TO) to optimize the electric field intensity at center. In TO, every point in the design domain is a design degree of freedom, which we discretize into a piece-wise constant parameter space $P$ for the design parameter $p\in [0,1]$. The material electric permittivity can then be determined by
+# We use density-based topology optimization (TO) to maximize the electric field intensity at the center. In TO, every point in the design domain is a design degree of freedom that can vary continuously between air ($p=0$) and silver ($p=1$), which we discretize into a piece-wise constant parameter space $P$ for the design parameter $p\in [0,1]$. The material's electric permittivity ε is then given by:
 # 
 # ```math
 # \varepsilon(p) = \left[n_{air}+p(n_{metal}-n_{air})\right]^2, 

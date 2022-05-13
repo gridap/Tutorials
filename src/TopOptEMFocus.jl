@@ -143,7 +143,7 @@ U = V   # mathematically equivalent to TrialFESpace(V,0)
 
 # ## Numerical integration
 # 
-# We generate the triangulation and a second-order Gaussian quadrature for the numerial integration for the total computation cell. Note that we create a boundary triangulation from a `Source` tag for the line excitation. Generally, we do not need such additional mesh tags for the source, we can use a delta function to approximate such line source excitation. However, by generating a line mesh, we can increase the accuracy of this source excitation.
+# We construct the triangulation and a second-order Gaussian quadrature scheme for assembling the finite-element matrix from the weak form. Note that we create a boundary triangulation from a `Source` tag for the line excitation, which is a convenient and accurate way to produce an incident planewave. (We could have alternatively devised a corresponding current source, e.g. using a finite-width delta-function approximation.)
 # 
 
 degree = 2

@@ -133,7 +133,7 @@ model = GmshDiscreteModel("../models/RecCirGeometry.msh")
 
 # ## FE spaces for the magnetic field
 # 
-# We use the first-order lagrangian as the finite element function space basis. The dirihlet edges are labeld with `DirichletEdges` in the mesh file. Since our problem involves complex numbers (because of PML), we need to assign the `vector_type` to be `Vector{ComplexF64}`.
+# We use the first-order Lagrange finite-element basis functions. The Dirichlet edges are labeled as `DirichletEdges` in the mesh file. Since our problem involves complex numbers (because of the PML), we need to specify the `vector_type` as `Vector{ComplexF64}`.
 # 
 
 order = 1

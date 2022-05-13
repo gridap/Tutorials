@@ -59,7 +59,7 @@
 # \end{aligned}\right.
 # ```
 # 
-# For convenience, in the weak form and Julia implementation below we represent $\Lambda$ as a vector instead of a diagonal $2 \times 2$ matrix, in which case $\Lambda\nabla$ becomes the elementwise product.
+# For convenience in the weak form and Julia implementation below, we represent $\Lambda$ as a vector given by the diagonal entries of the $2 \times 2$ scaling matrix, in which case $\Lambda\nabla$ becomes the elementwise product.
 # 
 # ## Topology Optimization
 # 

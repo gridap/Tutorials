@@ -78,7 +78,7 @@
 # \end{aligned} 
 # ```
 #
-# In this setup, we would have $r_f=R_f/(2\sqrt{3})$ where $R_f$ is the filter radius in another scheme used in the paper that we would want to compare with eventually [6]. 
+# We choose a filter radius $r_f=R_f/(2\sqrt{3})$ where $R_f=5$nm, in order to match a published result (using a slightly different filtering scheme) for comparison [6]. 
 # 
 # Next, one employs a smooth threshold projection on the intermediate variable $p_f$ to obtain a "binarized" density parameter $p_t$ that tends towards values of $0$ or $1$ almost everywhere [6]: 
 # ```math

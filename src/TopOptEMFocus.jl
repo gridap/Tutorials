@@ -95,7 +95,7 @@
 # 
 # ## Weak form
 # 
-# Now we get the weak form for the above PDEs. After integral by part and removing the zero boundary integral term, we get:
+# Now we derive the weak form of the PML Helmholtz PDE above. After integration by parts (in which the boundary term vanishes), we obtain:
 # 
 # ```math
 # a(u,v,p) = \int_\Omega \left[\nabla(\Lambda v)\cdot\frac{1}{\varepsilon(p)}\Lambda\nabla u-k^2uv\right]\mathrm{d}\Omega,

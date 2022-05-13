@@ -104,7 +104,7 @@
 # ```math
 # b(v) = \int_\Omega vf\mathrm{d}\Omega. 
 # ```
-# Notice that the $\nabla(\Lambda v)$ is also a element-wise "product" of two vectors $\nabla$ and $\Lambda v$.
+# Notice that the $\nabla(\Lambda v)$ is an element-wise "product" of two vectors $\nabla$ and $\Lambda v$.
 # 
 
 # ## Setup

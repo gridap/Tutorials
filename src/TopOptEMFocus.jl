@@ -78,7 +78,7 @@
 # \end{aligned} 
 # ```
 #
-# We choose a filter radius $r_f=R_f/(2\sqrt{3})$ where $R_f=5$nm, in order to match a published result (using a slightly different filtering scheme) for comparison [6]. 
+# We choose a filter radius $r_f=R_f/(2\sqrt{3})$ where $R_f=10$ nm, in order to match a published result (using a slightly different filtering scheme) for comparison [6]. 
 # 
 # Next, we apply a smoothed threshold projection to the intermediate variable $p_f$ to obtain a "binarized" density parameter $p_t$ that tends towards values of $0$ or $1$ almost everywhere [6] as the steepness $\beta$ of the thresholding is increased: 
 # ```math
@@ -133,7 +133,7 @@ model = GmshDiscreteModel("../models/RecCirGeometry.msh")
 
 # ## FE spaces for the magnetic field
 # 
-# We use the first-order Lagrange finite-element basis functions. The Dirichlet edges are labeled as `DirichletEdges` in the mesh file. Since our problem involves complex numbers (because of the PML), we need to specify the `vector_type` as `Vector{ComplexF64}`.
+# We use the first-order Lagrange finite-element basis functions. The Dirichlet edges are labeled as `DirichletEdges` in the mesh file. Since our problem involves complex numbers (because of the PML and the complex metal refractive index), we need to specify the `vector_type` as `Vector{ComplexF64}`.
 # 
 
 order = 1
@@ -440,14 +440,14 @@ g0 = gf_p(p0, grad; r, β, η, phys_params, fem_params)
 g1 = gf_p(p0+δp, []; r, β, η, phys_params, fem_params)
 g1-g0, grad'*δp
 
-# ## Optimization with  NLop
+# ## Optimization with  NLopt
 # 
 # Now we use NLopt.jl package to implement the MMA algorithm for optimization. Note that we start with $\beta=8$ and then gradually increase it to $\beta=32$ in consistant with Ref. [6].
 # 
 
-using NLopt, DelimitedFiles
+using NLopt
 
-function gf_p_optimize(p_init, r, β, η, TOL = 1e-4, MAX_ITER = 500; phys_params, fem_params)
+function gf_p_optimize(p_init; r, β, η, TOL = 1e-4, MAX_ITER = 500, phys_params, fem_params)
     ##################### Optimize #################
     opt = Opt(:LD_MMA, fem_params.np)
     opt.lower_bounds = 0
@@ -455,39 +455,21 @@ function gf_p_optimize(p_init, r, β, η, TOL = 1e-4, MAX_ITER = 500; phys_param
     opt.ftol_rel = TOL
     opt.maxeval = MAX_ITER
     opt.max_objective = (p0, grad) -> gf_p(p0, grad; r, β, η, phys_params, fem_params)
-    if (length(p_init)==0)
-        p_initial_guess = readdlm("p_opt_value.txt", Float64)
-        p_initial_guess = p_initial_guess[:]
-    else
-        p_initial_guess = p_init[:]
-    end
 
-    (g_opt, p_opt, ret) = optimize(opt, p_initial_guess)
+    (g_opt, p_opt, ret) = optimize(opt, p_init)
     @show numevals = opt.numevals # the number of function evaluations
-    
     return g_opt, p_opt
 end
 
-p_init = fill(0.4, fem_params.np)   # Initial guess
+p_opt = fill(0.4, fem_params.np)   # Initial guess
 β_list = [8.0, 16.0, 32.0]
 
 g_opt = 0
+TOL = 1e-8
+MAX_ITER = 100
 for bi = 1 : 3
     β = β_list[bi]
-    if bi == 1
-        g_opt, p_opt = gf_p_optimize(p_init, r, β, η, 1e-8, 100; phys_params, fem_params)
-    
-    else
-        g_opt, p_opt = gf_p_optimize([], r, β, η, 1e-8, 100; phys_params, fem_params)
-    end
-    open("p_opt_value.txt", "w") do iop
-        for i = 1 : length(p_opt)
-            write(iop, "$(p_opt[i]) \n")
-        end
-    end
-    open("g_opt_value.txt", "a") do io
-        write(io, "$g_opt \n")
-    end
+    g_opt, p_opt = gf_p_optimize(p_opt; r, β, η, TOL, MAX_ITER, phys_params, fem_params)
 end
 @show g_opt
 
@@ -497,9 +479,7 @@ end
 # 
 
 using GLMakie, GridapMakie
-
-p_max = readdlm("p_opt_value.txt", Float64)
-p0 = p_max[:]
+p0 = p_opt
 
 pf_vec = pf_p0(p0; r, fem_params)
 pfh = FEFunction(fem_params.Pf, pf_vec)
@@ -524,7 +504,7 @@ save("shape.png", fig)
 # For the electric field, recall that $\vert E\vert^2\sim\vert \frac{1}{\epsilon}\nabla H\vert^2$, the factor 2 below comes from the amplitude compared to the incident plane wave. We can see that the optimized shapes are very similiar to the optimized shape in Ref. [6], proving our results. 
 # 
 
-maxe = 30 # Maximum electric field
+maxe = 30 # Maximum electric field magnitude compared to the incident plane wave
 e1=abs2(phys_params.n_air^2)   
 e2=abs2(phys_params.n_metal^2)
 

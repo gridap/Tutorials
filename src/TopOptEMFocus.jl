@@ -70,7 +70,7 @@
 # ```
 # where $n_{air}=1$ and $n_{metal}$ are the refractive indices ($\sqrt{\varepsilon}$) of the air and metal, respectively. (It is tempting to simply linearly interpolate the permittivities ε, rather than the refractive indices, but this turns out to lead to artificial singularities in the case of metals where ε can pass through zero [4].) 
 # 
-# In practice, to avoid obtaining arbitrarily fine features as the spatial resolution is increased, one needs to impose a non-strict minimum lengthscale $r_f$. There are two schemes for this smoothing filter [5], here we perform the smoothing by solving a simple "damped diffusion" PDE, also called a Helmholtz filter [5]: 
+# In practice, to avoid obtaining arbitrarily fine features as the spatial resolution is increased, one needs to regularize the problem with a minimum lengthscale $r_f$ by generating a smoothed/filtered parameter function $p_f$.  (Although this regularizes the problem, strictly speaking it does not impose a minimum feature size because of the nonlinear-projection step below. In practical applications, one imposes additional [manufacturing constraints](http://doi.org/10.1364/OE.431188) explicitly.)  We perform the smoothing $p \to p_f$ by solving a simple "damped diffusion" PDE, also called a Helmholtz filter [5], for $p_f$ given the design variables $p$: 
 # ```math
 # \begin{aligned}    
 # -r_f^2\nabla^2p_f+p_f&=p\, ,\\

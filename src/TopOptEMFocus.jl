@@ -86,7 +86,7 @@
 # ```
 # Note that as $\beta\to\infty$, this threshold procedure goes to a step function, which would make the optimization problem non-differentiable. In consequence, the standard approach is to gradually increase $\beta$ to slowly binarize the design as the optimization progresses [6]. We will show how this is done below.  
 # 
-# Finally, we replace $p$ with the filtered and thresholded new parameter $p_t$ in the material permittivity expression above:
+# Finally, we replace $p$ with the filtered and thresholded $p_t$ in the ε interpolation formula from above:
 # 
 # ```math
 # \varepsilon(p_t) = \left[n_{air}+p_t(n_{metal}-n_{air})\right]^2,

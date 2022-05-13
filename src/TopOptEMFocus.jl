@@ -382,7 +382,7 @@ function Dgfdpf(pf_vec; β, η, phys_params, fem_params)
     return dgfdpf
 end
 
-# Next we define the relation between $p_f$ and $p$, and get the derivative of the filter also using adjoint method.
+# Next we define the relation between $p_f$ and $p$, and obtain the derivative of the filter by again applying an adjoint method:
 # 
 
 function pf_p0(p0; r, fem_params)

@@ -461,10 +461,10 @@ function gf_p_optimize(p_init; r, β, η, TOL = 1e-4, MAX_ITER = 500, phys_param
     return g_opt, p_opt
 end
 
-p_opt = fill(0.4, fem_params.np)   # Initial guess
+global p_opt = fill(0.4, fem_params.np)   # Initial guess
 β_list = [8.0, 16.0, 32.0]
 
-g_opt = 0
+global g_opt = 0
 TOL = 1e-8
 MAX_ITER = 100
 for bi = 1 : 3

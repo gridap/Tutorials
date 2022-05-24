@@ -470,7 +470,7 @@ MAX_ITER = 100
 for bi = 1 : 3
     β = β_list[bi]
     g_opt, p_temp_opt = gf_p_optimize(p_opt; r, β, η, TOL, MAX_ITER, phys_params, fem_params)
-    p_opt = p_temp_opt
+    global p_opt = p_temp_opt
 end
 @show g_opt
 

@@ -4,11 +4,11 @@ authors = ["Santiago Badia <santiago.badia@monash.edu>", "Francesc Verdugo <fver
 version = "0.17.0"
 
 [deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DrWatson = "634d3b9d-ee7a-5ddf-bec9-22491ea816e1"
 FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
-GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 Gridap = "56d4f2e9-7ea1-5844-9cf6-b9c51ca7ce8e"
 GridapDistributed = "f9701e48-63b3-45aa-9a63-9bc6c271f355"
 GridapGmsh = "3025c34a-b394-11e9-2a55-3fee550c04c8"

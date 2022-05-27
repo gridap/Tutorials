@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>18 Topology optimization · Gridap tutorials</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="Gridap tutorials logo"/></a><div class="docs-package-name"><span class="docs-autofit">Gridap tutorials</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><a class="tocitem" href="../t001_poisson/">1 Poisson equation</a></li><li><a class="tocitem" href="../t002_validation/">2 Code validation</a></li><li><a class="tocitem" href="../t003_elasticity/">3 Linear elasticity</a></li><li><a class="tocitem" href="../t004_p_laplacian/">4 p-Laplacian</a></li><li><a class="tocitem" href="../t005_hyperelasticity/">5 Hyper-elasticity</a></li><li><a class="tocitem" href="../t006_dg_discretization/">6 Poisson equation (with DG)</a></li><li><a class="tocitem" href="../t007_darcy/">7 Darcy equation (with RT)</a></li><li><a class="tocitem" href="../t008_inc_navier_stokes/">8 Incompressible Navier-Stokes</a></li><li><a class="tocitem" href="../t009_stokes/">9 Stokes equation</a></li><li><a class="tocitem" href="../t010_isotropic_damage/">10 Isotropic damage model</a></li><li><a class="tocitem" href="../t011_fsi_tutorial/">11 Fluid-Structure Interaction</a></li><li><a class="tocitem" href="../t012_emscatter/">12 Electromagnetic scattering in 2D</a></li><li><a class="tocitem" href="../t013_poisson_dev_fe/">13 Low-level API Poisson equation</a></li><li><a class="tocitem" href="../t014_validation_DrWatson/">14 On using DrWatson.jl</a></li><li><a class="tocitem" href="../t015_interpolation_fe/">15 Interpolation of CellFields</a></li><li><a class="tocitem" href="../t016_poisson_distributed/">16 Poisson equation on parallel distributed-memory computers</a></li><li><a class="tocitem" href="../t017_poisson_transient/">17 Transient Poisson equation</a></li><li class="is-active"><a class="tocitem" href>18 Topology optimization</a><ul class="internal"><li><a class="tocitem" href="#Problem-statement-1"><span>Problem statement</span></a></li><li><a class="tocitem" href="#Formulation-1"><span>Formulation</span></a></li><li><a class="tocitem" href="#Topology-Optimization-1"><span>Topology Optimization</span></a></li><li><a class="tocitem" href="#Weak-form-1"><span>Weak form</span></a></li><li><a class="tocitem" href="#Setup-1"><span>Setup</span></a></li><li><a class="tocitem" href="#Discrete-Model-1"><span>Discrete Model</span></a></li><li><a class="tocitem" href="#FE-spaces-for-the-magnetic-field-1"><span>FE spaces for the magnetic field</span></a></li><li><a class="tocitem" href="#Numerical-integration-1"><span>Numerical integration</span></a></li><li><a class="tocitem" href="#FE-spaces-for-the-design-parameters-1"><span>FE spaces for the design parameters</span></a></li><li><a class="tocitem" href="#PML-formulation-1"><span>PML formulation</span></a></li><li><a class="tocitem" href="#Filter-and-threshold-1"><span>Filter and threshold</span></a></li><li><a class="tocitem" href="#Weak-form-2"><span>Weak form</span></a></li><li><a class="tocitem" href="#Solve-for-plane-wave-incident-1"><span>Solve for plane wave incident</span></a></li><li><a class="tocitem" href="#Objective-1"><span>Objective</span></a></li><li><a class="tocitem" href="#Optimization-with-adjoint-method-1"><span>Optimization with adjoint method</span></a></li><li><a class="tocitem" href="#Optimization-with-NLopt-1"><span>Optimization with  NLopt</span></a></li><li><a class="tocitem" href="#Results-and-plot-1"><span>Results and plot</span></a></li><li><a class="tocitem" href="#References-1"><span>References</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>18 Topology optimization</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>18 Topology optimization</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/gridap/Tutorials/blob/master/src/TopOptEMFocus.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Tutorial-18:-Topology-optimization-1"><a class="docs-heading-anchor" href="#Tutorial-18:-Topology-optimization-1">Tutorial 18: Topology optimization</a><a class="docs-heading-anchor-permalink" href="#Tutorial-18:-Topology-optimization-1" title="Permalink"></a></h1><p><a href="https://mybinder.org/v2/gh/gridap/Tutorials/gh-pages?filepath=dev/notebooks/t018_TopOptEMFocus.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt/></a> <a href="https://nbviewer.jupyter.org/github/gridap/Tutorials/blob/gh-pages/dev/notebooks/t018_TopOptEMFocus.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt/></a></p><p>In this tutorial, we will learn:</p><ul><li>How to apply the adjoint method for sensitivity analysis in Gridap</li><li>How to do topology optimization in Gridap</li></ul><p>We recommend that you first read the <a href="https://gridap.github.io/Tutorials/dev/pages/t012_emscatter/#Tutorial-12:-Electromagnetic-scattering-in-2D-1">Electromagnetic scattering tutorial</a> to make sure you understand the following points:</p><ul><li>How to formulate the weak form for a 2d time-harmonic electromagnetic problem (a scalar Helmholtz equation)</li><li>How to implement a perfectly matched layer (PML) to absorb outgoing waves</li><li>How to impose periodic boundary conditions in Gridap</li><li>How to discretize PDEs with complex-valued solutions</li></ul><h2 id="Problem-statement-1"><a class="docs-heading-anchor" href="#Problem-statement-1">Problem statement</a><a class="docs-heading-anchor-permalink" href="#Problem-statement-1" title="Permalink"></a></h2><p>Consider the following optimization problem adapted from <a href="http://doi.org/10.1364/OE.28.004444">Christiansen et al. (2020)</a>: We want to design a metallic (silver) nanoparticle to focus an incident <span>$H_z$</span>-polarized planewave on a single spot, maximizing the electric-field intensity at this focal spot.   The metallic structure can be <em>any shape</em> of <em>any topology</em> (any connectivity, number of holes, etcetera) surrounding the focal spot, as long as the metal lies within an annular &quot;design region&quot; <span>$\Omega_d$</span>: between a minimum radius <span>$r_s = 10$</span>nm (the minimum distance from the focal spot) and an outer radius <span>$r_d=100$</span>nm.  The computational cell is of height <span>$H$</span> and length <span>$L$</span>, and we employ a perfectly matched layer (PML) thickness of <span>$d_{pml}$</span> to implement outgoing (radiation) boundary conditions for this finite domain. <img src="../../assets/TopOptEMFocus/Illustration.png" alt/></p><p>The goal is find the arrangement of the silver material in the gray region that maximizes the |electric field|² at the center (the focal point). Every &quot;pixel&quot; in the gray region is effectively treated as a degree of freedom that can vary continuously between silver (shown in black below) and air (shown in white below). This is called density-based <a href="https://en.wikipedia.org/wiki/Topology_optimization">topology optimization (TO)</a>, and leads to a tractable optimization problem despite the huge number of parameters. A standard &quot;projection&quot; technique, described below, is used to &quot;binarize&quot; the structure by eventually forcing the material to be either silver or air almost everywhere.</p><h2 id="Formulation-1"><a class="docs-heading-anchor" href="#Formulation-1">Formulation</a><a class="docs-heading-anchor-permalink" href="#Formulation-1" title="Permalink"></a></h2><p>From Maxwell&#39;s equations, considering a time-harmonic electromagnetic field polarized so that the electric field is in-plane and the magnetic field is out-of-plane (described by a scalar <span>$H$</span> equal to the z-component), we can derive the governing equation of this problem in 2D (Helmholtz equation) [1]:</p><div>\[\left[-\nabla\cdot\frac{1}{\varepsilon(x)}\nabla -k^2\mu(x)\right] H = f(x),\]</div><p>where <span>$k=\omega/c$</span> is the wave number in free space and <span>$f(x)$</span> is the source term (which corresponds to a magnetic current density in Maxwell&#39;s equations).</p><p>In order to simulate this scattering problem in a finite computational domain, we need outgoing (radiation) boundary conditions to prevent waves from reflecting back from the boundaries of the domain.  We employ the well-known technique of &quot;perfectly matched layers&quot; (PML) [2], which are an an artificial absorbing layer adjacent to the boundaries that absorbs waves with minimal reflections (going to zero as the resolution increases). The &quot;stretched-coordinate&quot; formulation of PML correspond to a simple transformation of the PDE [3]:</p><div>\[\frac{\partial}{\partial x}\rightarrow \frac{1}{1+\mathrm{i}\sigma(u_x)/\omega}\frac{\partial}{\partial x},\]</div><div>\[\frac{\partial}{\partial y}\rightarrow \frac{1}{1+\mathrm{i}\sigma(u_y)/\omega}\frac{\partial}{\partial y},\]</div><p>where <span>$u_{x/y}$</span> is the depth into the PML, <span>$\sigma$</span> is a profile function (here we chose <span>$\sigma(u)=\sigma_0(u/d_{pml})^2$</span>) and the <span>$x$</span> and <span>$y$</span> derivatives correspond PML layers at the <span>$x$</span> and <span>$y$</span> boundaries, respectively.  Note that at a finite mesh resolution, PML reflects some waves, and the standard technique to mitigate this is to &quot;turn on&quot; the PML absorption gradually—in this case we use a quadratic profile. The amplitude <span>$\sigma_0$</span> is chosen so that in the limit of infinite resolution the &quot;round-trip&quot; normal-incidence is some small number.</p><p>Since PML absorbs all waves before they reach the boundary, the associated boundary condition can then be chosen arbitrarily. Here, the boundary conditions are Dirichlet (zero) on the top and bottom sides <span>$\Gamma_D$</span> but periodic on the left (<span>$\Gamma_L$</span>) and right sides (<span>$\Gamma_R$</span>).  The reason that we use periodic boundary conditions for the left and right side instead of Dirichlet boundary conditions is that we want to simulate a plane wave excitation, so we must choose boundary conditions that are satisfied by this incident wave.  (Because of the anisotropic nature of PML, the PML layers at the <span>$x$</span> boundaries do not disturb an incident planewave traveling purely in the <span>$y$</span> direction.)</p><p>Let <span>$\mu(x)=1$</span> (materials at optical frequencies have negligible magnetic responses) and denote <span>$\Lambda=\operatorname{diagm}(\Lambda_x,\Lambda_y)$</span> where <span>$\Lambda_{x/y}=\frac{1}{1+\mathrm{i}\sigma(u_{x/y})/\omega}$</span>. We can then formulate the problem as</p><div>\[\left\{ \begin{aligned}
+\left[-\Lambda\nabla\cdot\frac{1}{\varepsilon(x)}\Lambda\nabla -k^2\right] H &amp;= f(x) &amp; \text{ in } \Omega,\\
+H&amp;=0 &amp; \text{ on } \Gamma_D,\\
+H|_{\Gamma_L}&amp;=H|_{\Gamma_R},&amp;\\
+\end{aligned}\right.\]</div><p>For convenience in the weak form and Julia implementation below, we represent <span>$\Lambda$</span> as a vector given by the diagonal entries of the <span>$2 \times 2$</span> scaling matrix, in which case <span>$\Lambda\nabla$</span> becomes the elementwise product.</p><h2 id="Topology-Optimization-1"><a class="docs-heading-anchor" href="#Topology-Optimization-1">Topology Optimization</a><a class="docs-heading-anchor-permalink" href="#Topology-Optimization-1" title="Permalink"></a></h2><p>We use density-based topology optimization (TO) to maximize the electric field intensity at the center. In TO, every point in the design domain is a design degree of freedom that can vary continuously between air (<span>$p=0$</span>) and silver (<span>$p=1$</span>), which we discretize into a piece-wise constant parameter space <span>$P$</span> for the design parameter <span>$p\in [0,1]$</span>. The material&#39;s electric permittivity ε is then given by:</p><div>\[\varepsilon(p) = \left[n_{air}+p(n_{metal}-n_{air})\right]^2,\]</div><p>where <span>$n_{air}=1$</span> and <span>$n_{metal}$</span> are the refractive indices (<span>$\sqrt{\varepsilon}$</span>) of the air and metal, respectively. (It is tempting to simply linearly interpolate the permittivities ε, rather than the refractive indices, but this turns out to lead to artificial singularities in the case of metals where ε can pass through zero [4].)</p><p>In practice, to avoid obtaining arbitrarily fine features as the spatial resolution is increased, one needs to regularize the problem with a minimum lengthscale <span>$r_f$</span> by generating a smoothed/filtered parameter function <span>$p_f$</span>.  (Although this regularizes the problem, strictly speaking it does not impose a minimum feature size because of the nonlinear-projection step below. In practical applications, one imposes additional <a href="http://doi.org/10.1364/OE.431188">manufacturing constraints</a> explicitly.)  We perform the smoothing <span>$p \to p_f$</span> by solving a simple &quot;damped diffusion&quot; PDE, also called a Helmholtz filter [5], for <span>$p_f$</span> given the design variables <span>$p$</span>:</p><div>\[\begin{aligned}
+-r_f^2\nabla^2p_f+p_f&amp;=p\, ,\\
+\left. \frac{\partial p_f}{\partial \vec{n}} \right\vert_{\partial\Omega_D} &amp; =0 .
+\end{aligned}\]</div><p>We choose a filter radius <span>$r_f=R_f/(2\sqrt{3})$</span> where <span>$R_f=10$</span> nm, in order to match a published result (using a slightly different filtering scheme) for comparison [6].</p><p>Next, we apply a smoothed threshold projection to the intermediate variable <span>$p_f$</span> to obtain a &quot;binarized&quot; density parameter <span>$p_t$</span> that tends towards values of <span>$0$</span> or <span>$1$</span> almost everywhere [6] as the steepness <span>$\beta$</span> of the thresholding is increased:</p><div>\[p_t = \frac{\tanh(\beta\eta)+\tanh\left[\beta(p_f-\eta)\right]}{\tanh(\beta\eta)+\tanh\left[\beta(1-\eta)\right]}.\]</div><p>Note that as <span>$\beta\to\infty$</span>, this threshold procedure goes to a step function, which would make the optimization problem non-differentiable. In consequence, the standard approach is to gradually increase <span>$\beta$</span> to slowly binarize the design as the optimization progresses [6]. We will show how this is done below.</p><p>Finally, we replace <span>$p$</span> with the filtered and thresholded <span>$p_t$</span> in the ε interpolation formula from above:</p><div>\[\varepsilon(p_t) = \left[n_{air}+p_t(n_{metal}-n_{air})\right]^2,\]</div><p>This is the quantity that will be used for the <span>$1/\varepsilon(x)$</span> coefficient in our Helmholtz PDE.</p><h2 id="Weak-form-1"><a class="docs-heading-anchor" href="#Weak-form-1">Weak form</a><a class="docs-heading-anchor-permalink" href="#Weak-form-1" title="Permalink"></a></h2><p>Now we derive the weak form of the PML Helmholtz PDE above. After integration by parts (in which the boundary term vanishes), we obtain:</p><div>\[a(u,v,p) = \int_\Omega \left[\nabla(\Lambda v)\cdot\frac{1}{\varepsilon(p)}\Lambda\nabla u-k^2uv\right]\mathrm{d}\Omega,\]</div><div>\[b(v) = \int_\Omega vf\mathrm{d}\Omega.\]</div><p>Notice that the <span>$\nabla(\Lambda v)$</span> is an element-wise &quot;product&quot; of two vectors <span>$\nabla$</span> and <span>$\Lambda v$</span>.</p><h2 id="Setup-1"><a class="docs-heading-anchor" href="#Setup-1">Setup</a><a class="docs-heading-anchor-permalink" href="#Setup-1" title="Permalink"></a></h2><p>We import the packages that will be used, define the geometry and physics parameters.</p><pre><code class="language-julia">using Gridap, Gridap.Geometry, Gridap.Fields, GridapGmsh
+λ = 532      # Wavelength (nm)
+L = 600      # Width of the numerical cell (excluding PML) (nm)
+h1 = 600     # Height of the air region below the source (nm)
+h2 = 200     # Height of the air region above the source (nm)
+dpml = 300   # Thickness of the PML (nm)
+
+n_metal = 0.054 + 3.429im # Silver refractive index at λ = 532 nm
+n_air = 1    # Air refractive index
+μ = 1        # Magnetic permeability
+k = 2*π/λ    # Wavenumber (nm^-1)</code></pre><h2 id="Discrete-Model-1"><a class="docs-heading-anchor" href="#Discrete-Model-1">Discrete Model</a><a class="docs-heading-anchor-permalink" href="#Discrete-Model-1" title="Permalink"></a></h2><p>We import the model from the <code>RecCirGeometry.msh</code> mesh file using the <code>GmshDiscreteModel</code> function defined in <code>GridapGmsh</code>. The mesh file is created with GMSH in Julia (see the file ../assets/TopOptEMFocus/MeshGenerator.jl). Note that this mesh file already specifies periodic boundaries for the left and right sides, which will cause Gridap to implement periodic boundary conditions. Also, the center smallest-distance circle region is labeled with <code>Center</code> and the annular design region is labeled with <code>Design</code> in the mesh file.</p><pre><code class="language-julia">model = GmshDiscreteModel(&quot;../models/RecCirGeometry.msh&quot;)</code></pre><h2 id="FE-spaces-for-the-magnetic-field-1"><a class="docs-heading-anchor" href="#FE-spaces-for-the-magnetic-field-1">FE spaces for the magnetic field</a><a class="docs-heading-anchor-permalink" href="#FE-spaces-for-the-magnetic-field-1" title="Permalink"></a></h2><p>We use the first-order Lagrange finite-element basis functions. The Dirichlet edges are labeled as <code>DirichletEdges</code> in the mesh file. Since our problem involves complex numbers (because of the PML and the complex metal refractive index), we need to specify the <code>vector_type</code> as <code>Vector{ComplexF64}</code>.</p><pre><code class="language-julia">order = 1
+reffe = ReferenceFE(lagrangian, Float64, order)
+V = TestFESpace(model, reffe, dirichlet_tags = [&quot;DirichletEdges&quot;, &quot;DirichletNodes&quot;], vector_type = Vector{ComplexF64})
+U = V   # mathematically equivalent to TrialFESpace(V,0)</code></pre><h2 id="Numerical-integration-1"><a class="docs-heading-anchor" href="#Numerical-integration-1">Numerical integration</a><a class="docs-heading-anchor-permalink" href="#Numerical-integration-1" title="Permalink"></a></h2><p>We construct the triangulation and a second-order Gaussian quadrature scheme for assembling the finite-element matrix from the weak form. Note that we create a boundary triangulation from a <code>Source</code> tag for the line excitation, which is a convenient and accurate way to produce an incident planewave. (We could have alternatively devised a corresponding current source, e.g. using a finite-width delta-function approximation.)</p><pre><code class="language-julia">degree = 2
+Ω = Triangulation(model)
+dΩ = Measure(Ω, degree)
+
+Γ_s = BoundaryTriangulation(model; tags = [&quot;Source&quot;]) # Source line
+dΓ_s = Measure(Γ_s, degree)</code></pre><p>We also want to construct quadrature meshes for the numerical integration over two subsets of the computational cell: the design domain (annulus) <span>$\Omega_d$</span> and the central &quot;hole&quot; <span>$\Omega_c$</span> surrounding the focal point. The former is used to localize the design optimization to <span>$\Omega_d$</span>, and the latter is used to define the objective function (which only depends on the field at the center).</p><pre><code class="language-julia">Ω_d = Triangulation(model, tags=&quot;Design&quot;)
+dΩ_d = Measure(Ω_d, degree)
+
+Ω_c = Triangulation(model, tags=&quot;Center&quot;)
+dΩ_c = Measure(Ω_c, degree)</code></pre><h2 id="FE-spaces-for-the-design-parameters-1"><a class="docs-heading-anchor" href="#FE-spaces-for-the-design-parameters-1">FE spaces for the design parameters</a><a class="docs-heading-anchor-permalink" href="#FE-spaces-for-the-design-parameters-1" title="Permalink"></a></h2><p>As discussed above, we need a piece-wise constant design parameter space <span>$P$</span> that is defined in the design domain, this is achieved by a zero-order lagrangian. The number of design parameters is then the number of cells in the design region.</p><pre><code class="language-julia">p_reffe = ReferenceFE(lagrangian, Float64, 0)
+Q = TestFESpace(Ω_d, p_reffe, vector_type = Vector{Float64})
+P = Q
+np = num_free_dofs(P) # Number of cells in design region (number of design parameters)</code></pre><p>Note that this over 70k design parameters, which is large but not huge by modern standards. To optimize so many design parameters, the key point is how to compute the gradients to those parameters efficiently.</p><p>Also, we need a first-order lagrangian function space <span>$P_f$</span> for the filtered parameters <span>$p_f$</span> since the zero-order lagrangian always produces zero derivatives. (Note that <span>$p_f$</span> and <span>$p_t$</span> share the same function space since the latter is only a projection of the previous one.)</p><pre><code class="language-julia">pf_reffe = ReferenceFE(lagrangian, Float64, 1)
+Qf = TestFESpace(Ω_d, pf_reffe, vector_type = Vector{Float64})
+Pf = Qf</code></pre><p>Finally, we pack up every thing related to gridap as a named tuple called <code>fem_params</code>. This is because we want to pass those as local parameters to the optimization functions later, instead of making them as global parameters.</p><pre><code class="language-julia">fem_params = (; V, U, Q, P, Qf, Pf, np, Ω, dΩ, dΩ_d, dΩ_c, dΓ_s)</code></pre><h2 id="PML-formulation-1"><a class="docs-heading-anchor" href="#PML-formulation-1">PML formulation</a><a class="docs-heading-anchor-permalink" href="#PML-formulation-1" title="Permalink"></a></h2><p>First we pack up all physical parameters as a structure call <code>phys</code>. Then we define a <code>s_PML</code> function: <span>$s(x)=1+\mathrm{i}\sigma(u)/\omega,$</span> and its derivative <code>ds_PML</code>. The parameter <code>LHp</code> and <code>LHn</code> indicates the size of the inner boundary of the PML regions. Finally, we create a function-like object <code>Λ</code> that returns the PML factors and define its derivative in gridap.</p><p>Note that here we are defining a &quot;callable object&quot; of type <code>Λ</code> that encapsulates all of the PML parameters. This is convenient, both because we can pass lots of parameters around easily and also because we can define additional methods on <code>Λ</code>, e.g. to express the <code>∇(Λv)</code> operation.</p><pre><code class="language-julia">R = 1e-10
+LHp=(L/2, h1+h2)   # Start of PML for x,y &gt; 0
+LHn=(L/2, 0)       # Start of PML for x,y &lt; 0
+phys_params = (; k, n_metal, n_air, μ, R, dpml, LHp, LHn)</code></pre><p>PML coordinate streching functions</p><pre><code class="language-julia">function s_PML(x; phys_params)
+    σ = -3 / 4 * log(phys_params.R) / phys_params.dpml / phys_params.n_air
+    xf = Tuple(x)
+    u = @. ifelse(xf &gt; 0 , xf - phys_params.LHp, - xf - phys_params.LHn)
+    return @. ifelse(u &gt; 0,  1 + (1im * σ / phys_params.k) * (u / phys_params.dpml)^2, $(1.0+0im))
+end
+
+function ds_PML(x; phys_params)
+    σ = -3 / 4 * log(phys_params.R) / phys_params.dpml / phys_params.n_air
+    xf = Tuple(x)
+    u = @. ifelse(xf &gt; 0 , xf - phys_params.LHp, - xf - phys_params.LHn)
+    ds = @. ifelse(u &gt; 0, (2im * σ / phys_params.k) * (1 / phys_params.dpml)^2 * u, $(0.0+0im))
+    return ds.*sign.(xf)
+end
+
+struct Λ{PT} &lt;: Function
+    phys_params::PT
+end
+
+function (Λf::Λ)(x)
+    s_x,s_y = s_PML(x; Λf.phys_params)
+    return VectorValue(1/s_x, 1/s_y)
+end</code></pre><p>Define the derivative for the Λ factor</p><pre><code class="language-julia">Fields.∇(Λf::Λ) = x -&gt; TensorValue{2, 2, ComplexF64}(-(Λf(x)[1])^2 * ds_PML(x; Λf.phys_params)[1], 0, 0, -(Λf(x)[2])^2 * ds_PML(x; Λf.phys_params)[2])</code></pre><h2 id="Filter-and-threshold-1"><a class="docs-heading-anchor" href="#Filter-and-threshold-1">Filter and threshold</a><a class="docs-heading-anchor-permalink" href="#Filter-and-threshold-1" title="Permalink"></a></h2><p>Here we use the filter and threshold dicussed above. The parameters for the filter and threshold are extracted from Ref [6]. Note that every integral in the filter is only defined on <span>$\Omega_d$</span></p><pre><code class="language-julia">r = 5/sqrt(3)               # Filter radius
+β = 32.0                    # β∈[1,∞], threshold sharpness
+η = 0.5                     # η∈[0,1], threshold center
+
+a_f(r, u, v) = r^2 * (∇(v) ⋅ ∇(u))
+
+function Filter(p0; r, fem_params)
+    ph = FEFunction(fem_params.P, p0)
+    op = AffineFEOperator(fem_params.Pf, fem_params.Qf) do u, v
+        ∫(a_f(r, u, v))fem_params.dΩ_d + ∫(v * u)fem_params.dΩ_d, ∫(v * ph)fem_params.dΩ_d
+      end
+    pfh = solve(op)
+    return get_free_dof_values(pfh)
+end
+
+function Threshold(pfh; β, η)
+    return ((tanh(β * η) + tanh(β * (pfh - η))) / (tanh(β * η) + tanh(β * (1.0 - η))))
+end</code></pre><h2 id="Weak-form-2"><a class="docs-heading-anchor" href="#Weak-form-2">Weak form</a><a class="docs-heading-anchor-permalink" href="#Weak-form-2" title="Permalink"></a></h2><p>We notice that the design parameters only affect the weak form in the design domain and the PML does not affect the design domain, we can then make things simpler by dividing the weak form to a base integral that contains the whole computation cell and an additional integral on the design domain. We also make a LU factorization on the final Maxwell operator matrix <span>$A$</span> since it will only be used to solve for linear equations.</p><pre><code class="language-julia">using LinearAlgebra
+ξd(p, n_air, n_metal)= 1 / (n_air + (n_metal - n_air) * p)^2 - 1 / n_air^2 # in the design region
+
+a_base(u, v; phys_params) = (1 / phys_params.n_air^2) * ((∇ .* (Λ(phys_params) * v)) ⊙ (Λ(phys_params) .* ∇(u))) - (phys_params.k^2 * phys_params.μ * (v * u))
+
+a_design(u, v, pth; phys_params) = ((p -&gt; ξd(p, phys_params.n_air, phys_params.n_metal)) ∘ pth) * (∇(v) ⊙ ∇(u))
+
+function MatrixA(pth; phys_params, fem_params)
+    A_mat = assemble_matrix(fem_params.U, fem_params.V) do u, v
+        ∫(a_base(u, v; phys_params))fem_params.dΩ + ∫(a_design(u, v, pth; phys_params))fem_params.dΩ_d
+    end
+    return lu(A_mat)
+end</code></pre><h2 id="Solve-for-plane-wave-incident-1"><a class="docs-heading-anchor" href="#Solve-for-plane-wave-incident-1">Solve for plane wave incident</a><a class="docs-heading-anchor-permalink" href="#Solve-for-plane-wave-incident-1" title="Permalink"></a></h2><p>The plane wave source <code>b_vec</code> can be simply assembled by a uniform integral over the source line, and the magnetic field vector <code>u_vec</code> can then be solved by a simple linear equation</p><pre><code class="language-julia">p0 = zeros(fem_params.np)  # Here we make p=0 everywhere just for illustration purpose
+pf_vec = Filter(p0;r, fem_params)
+pfh = FEFunction(fem_params.Pf, pf_vec)
+pth = (pf -&gt; Threshold(pf; β, η)) ∘ pfh
+A_mat = MatrixA(pth; phys_params, fem_params)
+b_vec = assemble_vector(v-&gt;(∫(v)fem_params.dΓ_s), fem_params.V)
+u_vec = A_mat \ b_vec
+uh = FEFunction(fem_params.U, u_vec)</code></pre><h2 id="Objective-1"><a class="docs-heading-anchor" href="#Objective-1">Objective</a><a class="docs-heading-anchor-permalink" href="#Objective-1" title="Permalink"></a></h2><p>The problem is maximizing the electric field intensity at the center. Recall that the electric field can be retrieved from the magnetic field by</p><div>\[\mathbf{E}(\mathbf{x})=\frac{\mathrm{i}}{\omega\varepsilon(\mathbf{x})}\nabla\times\mathbf{H}(\mathbf{x}),\]</div><p>and our objective is the field intensity at center <span>$\vert\mathbf{E}(\mathbf{x}_0)\vert^2$</span>.</p><p>In the 2D formulation, this objective can be simplified to</p><div>\[g = \int \vert\nabla H\vert^2\delta(x-x_0)\mathrm{d}\Omega = u^\dagger Ou,\]</div><p>where <span>$u$</span> is the magnetic field vector and</p><div>\[O = \int (\nabla \hat{v}\cdot\nabla\hat{u})\delta(x-x_0)\mathrm{d}\Omega,\]</div><p>with <span>$\hat{v}$</span> and <span>$\hat{u}$</span> are the finite element basis functions.</p><p>In practice, the delta function can be approximated by a concentrated Gaussian function. Note that we use <code>dΩ_c</code> here in order to reduce computation costs.</p><pre><code class="language-julia">function MatrixOf(fem_params)
+    x0 = VectorValue(0,300)  # Position of the field to be optimized
+    δ = 1
+    return assemble_matrix(fem_params.U, fem_params.V) do u, v
+        ∫((x-&gt;(1/(2*π)*exp(-norm(x - x0)^2 / 2 / δ^2))) * (∇(u) ⋅ ∇(v)) )fem_params.dΩ_c
+    end
+end</code></pre><h2 id="Optimization-with-adjoint-method-1"><a class="docs-heading-anchor" href="#Optimization-with-adjoint-method-1">Optimization with adjoint method</a><a class="docs-heading-anchor-permalink" href="#Optimization-with-adjoint-method-1" title="Permalink"></a></h2><p>Now that we have our objective to optimize, the next step is to find out the derivative to the desigin parameter <span>$p$</span> in order to apply a gradient-based optimization algorithm. We will be using <code>ChainRulesCore</code> and <code>Zygote</code> packages.</p><pre><code class="language-julia">using ChainRulesCore, Zygote
+import ChainRulesCore: rrule
+NO_FIELDS = ZeroTangent()</code></pre><p>Recall that our objective is <span>$g=u^\dagger Ou$</span> and only <span>$u=A(p)^{-1} b$</span> depends on the design parameters. The derivative of <span>$g$</span> with respect to <span>$p_t$</span> can be obtained via <a href="https://math.mit.edu/~stevenj/18.336/adjoint.pdf">adjoint method</a>:</p><div>\[\frac{\mathrm{d} g}{\mathrm{d}p_t}= -2\Re\left[w^\dagger\left(\frac{\mathrm{d}A}{\mathrm{d}p_t}u\right)\right],\]</div><p>where <span>$w$</span> comes from the adjoint solve <span>$A^\dagger w = Ou$</span>. The final derivative with respect to <span>$p$</span> can then be obtained via chain rules:</p><div>\[\frac{\mathrm{d} g}{\mathrm{d}p}=\frac{\mathrm{d} g}{\mathrm{d}p_t}\cdot\frac{\mathrm{d} p_t}{\mathrm{d}p_f}\cdot\frac{\mathrm{d} p_f}{\mathrm{d}p}\]</div><p>First we define some relative derivative functions:</p><pre><code class="language-julia">Dptdpf(pf, β, η) = β * (1.0 - tanh(β * (pf - η))^2) / (tanh(β * η) + tanh(β * (1.0 - η)))
+
+Dξdpf(pf, n_air, n_metal, β, η)= 2 * (n_air - n_metal) / (n_air + (n_metal - n_air) * Threshold(pf; β, η))^3 * Dptdpf(pf, β, η)
+
+DAdpf(u, v, pfh; phys_params, β, η) = ((p -&gt; Dξdpf(p, phys_params.n_air, phys_params.n_metal, β, η)) ∘ pfh) * (∇(v) ⊙ ∇(u))</code></pre><p>Then we create a function <code>gf_pf</code> that depends directly on <span>$p_f$</span> and write out the derivate using adjoint method formula. Note that the threshold chainrule is already implemented in the functions above.</p><pre><code class="language-julia">function gf_pf(pf_vec; β, η, phys_params, fem_params)
+    pfh = FEFunction(fem_params.Pf, pf_vec)
+    pth = (pf -&gt; Threshold(pf; β, η)) ∘ pfh
+    A_mat = MatrixA(pth; phys_params, fem_params)
+    b_vec = assemble_vector(v-&gt;(∫(v)fem_params.dΓ_s), fem_params.V)
+    u_vec = A_mat \ b_vec
+
+    O_mat = MatrixOf(fem_params)
+    real(u_vec&#39; * O_mat * u_vec)
+end
+
+function rrule(::typeof(gf_pf), pf_vec; β, η, phys_params, fem_params)
+    function U_pullback(dgdg)
+      NO_FIELDS, dgdg * Dgfdpf(pf_vec; β, η, phys_params, fem_params)
+    end
+    gf_pf(pf_vec; β, η, phys_params, fem_params), U_pullback
+end
+
+function Dgfdpf(pf_vec; β, η, phys_params, fem_params)
+    pfh = FEFunction(fem_params.Pf, pf_vec)
+    pth = (pf -&gt; Threshold(pf; β, η)) ∘ pfh
+    A_mat = MatrixA(pth; phys_params, fem_params)
+    b_vec = assemble_vector(v-&gt;(∫(v)fem_params.dΓ_s), fem_params.V)
+    u_vec = A_mat \ b_vec
+    O_mat = MatrixOf(fem_params)
+
+    uh = FEFunction(fem_params.U, u_vec)
+    w_vec =  A_mat&#39; \ (O_mat * u_vec)
+    wconjh = FEFunction(fem_params.U, conj(w_vec))
+
+    l_temp(dp) = ∫(real(-2 * DAdpf(uh, wconjh, pfh; phys_params, β, η)) * dp)fem_params.dΩ_d
+    dgfdpf = assemble_vector(l_temp, fem_params.Pf)
+    return dgfdpf
+end</code></pre><p>Next we define the relation between <span>$p_f$</span> and <span>$p$</span>, and obtain the derivative of the filter by again applying an adjoint method:</p><pre><code class="language-julia">function pf_p0(p0; r, fem_params)
+    pf_vec = Filter(p0; r, fem_params)
+    pf_vec[pf_vec .&lt; 0] .= 0
+    pf_vec[pf_vec .&gt; 1] .= 1.0
+    pf_vec
+end
+
+function rrule(::typeof(pf_p0), p0; r, fem_params)
+  function pf_pullback(dgdpf)
+    NO_FIELDS, Dgdp(dgdpf; r, fem_params)
+  end
+  pf_p0(p0; r, fem_params), pf_pullback
+end
+
+function Dgdp(dgdpf; r, fem_params)
+    Af = assemble_matrix(fem_params.Pf, fem_params.Qf) do u, v
+        ∫(a_f(r, u, v))fem_params.dΩ_d + ∫(v * u)fem_params.dΩ_d
+    end
+    wvec = Af&#39; \ dgdpf
+    wh = FEFunction(fem_params.Pf, wvec)
+    l_temp(dp) = ∫(wh * dp)fem_params.dΩ_d
+    return assemble_vector(l_temp, fem_params.P)
+end</code></pre><p>Finally, we pack up into a single function that takes <code>p</code> and returns our objective function, and which can optionally take a <code>grad</code> vector into which the gradient (computed by Zygote by composing our rules above) can be written in-place (as required for use in the NLopt optimization package). We also optionally record the value of the objective function from every call in order to save a record of the optimization process.</p><pre><code class="language-julia">function gf_p(p0::Vector; r, β, η, phys_params, fem_params)
+    pf_vec = pf_p0(p0; r, fem_params)
+    gf_pf(pf_vec; β, η, phys_params, fem_params)
+end
+
+function gf_p(p0::Vector, grad::Vector; r, β, η, phys_params, fem_params)
+    if length(grad) &gt; 0
+        dgdp, = Zygote.gradient(p -&gt; gf_p(p; r, β, η, phys_params, fem_params), p0)
+        grad[:] = dgdp
+    end
+    gvalue = gf_p(p0::Vector; r, β, η, phys_params, fem_params)
+    open(&quot;gvalue.txt&quot;, &quot;a&quot;) do io
+        write(io, &quot;$gvalue \n&quot;)
+    end
+    gvalue
+end</code></pre><p>Using the following codes, we can check if we can get the derivatives correctly from the adjoint method by comparing it with the finite difference results.</p><pre><code class="language-julia">p0 = rand(fem_params.np)
+δp = rand(fem_params.np)*1e-8
+grad = zeros(fem_params.np)
+
+g0 = gf_p(p0, grad; r, β, η, phys_params, fem_params)
+g1 = gf_p(p0+δp, []; r, β, η, phys_params, fem_params)
+g1-g0, grad&#39;*δp</code></pre><h2 id="Optimization-with-NLopt-1"><a class="docs-heading-anchor" href="#Optimization-with-NLopt-1">Optimization with  NLopt</a><a class="docs-heading-anchor-permalink" href="#Optimization-with-NLopt-1" title="Permalink"></a></h2><p>Now we use NLopt.jl package to implement the MMA algorithm for optimization. Note that we start with <span>$\beta=8$</span> and then gradually increase it to <span>$\beta=32$</span> in consistant with Ref. [6].</p><pre><code class="language-julia">using NLopt
+
+function gf_p_optimize(p_init; r, β, η, TOL = 1e-4, MAX_ITER = 500, phys_params, fem_params)
+    ##################### Optimize #################
+    opt = Opt(:LD_MMA, fem_params.np)
+    opt.lower_bounds = 0
+    opt.upper_bounds = 1
+    opt.ftol_rel = TOL
+    opt.maxeval = MAX_ITER
+    opt.max_objective = (p0, grad) -&gt; gf_p(p0, grad; r, β, η, phys_params, fem_params)
+
+    (g_opt, p_opt, ret) = optimize(opt, p_init)
+    @show numevals = opt.numevals # the number of function evaluations
+    return g_opt, p_opt
+end
+
+p_opt = fill(0.4, fem_params.np)   # Initial guess
+β_list = [8.0, 16.0, 32.0]
+
+g_opt = 0
+TOL = 1e-8
+MAX_ITER = 100
+for bi = 1 : 3
+    β = β_list[bi]
+    g_opt, p_temp_opt = gf_p_optimize(p_opt; r, β, η, TOL, MAX_ITER, phys_params, fem_params)
+    global p_opt = p_temp_opt
+end
+@show g_opt</code></pre><h2 id="Results-and-plot-1"><a class="docs-heading-anchor" href="#Results-and-plot-1">Results and plot</a><a class="docs-heading-anchor-permalink" href="#Results-and-plot-1" title="Permalink"></a></h2><p>We use the CairoMakie.jl and GridapMakie.jl packages to plot the field as well as the optimized shape. Note that there might be multiple local optima for this problem, so different initial guesses might result in different optimized shapes.</p><pre><code class="language-julia">using CairoMakie, GridapMakie
+p0 = p_opt
+
+pf_vec = pf_p0(p0; r, fem_params)
+pfh = FEFunction(fem_params.Pf, pf_vec)
+pth = (pf -&gt; Threshold(pf; β, η)) ∘ pfh
+A_mat = MatrixA(pth; phys_params, fem_params)
+b_vec = assemble_vector(v-&gt;(∫(v)fem_params.dΓ_s), fem_params.V)
+u_vec = A_mat \ b_vec
+uh = FEFunction(fem_params.U, u_vec)
+
+fig, ax, plt = plot(fem_params.Ω, pth, colormap = :binary)
+Colorbar(fig[1,2], plt)
+ax.aspect = AxisAspect(1)
+ax.title = &quot;Design Shape&quot;
+rplot = 110 # Region for plot
+limits!(ax, -rplot, rplot, (h1)/2-rplot, (h1)/2+rplot)
+save(&quot;shape.png&quot;, fig)</code></pre><p><img src="../../assets/TopOptEMFocus/shape.png" alt/></p><p>For the electric field, recall that <span>$\vert E\vert^2\sim\vert \frac{1}{\epsilon}\nabla H\vert^2$</span>, the factor 2 below comes from the amplitude compared to the incident plane wave. We can see that the optimized shapes are very similiar to the optimized shape in Ref. [6], proving our results.</p><pre><code class="language-julia">maxe = 30 # Maximum electric field magnitude compared to the incident plane wave
+e1=abs2(phys_params.n_air^2)
+e2=abs2(phys_params.n_metal^2)
+
+fig, ax, plt = plot(fem_params.Ω, 2*(sqrt∘(abs((conj(∇(uh)) ⋅ ∇(uh))/(CellField(e1,fem_params.Ω) + (e2 - e1) * pth)))), colormap = :hot, colorrange=(0, maxe))
+Colorbar(fig[1,2], plt)
+ax.title = &quot;|E|&quot;
+ax.aspect = AxisAspect(1)
+limits!(ax, -rplot, rplot, (h1)/2-rplot, (h1)/2+rplot)
+save(&quot;Field.png&quot;, fig)</code></pre><p><img src="../../assets/TopOptEMFocus/Field.png" alt/></p><h2 id="References-1"><a class="docs-heading-anchor" href="#References-1">References</a><a class="docs-heading-anchor-permalink" href="#References-1" title="Permalink"></a></h2><p>[1] <a href="https://en.wikipedia.org/wiki/Electromagnetic_wave_equation">Wikipedia: Electromagnetic wave equation</a></p><p>[2] <a href="https://en.wikipedia.org/wiki/Perfectly_matched_layer">Wikipedia: Perfectly matched layer</a></p><p>[3] A. Oskooi and S. G. Johnson, “<a href="http://math.mit.edu/~stevenj/papers/OskooiJo11.pdf">Distinguishing correct from incorrect PML proposals and a corrected unsplit PML for anisotropic, dispersive media</a>,” Journal of Computational Physics, vol. 230, pp. 2369–2377, April 2011.</p><p>[4] R. E. Christiansen, J. Vester-Petersen, S.P. Madsen, and O. Sigmund, “<a href="https://pure.au.dk/portal/files/206950673/1_s2.0_S0045782518304328_main_1_.pdf">A non-linear material interpolation for design of metallic nano-particles using topology optimization</a>,” Computer Methods in Applied Mechanics and Engineering , vol. 343, pp. 23–39, January 2019.</p><p>[5] B. S. Lazarov and O. Sigmund, &quot;<a href="https://en.wikipedia.org/wiki/Jacobi%E2%80%93Anger_expansion">Filters in topology optimization based on Helmholtz-type differential equations</a>&quot;, International Journal for Numerical Methods in Engineering, vol. 86, pp. 765-781, December 2010.</p><p>[6] R.E. Christiansen, J. Michon, M. Benzaouia, O. Sigmund, and S.G. Johnson, &quot;<a href="https://opg.optica.org/oe/fulltext.cfm?uri=oe-28-4-4444&amp;id=426514">Inverse design of nanoparticles for enhanced Raman scattering</a>,&quot; Optical Express, vol. 28, pp. 4444-4462, Feburary 2020.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../t017_poisson_transient/">« 17 Transient Poisson equation</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 27 May 2022 08:59">Friday 27 May 2022</span>. Using Julia version 1.6.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

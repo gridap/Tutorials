@@ -39,6 +39,7 @@ GridapP4est = "0.1"
 GridapPETSc = "0.4"
 MPI = "0.19"
 PartitionedArrays = "0.2"
+Revise = "3"
 SpecialFunctions = "1"
 julia = "1.3"
 

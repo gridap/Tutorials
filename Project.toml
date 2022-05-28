@@ -32,6 +32,7 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
+ChainRulesCore = "1"
 Gridap = "0.17.9"
 GridapDistributed = "0.2"
 GridapGmsh = "0.6"

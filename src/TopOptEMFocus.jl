@@ -387,8 +387,6 @@ end
 
 function pf_p0(p0; r, fem_params)
     pf_vec = Filter(p0; r, fem_params)
-    pf_vec[pf_vec .< 0] .= 0
-    pf_vec[pf_vec .> 1] .= 1.0
     pf_vec
 end
 

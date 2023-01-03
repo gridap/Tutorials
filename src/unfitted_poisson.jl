@@ -10,7 +10,7 @@
 #
 # We want to solve the **Poisson equation** on the crescent moon 2D shape shown in the next figure
 #
-# <img src="../assets/unfitted_poisson/crescent_moon.png" width="480">
+# ![fig0a](../assets/unfitted_poisson/crescent_moon.png)
 #
 # We prescribe the linear solution to the problem $u(x) = x - y$ and Dirichlet boundary conditions on the whole boundary. Thus, the problem to solve is: find the scalar field $u$ such that
 #
@@ -29,7 +29,7 @@
 #
 # | Body-fitted | Unfitted |
 # | ----  | ---- |
-# | <img src="../assets/unfitted_poisson/fig_2_body-fitted_a_bis.png" width="480"> | <img src="../assets/unfitted_poisson/fig_3_unfitted.png" width="480">
+# | ![fig0b](../assets/unfitted_poisson/fig_2_body-fitted_a_bis.png) | ![fig0c](../assets/unfitted_poisson/fig_3_unfitted.png)
 #
 # Unfitted methods allow one to circumvent the meshing bottleneck when dealing with very complex geometries. But, as usual, this comes at a price. In unfitted methods, integration of the weak form and imposition of Dirichlet boundary conditions becomes more involved. In addition, we have to be careful with the small cut cell problem, which refers to stability and ill-conditioning issues that appear in presence of very small intersections between the background cells and the domain.
 #
@@ -65,7 +65,7 @@ using GridapEmbedded
 #
 # We will use the former properties to generate the crescent moon shape with [GridapEmbedded](https://github.com/gridap/GridapEmbedded.jl) as follows. First, we note that the crescent moon shape is the outcome of subtracting to a disk of radius $R=1/2$ another disk of radius R, whose center is at a relative position $(-R/2,R/2)$.
 #
-# <img src="../assets/unfitted_poisson/crescent_moon_setup.png" width="420">
+# ![fig1](../assets/unfitted_poisson/crescent_moon_setup.png)
 #
 # Defining this geometry in [GridapEmbedded](https://github.com/gridap/GridapEmbedded.jl) is done as follows:
 
@@ -109,7 +109,7 @@ writevtk(Ω_act,"act_trian")
 
 # In the picture below of the background grid, white cells are _inactive_, whereas gray cells are _active_.
 #
-# <img src="../assets/unfitted_poisson/fig_active_triangulation.png" width="420">
+# ![fig2](../assets/unfitted_poisson/fig_active_triangulation.png)
 #
 # As we will see later, we define our unfitted FE spaces on _active_ triangulations. 
 #
@@ -120,22 +120,22 @@ writevtk(Ω,"phys_trian")
 
 # Once again, we can combine plots of the physical and active triangulations to illustrate these concepts. In the first plot, we show the physical triangulation within the background one. 
 #
-# <img src="../assets/unfitted_poisson/fig_physical_trian_1.png" width="420">
+# ![fig3](../assets/unfitted_poisson/fig_physical_trian_1.png)
 #
 # Note that cut cells are subtriangulated to approximate the embedded geometry, as exposed in the following close-up plot.
 #
-# <img src="../assets/unfitted_poisson/fig_physical_trian_2.png" width="420">
+# ![fig4](../assets/unfitted_poisson/fig_physical_trian_2.png)
 #
 # In the third plot, we show the region represented by physical triangulation (shaded in gray) embedded in the active grid (black-contoured cells).
 #
-# <img src="../assets/unfitted_poisson/fig_physical_trian_3.png" width="420">
+# ![fig5](../assets/unfitted_poisson/fig_physical_trian_3.png" width="420")
 #
 # **In a nutshell,** to define the unfitted FE formulation of the problem we need the \"active\" and \"physical\" triangulations of the domain. The former triangulation is used to define the FE spaces, whereas the latter is used to integrate the weak form. We use a level-set function to derive both of them.
 #
 # | Active | Physical |
 # | ----  | ---- |
 # | _For_ FE spaces | _For_ measures |
-# | <img src="../assets/unfitted_poisson/fig_active_triangulation.png" width="280"> | <img src="../assets/unfitted_poisson/fig_physical_trian_1.png" width="250">
+# | ![fig6](../assets/unfitted_poisson/fig_active_triangulation.png) | ![fig7](../assets/unfitted_poisson/fig_physical_trian_1.png)
 #
 # ### Unfitted FE spaces
 #
@@ -151,7 +151,7 @@ writevtk(Ω,"phys_trian")
 #
 # Hence, we end up extrapolating exterior DoFs ${\color{red}\times}$, in terms of interior ones ${\color{blue}\bullet}$.
 #
-# # <img src="../assets/unfitted_poisson/fig_agfemspace.png" width="280">
+# ![fig8](../assets/unfitted_poisson/fig_agfemspace.png)
 #
 # We define the AgFEM space of our problem as follows. First, we generate a standard linear FE space **on the `ACTIVE` triangulation**. We do not prescribe Dirichlet boundaries on the standard FE space for reasons that will be clear later in the tutorial.
 
@@ -200,7 +200,7 @@ dΩ = Measure(Ω,degree)
 #
 # | Model problem | Body-fitted | Unfitted |
 # | ---- | ---- | ---- |
-# | <img src="../assets/unfitted_poisson/fig_cp_bcs.png" width="280"> | <img src="../assets/unfitted_poisson/fig_bf_bcs.png" width="280"> | <img src="../assets/unfitted_poisson/fig_ud_bcs.png" width="280"> | 
+# | ![fig9](../assets/unfitted_poisson/fig_cp_bcs.png) | ![fig10](../assets/unfitted_poisson/fig_bf_bcs.png) | ![fig11](../assets/unfitted_poisson/fig_ud_bcs.png) | 
 # 
 # Clearly, on body-fitted meshes, we can impose Dirichlet BCs _strongly_, i.e. remove the basis functions associated to Dirichlet DoFs from the FE space. On unfitted meshes, we must enforce these conditions weakly. In order to do that we resort to Nitsche's method:
 #

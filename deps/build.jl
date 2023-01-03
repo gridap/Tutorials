@@ -22,7 +22,8 @@ files = [
   "Interpolation of CellFields"=>"interpolation_fe.jl",
   "Poisson equation on parallel distributed-memory computers"=>"poisson_distributed.jl",
   "Transient Poisson equation"=>"poisson_transient.jl",
-  "Topology optimization"=>"TopOptEMFocus.jl"]
+  "Topology optimization"=>"TopOptEMFocus.jl",
+  "Unfitted Poisson"=>"unfitted_poisson.jl"]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)
 for (i,(title,filename)) in enumerate(files)

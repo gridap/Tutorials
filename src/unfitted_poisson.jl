@@ -250,4 +250,8 @@ using Test
 @test el2/ul2 < 1.e-8
 @test eh1/uh1 < 1.e-7
 
+writevtk(Ω,"results.vtu",cellfields=["uh"=>uh])
+
+# ![fig10](../assets/unfitted_poisson/fig_results.png)
+
 # **Tutorial done!**

@@ -35,14 +35,14 @@ function main_ex1(parts)
   writevtk(Ω,"results_ex1",cellfields=["uh"=>uh,"grad_uh"=>∇(uh)])
 end
 
-# Once the `main_ex1` function has been defined, we have to trigger its execution on the different parts. To this end, one calls the `prun` function of [`PartitionedArrays.jl`](https://github.com/fverdugo/PartitionedArrays.jl) right at the beginning of the program.
+# Once the `main_ex1` function has been defined, we have to trigger its execution on the different parts. To this end, one calls the `with_backend` function of [`PartitionedArrays.jl`](https://github.com/fverdugo/PartitionedArrays.jl) right at the beginning of the program.
 
 partition = (2,2)
-prun(main_ex1, mpi, partition)
+with_backend(main_ex1, MPIBackend(), partition)
 
 # With this function, the programmer sets up the `PartitionedArrays.jl` communication backend (i.e., MPI in the example), specifies the number of parts and their layout (i.e., 2x2 Cartesian-like mesh partition in the example), and provides the `main_ex1` function to be run on each part.
 
-# Although not illustrated in this tutorial, we note that one may also use the `sequential` `PartitionedArrays.jl` backend, instead of `mpi`. With this backend, the code executes serially on a single process (and there is thus no need to use `mpiexecjl` to launch the program), although  the data structures are still partitioned into parts. This is very useful, among others, for interactive execution of the code, and debugging, before moving to MPI parallelism.
+# Although not illustrated in this tutorial, we note that one may also use the `SequentialBackend()` `PartitionedArrays.jl` backend, instead of `MPIBackend()`. With this backend, the code executes serially on a single process (and there is thus no need to use `mpiexecjl` to launch the program), although  the data structures are still partitioned into parts. This is very useful, among others, for interactive execution of the code, and debugging, before moving to MPI parallelism.
 
 # ## Second example: `GridapDistributed.jl` + `GridapPETSc.jl` for the linear solver
 
@@ -74,11 +74,11 @@ function main_ex2(parts)
 end
 
 partition = (2,2)
-prun(main_ex2, mpi, partition)
+with_backend(main_ex2, MPIBackend(), partition)
 
 # ## Third example: second example + `GridapP4est.jl` for mesh generation
 
-# In this example, we define the Cartesian mesh using `GridapP4est.jl` via recursive uniform refinement starting with a single cell. It only involves minor modifications compared to the previous example. First, one has to generate a coarse mesh of the domain. As the domain is a just a simple box in the example, it suffices to use a coarse mesh with a single quadrilateral fitted to the box in order to capture the geometry of the domain with no geometrical error (see how the `coarse_discrete_model` object is generated). In more complex scenarios, one can read an unstructured coarse mesh from disk, generated, e.g., with an unstructured brick mesh generator. Second, when building the fine mesh of the domain (see `UniformlyRefinedForestOfOctreesDiscreteModel` call), one has to specify the number of uniform refinements to be performed on the coarse mesh in order to generate the fine mesh. Finally, when calling `prun`, we do not longer specify a Cartesian partition but just the number of parts.
+# In this example, we define the Cartesian mesh using `GridapP4est.jl` via recursive uniform refinement starting with a single cell. It only involves minor modifications compared to the previous example. First, one has to generate a coarse mesh of the domain. As the domain is a just a simple box in the example, it suffices to use a coarse mesh with a single quadrilateral fitted to the box in order to capture the geometry of the domain with no geometrical error (see how the `coarse_discrete_model` object is generated). In more complex scenarios, one can read an unstructured coarse mesh from disk, generated, e.g., with an unstructured brick mesh generator. Second, when building the fine mesh of the domain (see `UniformlyRefinedForestOfOctreesDiscreteModel` call), one has to specify the number of uniform refinements to be performed on the coarse mesh in order to generate the fine mesh. Finally, when calling `with_backend`, we do not longer specify a Cartesian partition but just the number of parts.
 
 using GridapP4est
 
@@ -110,7 +110,7 @@ function main_ex3(parts)
 end
 
 nparts = 4
-prun(main_ex3, mpi, nparts)
+with_backend(main_ex3, MPIBackend(), nparts)
 
 # ## Fourth example: second example + `GridapGmsh.jl` for mesh generation
 
@@ -139,4 +139,4 @@ function main_ex4(parts)
 end
 
 nparts = 4
-prun(main_ex4, mpi, nparts)
+with_backend(main_ex4, MPIBackend(), nparts)

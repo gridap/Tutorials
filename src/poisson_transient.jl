@@ -85,18 +85,18 @@ op_Af = TransientAffineFEOperator(m,a,b,U,V)
 # For time-dependent problems with constant coefficients, which is not the case of this tutorial, one could use the optimized operator `TransientConstantMatrixFEOperator`, which assumes that the matrix contributions ($m$ and $a$) are time-independent. That is:
 m₀(u,v) = ∫( u*v )dΩ
 a₀(u,v) = ∫( κ(0.0)*(∇(u)⋅∇(v)) )dΩ
-op_CM = TransientConstantMatrixFEOperator(m,a,b,U,V)
+op_CM = TransientConstantMatrixFEOperator(m₀,a₀,b,U,V)
 
 # Going further, if we had a problem with constant forcing term, i.e. constant force and constant boundary conditions, we could have used the `TransientConstantFEOperator`. In that case the linear form is also time-independent.
 b₀(v) = ∫( f(0.0)*v )dΩ
-op_C = TransientConstantFEOperator(m,a,b,U,V)
+op_C = TransientConstantFEOperator(m₀,a₀,b₀,U,V)
 
 # ## Transient solver
 
 # Once we have the FE operator defined, we proceed with the definition of the transient solver. First, we define a linear solver to be used at each time step. Here we use the `LUSolver`, but other choices are possible.
 linear_solver = LUSolver()
 
-# Then, we define the ODE solver. That is, the scheme that will be used for the time integration. In this tutorial we use the `ThetaMethod` with $\theta = 0.5$, resulting in a 2nd order scheme. The `ThetaMethod` function receives the linear solver, the time step size $\Delta t$ (constant) and the value of $\theta $.
+# Then, we define the ODE solver. That is, the scheme that will be used for the time integration. In this tutorial we use the `ThetaMethod` with $\theta = 0.5$, resulting in a 2nd order scheme. The `ThetaMethod` function receives the linear solver, the time step size $\Delta t$ (constant) and the value of $\theta$.
 Δt = 0.05
 θ = 0.5
 ode_solver = ThetaMethod(linear_solver,Δt,θ)

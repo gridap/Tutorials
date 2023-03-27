@@ -6,7 +6,7 @@
 
 # ## Problem statement
 
-# We solve the heat equation in a 2-dimensional domain $\Omega$, the unit square, with Homogenous Dirichlet boundaries on the whole boundary $\partial \Omega$. We consider a time-dependent conductivity $\kappa(t)=1.0 + 0.95\sin(2\pi t)$, a time-dependent volumetric forcing term $f(t) = \sin(\pi t)$ and a constant Homogenous boundary condition $g = 0.0$. The initial solution is $u(x,0) = u_0 = 0$. With these definitions, the strong form of the problem reads:
+# We solve the heat equation in a 2-dimensional domain $\Omega$, the unit square, with Homogeneous Dirichlet boundaries on the whole boundary $\partial \Omega$. We consider a time-dependent conductivity $\kappa(t)=1.0 + 0.95\sin(2\pi t)$, a time-dependent volumetric forcing term $f(t) = \sin(\pi t)$ and a constant Homogeneous boundary condition $g = 0.0$. The initial solution is $u(x,0) = u_0 = 0$. With these definitions, the strong form of the problem reads:
 
 # ```math
 # \left\lbrace
@@ -54,7 +54,7 @@ refFE = ReferenceFE(lagrangian,Float64,1)
 # The space of test functions is constant in time and is defined in steady problems:
 V = TestFESpace(𝒯,refFE,dirichlet_tags="boundary")
 
-# The trial space is now a `TransientTrialFESpace`, wich is constructed from a `TestFESpace` and a function (or vector of functions) for the Dirichlet boundary condition/s. In that case, the boundary condition function is a time-independent constant, but it could also be a time-dependent field depending on the coordinates $x$ and time $t$.
+# The trial space is now a `TransientTrialFESpace`, which is constructed from a `TestFESpace` and a function (or vector of functions) for the Dirichlet boundary condition/s. In that case, the boundary condition function is a time-independent constant, but it could also be a time-dependent field depending on the coordinates $x$ and time $t$.
 g(x,t::Real) = 0.0
 g(t::Real) = x -> g(x,t)
 U = TransientTrialFESpace(V,g)

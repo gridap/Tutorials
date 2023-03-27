@@ -199,7 +199,7 @@ LHp=(L/2, h1+h2)   # Start of PML for x,y > 0
 LHn=(L/2, 0)       # Start of PML for x,y < 0
 phys_params = (; k, n_metal, n_air, μ, R, dpml, LHp, LHn)
 
-# PML coordinate streching functions
+# PML coordinate stretching functions
 function s_PML(x; phys_params)
     σ = -3 / 4 * log(phys_params.R) / phys_params.dpml / phys_params.n_air
     xf = Tuple(x)
@@ -230,7 +230,7 @@ Fields.∇(Λf::Λ) = x -> TensorValue{2, 2, ComplexF64}(-(Λf(x)[1])^2 * ds_PML
 
 # ## Filter and threshold
 # 
-# Here we use the filter and threshold dicussed above. The parameters for the filter and threshold are extracted from Ref [6]. Note that every integral in the filter is only defined on $\Omega_d$
+# Here we use the filter and threshold discussed above. The parameters for the filter and threshold are extracted from Ref [6]. Note that every integral in the filter is only defined on $\Omega_d$
 # 
 
 r = 5/sqrt(3)               # Filter radius
@@ -344,7 +344,7 @@ Dξdpf(pf, n_air, n_metal, β, η)= 2 * (n_air - n_metal) / (n_air + (n_metal - 
 DAdpf(u, v, pfh; phys_params, β, η) = ((p -> Dξdpf(p, phys_params.n_air, phys_params.n_metal, β, η)) ∘ pfh) * (∇(v) ⊙ ∇(u))
 
 
-# Then we create a function `gf_pf` that depends directly on $p_f$ and write out the derivate using adjoint method formula. Note that the threshold chainrule is already implemented in the functions above.
+# Then we create a function `gf_pf` that depends directly on $p_f$ and write out the derivative using adjoint method formula. Note that the threshold chainrule is already implemented in the functions above.
 # 
 
 function gf_pf(pf_vec; β, η, phys_params, fem_params)
@@ -440,7 +440,7 @@ g1-g0, grad'*δp
 
 # ## Optimization with  NLopt
 # 
-# Now we use NLopt.jl package to implement the MMA algorithm for optimization. Note that we start with $\beta=8$ and then gradually increase it to $\beta=32$ in consistant with Ref. [6].
+# Now we use NLopt.jl package to implement the MMA algorithm for optimization. Note that we start with $\beta=8$ and then gradually increase it to $\beta=32$ in consistent with Ref. [6].
 # 
 
 using NLopt
@@ -500,7 +500,7 @@ save("shape.png", fig)
 # ![](../assets/TopOptEMFocus/shape.png)
 # 
 
-# For the electric field, recall that $\vert E\vert^2\sim\vert \frac{1}{\epsilon}\nabla H\vert^2$, the factor 2 below comes from the amplitude compared to the incident plane wave. We can see that the optimized shapes are very similiar to the optimized shape in Ref. [6], proving our results. 
+# For the electric field, recall that $\vert E\vert^2\sim\vert \frac{1}{\epsilon}\nabla H\vert^2$, the factor 2 below comes from the amplitude compared to the incident plane wave. We can see that the optimized shapes are very similar to the optimized shape in Ref. [6], proving our results. 
 # 
 
 maxe = 30 # Maximum electric field magnitude compared to the incident plane wave
@@ -529,6 +529,6 @@ save("Field.png", fig)
 # 
 # [5] B. S. Lazarov and O. Sigmund, "[Filters in topology optimization based on Helmholtz-type differential equations](https://en.wikipedia.org/wiki/Jacobi%E2%80%93Anger_expansion)", International Journal for Numerical Methods in Engineering, vol. 86, pp. 765-781, December 2010.
 # 
-# [6] R.E. Christiansen, J. Michon, M. Benzaouia, O. Sigmund, and S.G. Johnson, "[Inverse design of nanoparticles for enhanced Raman scattering](https://opg.optica.org/oe/fulltext.cfm?uri=oe-28-4-4444&id=426514)," Optical Express, vol. 28, pp. 4444-4462, Feburary 2020.
+# [6] R.E. Christiansen, J. Michon, M. Benzaouia, O. Sigmund, and S.G. Johnson, "[Inverse design of nanoparticles for enhanced Raman scattering](https://opg.optica.org/oe/fulltext.cfm?uri=oe-28-4-4444&id=426514)," Optical Express, vol. 28, pp. 4444-4462, February 2020.
 # 
 

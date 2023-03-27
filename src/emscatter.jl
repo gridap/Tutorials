@@ -89,7 +89,7 @@ model = GmshDiscreteModel("../models/geometry.msh")
 
 # ## FE spaces
 # 
-# We use the first-order lagrangian as the finite element function space basis. The dirihlet edges are labeld with `DirichletEdges` in the mesh file. Since our problem involves complex numbers (because of PML), we need to assign the `vector_type` to be `Vector{ComplexF64}`.
+# We use the first-order lagrangian as the finite element function space basis. The Dirichlet edges are labeled with `DirichletEdges` in the mesh file. Since our problem involves complex numbers (because of PML), we need to assign the `vector_type` to be `Vector{ComplexF64}`.
 # 
 
 # ### Test and trial finite element function space
@@ -100,7 +100,7 @@ U = V # mathematically equivalent to TrialFESpace(V,0)
 
 # ## Numerical integration
 # 
-# We generate the triangulation and a second-order Gaussian quadrature for the numerial integration. Note that we create a boundary triangulation from a `Source` tag for the line excitation. Generally, we do not need such additional mesh tags for the source, we can use a delta function to approximate such line source excitation. However, by generating a line mesh, we can increase the accuracy of this source excitation.
+# We generate the triangulation and a second-order Gaussian quadrature for the numerical integration. Note that we create a boundary triangulation from a `Source` tag for the line excitation. Generally, we do not need such additional mesh tags for the source, we can use a delta function to approximate such line source excitation. However, by generating a line mesh, we can increase the accuracy of this source excitation.
 # 
 
 # ### Generate triangulation and quadrature from model 
@@ -118,11 +118,11 @@ dΓ = Measure(Γ,degree)
 # 
 
 # ### PML parameters
-Rpml = 1e-12      # Tolerence for PML reflection 
+Rpml = 1e-12      # Tolerance for PML reflection 
 σ = -3/4*log(Rpml)/d_pml # σ_0
 LH = (L,H) # Size of the PML inner boundary (a rectangular centere at (0,0))
 
-# ### PML coordinate streching functions
+# ### PML coordinate stretching functions
 function s_PML(x,σ,k,LH,d_pml)
     u = abs.(Tuple(x)).-LH./2  # get the depth into PML
     return @. ifelse(u > 0,  1+(1im*σ/k)*(u/d_pml)^2, $(1.0+0im))
@@ -196,7 +196,7 @@ uh = solve(op)
 # H_0=\sum_m i^mJ_m(kr)e^{im\theta},
 # ```
 #
-# where $m=0,\pm 1,\pm 2,\dots$ and $J_m(z)$ is the Bessel function of the fisrt kind. 
+# where $m=0,\pm 1,\pm 2,\dots$ and $J_m(z)$ is the Bessel function of the first kind. 
 # 
 # For simplicity, we start with only the $m$-th component and take it as the incident part: 
 #

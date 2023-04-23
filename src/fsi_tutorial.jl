@@ -288,7 +288,7 @@ a_f((u,p),(v,q)) = ∫( ε(v) ⊙ (σ_dev_f ∘ ε(u)) - (∇⋅v)*p + q*(∇⋅
 a_fs((us,uf,p),(vs,vf,q)) = ∫( α*(jump_Γ(vf,vs)⋅jump_Γ(uf,us)) +
                                jump_Γ(vf,vs)⋅t_Γfs(1,p,uf,n_Γfs) +
                                t_Γfs(χ,q,vf,n_Γfs)⋅jump_Γ(uf,us) )dΓ_fs
-# Where $\chi$ is a parameter that can take values $1.0$ or $-1.0$ and it is used to define the symmetric or antisymmetric version of the method, respectively. To difine this form we used the well known Nitsche's method, which enforces the continuity of fluid and solid velocities as well as the continuity of the normal stresses, see for instance [2].
+# Where $\chi$ is a parameter that can take values $1.0$ or $-1.0$ and it is used to define the symmetric or antisymmetric version of the method, respectively. To define this form we used the well known Nitsche's method, which enforces the continuity of fluid and solid velocities as well as the continuity of the normal stresses, see for instance [2].
 const γ = 1.0
 const χ = -1.0
 jump_Γ(wf,ws) = wf.⁺-ws.⁻

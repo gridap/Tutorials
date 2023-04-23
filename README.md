@@ -64,7 +64,7 @@ Join to our [gitter](https://gitter.im/Gridap-jl/community) chat to ask question
 
 ## How to cite Gridap
 
-In order to give credit to the `Gridap` contributors, we simply ask you to cite the refence below in any publication in which you have made use of `Gridap` packages:
+In order to give credit to the `Gridap` contributors, we simply ask you to cite the reference below in any publication in which you have made use of `Gridap` packages:
 
 ```
 @article{Badia2020,

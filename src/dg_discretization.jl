@@ -25,7 +25,7 @@
 # since we want to illustrate how to compute discretization errors. We take
 # $u(x) = 3 x_1 + x_2^2 + 2 x_3^3 + x_1 x_2 x_3 $ as the exact solution of the
 # problem, for which $f(x)= -2 - 12x_3 $ and $g(x) = u(x)$. The selected
-# manufactured solution $u$ is a third order multi-va riate polynomial, which
+# manufactured solution $u$ is a third order multi-variate polynomial, which
 # can be represented exactly by the FE discretization that we are going to
 # define below. In this scenario, the discretization error has to be close to
 # the machine precision. We will use this result to validate the proposed

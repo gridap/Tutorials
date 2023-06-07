@@ -107,7 +107,7 @@ dΓ = Measure(Γ,degree)
 #
 # ## Weak form
 #
-# With all the ingredients presented so far, we are ready to define the weak form. This is done by defining to functions representing the bi-linear and linear forms:
+# With all the ingredients presented so far, we are ready to define the weak form. This is done by defining functions representing the bi-linear and linear forms:
 
 f(x) = 1.0
 h(x) = 3.0

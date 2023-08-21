@@ -1,7 +1,18 @@
+authors = ["Santiago Badia <santiago.badia@monash.edu>", "Francesc Verdugo <fverdugo@cimne.upc.edu>"]
 name = "Tutorials"
 uuid = "ab87341f-2653-5384-8dc6-691ea82e91b3"
-authors = ["Santiago Badia <santiago.badia@monash.edu>", "Francesc Verdugo <fverdugo@cimne.upc.edu>"]
 version = "0.17.0"
+
+[compat]
+Gridap = "0.17.9"
+GridapDistributed = "0.3"
+GridapGmsh = "0.7"
+GridapP4est = "0.3"
+GridapPETSc = "0.5"
+MPI = "0.20"
+PartitionedArrays = "0.3"
+SpecialFunctions = "1"
+julia = "1.3"
 
 [deps]
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
@@ -32,18 +43,8 @@ Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
-[compat]
-Gridap = "0.17.9"
-GridapDistributed = "0.2"
-GridapGmsh = "0.6"
-GridapP4est = "0.1"
-GridapPETSc = "0.4"
-MPI = "0.19"
-PartitionedArrays = "0.2.12"
-SpecialFunctions = "1"
-julia = "1.3"
-
 [extras]
+MPIPreferences = "3da0fdf6-3ccc-4f1b-acd9-58baa6c99267"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]

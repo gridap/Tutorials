@@ -16,10 +16,11 @@ using PartitionedArrays
 
 # The first step in any `GridapDistributed.jl` program is to define a function (named `main_ex1` below) to be executed on each part on which the domain is distributed. This function receives a single argument (named `parts` below). The body of this function is equivalent to a sequential `Gridap` script, except for the `CartesianDiscreteModel` call, which in `GridapDistributed` also requires the `parts` argument passed to the `main_ex1` function. The domain is discretized using the parallel Cartesian-like mesh generator built-in in `GridapDistributed`.
 
-function main_ex1(parts)
+function main_ex1(rank_partition,distribute)
+  parts  = distribute(LinearIndices((prod(rank_partition),)))
   domain = (0,1,0,1)
   mesh_partition = (4,4)
-  model = CartesianDiscreteModel(parts,domain,mesh_partition)
+  model = CartesianDiscreteModel(parts,rank_partition,domain,mesh_partition)
   order = 2
   u((x,y)) = (x+y)^order
   f(x) = -Δ(u,x)
@@ -37,8 +38,10 @@ end
 
 # Once the `main_ex1` function has been defined, we have to trigger its execution on the different parts. To this end, one calls the `with_backend` function of [`PartitionedArrays.jl`](https://github.com/fverdugo/PartitionedArrays.jl) right at the beginning of the program.
 
-partition = (2,2)
-with_backend(main_ex1, MPIBackend(), partition)
+rank_partition = (2,2)
+with_mpi() do distribute
+  main_ex1(rank_partition,distribute)
+end
 
 # With this function, the programmer sets up the `PartitionedArrays.jl` communication backend (i.e., MPI in the example), specifies the number of parts and their layout (i.e., 2x2 Cartesian-like mesh partition in the example), and provides the `main_ex1` function to be run on each part.
 
@@ -50,12 +53,13 @@ using GridapPETSc
 
 # In this example we use `GridapPETSc.jl` to have access to a scalable linear solver. The code is almost identical as the one above (see below). The main difference is that now we are wrapping most of the code of the `main_ex2` function within a do-block syntax function call to the `GridapPETSc.with(args=split(options))` function. The `with` function receives as a first argument a function with no arguments with the instructions to be executed on each MPI task/subdomain (that we pass to it as an anonymous function with no arguments), along with the `options` to be passed to the PETSc linear solver. For a detailed explanation of possible options we refer to the PETSc library documentation. Note that the call to `PETScLinearSolver()` initializes the PETSc solver with these `options` (even though `options` is not actually passed to the linear solver constructor). Besides, we have to pass the created linear solver object `solver` to the `solve` function to override the default linear solver (i.e., a call to the backslash `\` Julia operator).
 
-function main_ex2(parts)
+function main_ex2(rank_partition,distribute)
+  parts  = distribute(LinearIndices((prod(rank_partition),)))
   options = "-ksp_type cg -pc_type gamg -ksp_monitor"
   GridapPETSc.with(args=split(options)) do
     domain = (0,1,0,1)
     mesh_partition = (4,4)
-    model = CartesianDiscreteModel(parts,domain,mesh_partition)
+    model = CartesianDiscreteModel(parts,rank_partition,domain,mesh_partition)
     order = 2
     u((x,y)) = (x+y)^order
     f(x) = -Δ(u,x)
@@ -73,8 +77,10 @@ function main_ex2(parts)
   end
 end
 
-partition = (2,2)
-with_backend(main_ex2, MPIBackend(), partition)
+rank_partition = (2,2)
+with_mpi() do distribute
+  main_ex2(rank_partition,distribute)
+end
 
 # ## Third example: second example + `GridapP4est.jl` for mesh generation
 
@@ -82,14 +88,15 @@ with_backend(main_ex2, MPIBackend(), partition)
 
 using GridapP4est
 
-function main_ex3(parts)
+function main_ex3(nparts,distribute)
+  parts   = distribute(LinearIndices((nparts,)))
   options = "-ksp_type cg -pc_type gamg -ksp_monitor"
   GridapPETSc.with(args=split(options)) do
     domain = (0,1,0,1)
     coarse_mesh_partition = (1,1)
-    num_uniform_refinements=2
-    coarse_discrete_model=CartesianDiscreteModel(domain,coarse_mesh_partition)
-    model=UniformlyRefinedForestOfOctreesDiscreteModel(parts,
+    num_uniform_refinements = 2
+    coarse_discrete_model = CartesianDiscreteModel(domain,coarse_mesh_partition)
+    model = UniformlyRefinedForestOfOctreesDiscreteModel(parts,
                                                        coarse_discrete_model,
                                                        num_uniform_refinements)
     order = 2
@@ -110,14 +117,17 @@ function main_ex3(parts)
 end
 
 nparts = 4
-with_backend(main_ex3, MPIBackend(), nparts)
+with_mpi() do distribute
+  main_ex3(nparts,distribute)
+end
 
 # ## Fourth example: second example + `GridapGmsh.jl` for mesh generation
 
 # In this example, we want to use an unstructured mesh. The mesh is read from disk and partitioned/distributed automatically by `GridapGmsh` inside the call to the `GmshDiscreteModel` constructor.
 
 using GridapGmsh
-function main_ex4(parts)
+function main_ex4(nparts,distribute)
+  parts  = distribute(LinearIndices((nparts,)))
   options = "-ksp_type cg -pc_type gamg -ksp_monitor"
   GridapPETSc.with(args=split(options)) do
     model = GmshDiscreteModel(parts,"../models/demo.msh")
@@ -139,4 +149,6 @@ function main_ex4(parts)
 end
 
 nparts = 4
-with_backend(main_ex4, MPIBackend(), nparts)
+with_mpi() do distribute 
+  main_ex4(nparts,distribute)
+end

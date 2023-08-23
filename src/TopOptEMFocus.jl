@@ -49,7 +49,7 @@
 # 
 # Since PML absorbs all waves before they reach the boundary, the associated boundary condition can then be chosen arbitrarily. Here, the boundary conditions are Dirichlet (zero) on the top and bottom sides $\Gamma_D$ but periodic on the left ($\Gamma_L$) and right sides ($\Gamma_R$).  The reason that we use periodic boundary conditions for the left and right side instead of Dirichlet boundary conditions is that we want to simulate a plane wave excitation, so we must choose boundary conditions that are satisfied by this incident wave.  (Because of the anisotropic nature of PML, the PML layers at the $x$ boundaries do not disturb an incident planewave traveling purely in the $y$ direction.) 
 # 
-# Let $\mu(x)=1$ (materials at optical frequencies have negligible magnetic responses) and denote $\Lambda=\operatorname{diatom}(\Lambda_x,\Lambda_y)$ where $\Lambda_{x/y}=\frac{1}{1+\mathrm{i}\sigma(u_{x/y})/\omega}$. We can then formulate the problem as 
+# Let $\mu(x)=1$ (materials at optical frequencies have negligible magnetic responses) and denote $\Lambda=\operatorname{diagm}(\Lambda_x,\Lambda_y)$ where $\Lambda_{x/y}=\frac{1}{1+\mathrm{i}\sigma(u_{x/y})/\omega}$. We can then formulate the problem as 
 # 
 # ```math
 # \left\{ \begin{aligned} 
@@ -171,7 +171,7 @@ dΩ_c = Measure(Ω_c, degree)
 p_reffe = ReferenceFE(lagrangian, Float64, 0)
 Q = TestFESpace(Ω_d, p_reffe, vector_type = Vector{Float64})
 P = Q
-mp = num_free_dofs(P) # Number of cells in design region (number of design parameters)
+np = num_free_dofs(P) # Number of cells in design region (number of design parameters)
 
 # Note that this over 70k design parameters, which is large but not huge by modern standards. To optimize so many design parameters, the key point is how to compute the gradients to those parameters efficiently.
 # 

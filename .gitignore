@@ -2,8 +2,10 @@ deps/build.log
 deps/deps.jl
 notebooks
 Manifest.toml
+LocalPreferences.toml
 .ipynb_checkpoints/
 *.vtu
+*.pvtu
 tmp/
 .vscode/
 *.code-workspace

@@ -63,7 +63,7 @@ U = TransientTrialFESpace(V,g)
 
 # The weak form of the problem follows the same structure as other `Gridap` tutorials, where we define the bilinear and linear forms to define the `FEOperator`. In this case we need to deal with time-dependent quantities and with the presence of time derivatives. The former is handled by passing the time, $t$, as an additional argument to the form, i.e. $a(t,u,v)$. The latter is defined using the time derivative operator `∂t`.
 
-# The most general way of constructing a transient FE operator is by using the `TransientFEOperator` function, which receives a residual, a jacobian with respect to the unknown and a jacobian with respect to the time derivative.
+# The most general way of constructing a transient FE operator is by using the `TransientFEOperator` function, which receives a residual, a Jacobian with respect to the unknown and a Jacobian with respect to the time derivative.
 κ(t) = 1.0 + 0.95*sin(2π*t)
 f(t) = sin(π*t)
 res(t,u,v) = ∫( ∂t(u)*v + κ(t)*(∇(u)⋅∇(v)) - f(t)*v )dΩ
@@ -96,7 +96,7 @@ op_C = TransientConstantFEOperator(m₀,a₀,b₀,U,V)
 # Once we have the FE operator defined, we proceed with the definition of the transient solver. First, we define a linear solver to be used at each time step. Here we use the `LUSolver`, but other choices are possible.
 linear_solver = LUSolver()
 
-# Then, we define the ODE solver. That is, the scheme that will be used for the time integration. In this tutorial we use the `ThetaMethod` with $\theta = 0.5$, resulting in a 2nd order scheme. The `ThetaMethod` function receives the linear solver, the time step size $\Delta t$ (constant) and the value of $\theta$.
+# Then, we define the ODE solver. That is, the scheme that will be used for the time integration. In this tutorial we use the `Steamed` with $\theta = 0.5$, resulting in a 2nd order scheme. The `ThetaMethod` function receives the linear solver, the time step size $\Delta t$ (constant) and the value of $\theta$.
 Δt = 0.05
 θ = 0.5
 ode_solver = ThetaMethod(linear_solver,Δt,θ)

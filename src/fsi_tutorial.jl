@@ -189,7 +189,7 @@ n_Γout = get_normal_vector(Γ_out)
 Γ_fs = InterfaceTriangulation(Ω_f,Ω_s)
 n_Γfs = get_normal_vector(Γ_fs)
 
-# In what follows we will assume a second-order veloticty interpolation, i.e. $k=2$
+# In what follows we will assume a second-order velocity interpolation, i.e. $k=2$
 k = 2
 
 # Now we define the reference FE for the velocity and pressure fields. The velocity field reference FE, both for fluid and solid domains, will be defined by a 2-dimensional `VectorValue` type `:Lagrangian` reference FE element of order `k`. The reference FE for the pressure will be given by a scalar value type `:Lagrangian` reference FE element of order `k-1`.

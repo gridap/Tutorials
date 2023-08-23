@@ -49,7 +49,7 @@
 # 
 # Since PML absorbs all waves before they reach the boundary, the associated boundary condition can then be chosen arbitrarily. Here, the boundary conditions are Dirichlet (zero) on the top and bottom sides $\Gamma_D$ but periodic on the left ($\Gamma_L$) and right sides ($\Gamma_R$).  The reason that we use periodic boundary conditions for the left and right side instead of Dirichlet boundary conditions is that we want to simulate a plane wave excitation, so we must choose boundary conditions that are satisfied by this incident wave.  (Because of the anisotropic nature of PML, the PML layers at the $x$ boundaries do not disturb an incident planewave traveling purely in the $y$ direction.) 
 # 
-# Let $\mu(x)=1$ (materials at optical frequencies have negligible magnetic responses) and denote $\Lambda=\operatorname{diagm}(\Lambda_x,\Lambda_y)$ where $\Lambda_{x/y}=\frac{1}{1+\mathrm{i}\sigma(u_{x/y})/\omega}$. We can then formulate the problem as 
+# Let $\mu(x)=1$ (materials at optical frequencies have negligible magnetic responses) and denote $\Lambda=\operatorname{diatom}(\Lambda_x,\Lambda_y)$ where $\Lambda_{x/y}=\frac{1}{1+\mathrm{i}\sigma(u_{x/y})/\omega}$. We can then formulate the problem as 
 # 
 # ```math
 # \left\{ \begin{aligned} 
@@ -70,7 +70,7 @@
 # ```
 # where $n_{air}=1$ and $n_{metal}$ are the refractive indices ($\sqrt{\varepsilon}$) of the air and metal, respectively. (It is tempting to simply linearly interpolate the permittivities ε, rather than the refractive indices, but this turns out to lead to artificial singularities in the case of metals where ε can pass through zero [4].) 
 # 
-# In practice, to avoid obtaining arbitrarily fine features as the spatial resolution is increased, one needs to regularize the problem with a minimum lengthscale $r_f$ by generating a smoothed/filtered parameter function $p_f$.  (Although this regularizes the problem, strictly speaking it does not impose a minimum feature size because of the nonlinear-projection step below. In practical applications, one imposes additional [manufacturing constraints](http://doi.org/10.1364/OE.431188) explicitly.)  We perform the smoothing $p \to p_f$ by solving a simple "damped diffusion" PDE, also called a Helmholtz filter [5], for $p_f$ given the design variables $p$: 
+# In practice, to avoid obtaining arbitrarily fine features as the spatial resolution is increased, one needs to regularize the problem with a minimum length-scale $r_f$ by generating a smoothed/filtered parameter function $p_f$.  (Although this regularizes the problem, strictly speaking it does not impose a minimum feature size because of the nonlinear-projection step below. In practical applications, one imposes additional [manufacturing constraints](http://doi.org/10.1364/OE.431188) explicitly.)  We perform the smoothing $p \to p_f$ by solving a simple "damped diffusion" PDE, also called a Helmholtz filter [5], for $p_f$ given the design variables $p$: 
 # ```math
 # \begin{aligned}    
 # -r_f^2\nabla^2p_f+p_f&=p\, ,\\
@@ -171,7 +171,7 @@ dΩ_c = Measure(Ω_c, degree)
 p_reffe = ReferenceFE(lagrangian, Float64, 0)
 Q = TestFESpace(Ω_d, p_reffe, vector_type = Vector{Float64})
 P = Q
-np = num_free_dofs(P) # Number of cells in design region (number of design parameters)
+mp = num_free_dofs(P) # Number of cells in design region (number of design parameters)
 
 # Note that this over 70k design parameters, which is large but not huge by modern standards. To optimize so many design parameters, the key point is how to compute the gradients to those parameters efficiently.
 # 
@@ -182,14 +182,14 @@ pf_reffe = ReferenceFE(lagrangian, Float64, 1)
 Qf = TestFESpace(Ω_d, pf_reffe, vector_type = Vector{Float64})
 Pf = Qf
 
-# Finally, we pack up every thing related to gridap as a named tuple called `fem_params`. This is because we want to pass those as local parameters to the optimization functions later, instead of making them as global parameters. 
+# Finally, we pack up every thing related to Gridap as a named tuple called `fem_params`. This is because we want to pass those as local parameters to the optimization functions later, instead of making them as global parameters. 
 # 
 
 fem_params = (; V, U, Q, P, Qf, Pf, np, Ω, dΩ, dΩ_d, dΩ_c, dΓ_s)
 
 # ## PML formulation
 # 
-# First we pack up all physical parameters as a structure call `phys`. Then we define a `s_PML` function: $s(x)=1+\mathrm{i}\sigma(u)/\omega,$ and its derivative `ds_PML`. The parameter `LHp` and `LHn` indicates the size of the inner boundary of the PML regions. Finally, we create a function-like object `Λ` that returns the PML factors and define its derivative in gridap. 
+# First we pack up all physical parameters as a structure call `phys`. Then we define a `s_PML` function: $s(x)=1+\mathrm{i}\sigma(u)/\omega,$ and its derivative `ds_PML`. The parameter `LHp` and `LHn` indicates the size of the inner boundary of the PML regions. Finally, we create a function-like object `Λ` that returns the PML factors and define its derivative in Gridap. 
 # 
 # Note that here we are defining a "callable object" of type `Λ` that encapsulates all of the PML parameters. This is convenient, both because we can pass lots of parameters around easily and also because we can define additional methods on `Λ`, e.g. to express the `∇(Λv)` operation.
 # 
@@ -318,7 +318,7 @@ end
 
 # ## Optimization with adjoint method
 # 
-# Now that we have our objective to optimize, the next step is to find out the derivative to the desigin parameter $p$ in order to apply a gradient-based optimization algorithm. We will be using `ChainRulesCore` and `Zygote` packages.  
+# Now that we have our objective to optimize, the next step is to find out the derivative to the design parameter $p$ in order to apply a gradient-based optimization algorithm. We will be using `ChainRulesCore` and `Zygote` packages.  
 # 
 
 using ChainRulesCore, Zygote

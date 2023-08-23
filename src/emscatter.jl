@@ -35,7 +35,7 @@
 # Note that at a finite mesh resolution, PML reflects some waves, and the standard technique to mitigate this is to "turn on" the PML absorption gradually—in this case we use a quadratic profile. The amplitude $\sigma_0$ is chosen so that in the limit of infinite resolution the "round-trip" normal-incidence is some small number. 
 # 
 # Since PML absorbs all waves in $x/y$ direction, the associated boundary condition is then usually the zero Dirichlet boundary condition. Here, the boundary conditions are zero Dirichlet boundary on the top and bottom side $\Gamma_D$ but periodic boundary condition on the left ($\Gamma_L$) and right side ($\Gamma_R$). 
-# The reason that we use a periodic boundary condition for the left and right side instead of zero Dirichlet boundary condition is that we want to simulate a plane wave exicitation, which then requires a periodic boundary condition.
+# The reason that we use a periodic boundary condition for the left and right side instead of zero Dirichlet boundary condition is that we want to simulate a plane wave excitation, which then requires a periodic boundary condition.
 #
 # Consider $\mu(x)=1$ (which is mostly the case in electromagnetic problems) and denote $\Lambda=\operatorname{diagm}(\Lambda_x,\Lambda_y)$ where $\Lambda_{x/y}=\frac{1}{1+\mathrm{i}\sigma(u_{x/y})/\omega}$, we can formulate the problem as 
 #
@@ -46,7 +46,7 @@
 # H|_{\Gamma_L}&=H|_{\Gamma_R},&\\
 # \end{aligned}\right.
 # ```
-# For convenience, in the weak form and Julia implementation below we represent $\Lambda$ as a vector instead of a diagonal $2 \times 2$ matrix, in which case $\Lambda\nabla$ becomes the elementwise product.
+# For convenience, in the weak form and Julia implementation below we represent $\Lambda$ as a vector instead of a diagonal $2 \times 2$ matrix, in which case $\Lambda\nabla$ becomes the element-wise product.
 #
 # ## Numerical scheme
 # 
@@ -89,7 +89,7 @@ model = GmshDiscreteModel("../models/geometry.msh")
 
 # ## FE spaces
 # 
-# We use the first-order lagrangian as the finite element function space basis. The Dirichlet edges are labeled with `DirichletEdges` in the mesh file. Since our problem involves complex numbers (because of PML), we need to assign the `vector_type` to be `Vector{ComplexF64}`.
+# We use the first-order Lagrangian as the finite element function space basis. The Dirichlet edges are labeled with `DirichletEdges` in the mesh file. Since our problem involves complex numbers (because of PML), we need to assign the `vector_type` to be `Vector{ComplexF64}`.
 # 
 
 # ### Test and trial finite element function space
@@ -120,7 +120,7 @@ dΓ = Measure(Γ,degree)
 # ### PML parameters
 Rpml = 1e-12      # Tolerance for PML reflection 
 σ = -3/4*log(Rpml)/d_pml # σ_0
-LH = (L,H) # Size of the PML inner boundary (a rectangular centere at (0,0))
+LH = (L,H) # Size of the PML inner boundary (a rectangular center at (0,0))
 
 # ### PML coordinate stretching functions
 function s_PML(x,σ,k,LH,d_pml)
@@ -189,7 +189,7 @@ uh = solve(op)
 
 # ## Analytical solution
 # ### Theoretical analysis
-# In this section, we construct the semi-analytical solution to this scattering problem, for comparison to the numerical solution. This is possible because of the symmetry of the cylinder, which allows us to expand the solutions of the Helmoltz equation in Bessel functions and match boundary conditions at the cylinder interface. (In 3d, the analogous process with spherical harmonics is known as "Mie scattering".) For more information on this technique, see Ref [4].
+# In this section, we construct the semi-analytical solution to this scattering problem, for comparison to the numerical solution. This is possible because of the symmetry of the cylinder, which allows us to expand the solutions of the Helmholtz equation in Bessel functions and match boundary conditions at the cylinder interface. (In 3d, the analogous process with spherical harmonics is known as "Mie scattering".) For more information on this technique, see Ref [4].
 # In 2D cylinder coordinates, we can expand the plane wave in terms of Bessel functions (this is the Jacobi–Anger identity [5]):
 #
 # ```math

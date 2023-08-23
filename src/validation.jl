@@ -107,7 +107,7 @@ uh = solve(op)
 #
 # ## Measuring the discretization error
 #
-# Our goal is to check that the discratization error associated with the computed approximation `uh` is close to machine precision. To this end, the first step is to compute the discretization error, which is done as you would expect:
+# Our goal is to check that the discretization error associated with the computed approximation `uh` is close to machine precision. To this end, the first step is to compute the discretization error, which is done as you would expect:
 
 e = u - uh
 

@@ -85,13 +85,13 @@ X = MultiFieldFESpace([U, P])
 
 # ## Numerical integration
 #
-# In this example we need to integrate in the interior of $\Omega$ and on the Neumann boundary $\Gamma_{\rm N}$. For the volume integrals, we extract the triangulation from the geometrical model and define the corresponding Lebesge measures, which will allow to write down the integrals of the weak form.
+# In this example we need to integrate in the interior of $\Omega$ and on the Neumann boundary $\Gamma_{\rm N}$. For the volume integrals, we extract the triangulation from the geometrical model and define the corresponding Lebesgue measures, which will allow to write down the integrals of the weak form.
 
 trian = Triangulation(model)
 degree = 2
 dΩ = Measure(trian,degree)
 
-# In order to integrate the Neumann boundary condition, we only need to build an integration mesh for the right side of the domain (which is the only part of $\Gamma_{\rm N}$, where the Neumann function $h$ is different from zero). Within the model, the right side of $\Omega$ is identified with the boundary tag 8. Using this identifier, we extract the corresponding surface triangulation and create the required Lebesge measure.
+# In order to integrate the Neumann boundary condition, we only need to build an integration mesh for the right side of the domain (which is the only part of $\Gamma_{\rm N}$, where the Neumann function $h$ is different from zero). Within the model, the right side of $\Omega$ is identified with the boundary tag 8. Using this identifier, we extract the corresponding surface triangulation and create the required Lebesgue measure.
 
 neumanntags = [8,]
 btrian = BoundaryTriangulation(model,tags=neumanntags)

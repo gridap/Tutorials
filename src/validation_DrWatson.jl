@@ -1,7 +1,7 @@
 # In this tutorial, we will learn
 # - How to use `DrWatson.jl` to accelerate and reproduce our Gridap simulation workflows
 
-# [DrWatson.jl](https://github.com/JuliaDynamics/DrWatson.jl) is a Julia package that helps managing a typical scientific workflow thorought all its phases, see a summary [here](https://juliadynamics.github.io/DrWatson.jl/stable/workflow/).
+# [DrWatson.jl](https://github.com/JuliaDynamics/DrWatson.jl) is a Julia package that helps managing a typical scientific workflow through all its phases, see a summary [here](https://juliadynamics.github.io/DrWatson.jl/stable/workflow/).
 
 # All its functionalities can be accessed with (non-invasive) simple function calls.
 
@@ -40,7 +40,7 @@ import Gridap: ∇
 
 # To this end, we want to solve our computational model for many combinations of mesh size and order of FE approximation (*parameters*) and extract the L2- and H1-norm errors (*output data*).
 
-# We first group all parameters and parameter values in a single ditionary
+# We first group all parameters and parameter values in a single dictionary
 
 params = Dict(
   "cells_per_axis" => [8,16,32,64],

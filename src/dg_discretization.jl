@@ -245,7 +245,7 @@ writevtk(Λ,"strian")
 # ![](../assets/dg_discretization/skeleton_trian.png)
 # 
 # Once we have constructed the triangulations needed in this example, we define
-# the corresponding quadrature rules by passing the triangualtions 
+# the corresponding quadrature rules by passing the triangulations 
 # together with the desired degree to the `Measure` function.
 
 degree = 2*order

@@ -14,7 +14,7 @@ using Gridap
 using GridapDistributed
 using PartitionedArrays
 
-# The first step in any `GridapDistributed.jl` program is to define a function (named `main_ex1` below) to be executed on each part on which the domain is distributed. This function receives a single argument (named `parts` below). The body of this function is equivalent to a sequential `Gridap` script, except for the `CartesianDiscreteModel` call, which in `GridapDistributed` also requires the `parts` argument passed to the `main_ex1` function. The domain is discretized using the parallel Cartesian-like mesh generator built-in in `GridapDistributed`.
+# The first step in any `GridapDistributed.jl` program is to define a function (named `main_ex1` below) to be executed on each part on which the domain is distributed. This function receives two arguments, `rank_partition` and `distribute`. The former is the process grid layout, `(2,2)` in this case, and the latter is a function that creates a distributed array with the identifiers of the parallel processes. The body of this function is equivalent to a sequential `Gridap` script, except for the `CartesianDiscreteModel` call, which in `GridapDistributed` also requires the `parts` and `rank_partition` arguments passed to the `main_ex1` function. The domain is discretized using the parallel Cartesian-like mesh generator built-in in `GridapDistributed`.
 
 function main_ex1(rank_partition,distribute)
   parts  = distribute(LinearIndices((prod(rank_partition),)))
@@ -36,16 +36,16 @@ function main_ex1(rank_partition,distribute)
   writevtk(Ω,"results_ex1",cellfields=["uh"=>uh,"grad_uh"=>∇(uh)])
 end
 
-# Once the `main_ex1` function has been defined, we have to trigger its execution on the different parts. To this end, one calls the `with_backend` function of [`PartitionedArrays.jl`](https://github.com/fverdugo/PartitionedArrays.jl) right at the beginning of the program.
+# Once the `main_ex1` function has been defined, we have to trigger its execution on the different parts. To this end, one calls the `with_mpi` function of [`PartitionedArrays.jl`](https://github.com/fverdugo/PartitionedArrays.jl) right at the beginning of the program.
 
 rank_partition = (2,2)
 with_mpi() do distribute
   main_ex1(rank_partition,distribute)
 end
 
-# With this function, the programmer sets up the `PartitionedArrays.jl` communication backend (i.e., MPI in the example), specifies the number of parts and their layout (i.e., 2x2 Cartesian-like mesh partition in the example), and provides the `main_ex1` function to be run on each part.
+# The `with_mpi(f)` function receives one function (defined in-situ using Julia's do-block function call syntax here) assumed to have a single argument, the `distribute` function (see above). This function is called from `with_mpi(f)` and executed on each part. It in turn calls the `main_ex1` function, which does the actual work. 
 
-# Although not illustrated in this tutorial, we note that one may also use the `SequentialBackend()` `PartitionedArrays.jl` backend, instead of `MPIBackend()`. With this backend, the code executes serially on a single process (and there is thus no need to use `mpiexecjl` to launch the program), although  the data structures are still partitioned into parts. This is very useful, among others, for interactive execution of the code, and debugging, before moving to MPI parallelism.
+# Although not illustrated in this tutorial, we note that one may also use the `with_debug(f)` `PartitionedArrays.jl` function, instead of `with_mpi(f)`. With this function, the code executes serially on a single process (and there is thus no need to use `mpiexecjl` to launch the program), although  the data structures are still partitioned into parts. This is very useful, among others, for interactive execution of the code, and debugging, before moving to MPI parallelism.
 
 # ## Second example: `GridapDistributed.jl` + `GridapPETSc.jl` for the linear solver
 
@@ -84,7 +84,7 @@ end
 
 # ## Third example: second example + `GridapP4est.jl` for mesh generation
 
-# In this example, we define the Cartesian mesh using `GridapP4est.jl` via recursive uniform refinement starting with a single cell. It only involves minor modifications compared to the previous example. First, one has to generate a coarse mesh of the domain. As the domain is a just a simple box in the example, it suffices to use a coarse mesh with a single quadrilateral fitted to the box in order to capture the geometry of the domain with no geometrical error (see how the `coarse_discrete_model` object is generated). In more complex scenarios, one can read an unstructured coarse mesh from disk, generated, e.g., with an unstructured brick mesh generator. Second, when building the fine mesh of the domain (see `UniformlyRefinedForestOfOctreesDiscreteModel` call), one has to specify the number of uniform refinements to be performed on the coarse mesh in order to generate the fine mesh. Finally, when calling `with_backend`, we do not longer specify a Cartesian partition but just the number of parts.
+# In this example, we define the Cartesian mesh using `GridapP4est.jl` via recursive uniform refinement starting with a single cell. It only involves minor modifications compared to the previous example. First, one has to generate a coarse mesh of the domain. As the domain is a just a simple box in the example, it suffices to use a coarse mesh with a single quadrilateral fitted to the box in order to capture the geometry of the domain with no geometrical error (see how the `coarse_discrete_model` object is generated). In more complex scenarios, one can read an unstructured coarse mesh from disk, generated, e.g., with an unstructured brick mesh generator. Second, when building the fine mesh of the domain (see `UniformlyRefinedForestOfOctreesDiscreteModel` call), one has to specify the number of uniform refinements to be performed on the coarse mesh in order to generate the fine mesh. Finally, when calling `with_mpi(f)`, we do not longer specify a Cartesian partition but just the number of parts.
 
 using GridapP4est
 

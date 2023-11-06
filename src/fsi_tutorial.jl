@@ -116,7 +116,7 @@ uf_in(x) = VectorValue( 1.5 * U * x[2] * ( H - x[2] ) / ( (H/2)^2 ), 0.0 )
 uf_0(x) = VectorValue( 0.0, 0.0 )
 us_0(x) = VectorValue( 0.0, 0.0 )
 
-# We consider a free tranction condition at the channel outlet
+# We consider a free traction condition at the channel outlet
 # ```math
 # n_{\rm F} \cdot \boldsymbol{\sigma}_{\rm F}  = \mathbf{0}\quad\textrm{on }\Gamma_{\rm F,N}
 # ```

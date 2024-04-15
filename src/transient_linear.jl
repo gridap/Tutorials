@@ -1,5 +1,3 @@
-# ## Introduction
-
 # In this tutorial, we will learn
 # * How to solve a simple time-dependent PDE in Gridap
 # * How to build a transient FE space
@@ -9,7 +7,7 @@
 
 # We split the presentation of the ODE module of Gridap in two parts:
 # * In this tutorial we focus on the differences between the steady and time-dependent cases, on a simple linear time-dependent PDE.
-# * [Tutorial 18](https://gridap.github.io/Tutorials/stable/pages/t0018_transient_nonlinear/) will introduce more advanced features of the ODE module of Gridap, applied to a nonlinear time-dependent PDE.
+# * [Tutorial 18](@ref transient_nonlinear.jl) will introduce more advanced features of the ODE module of Gridap, applied to a nonlinear time-dependent PDE.
 
 # The [documentation of the ODE module of Gridap](https://gridap.github.io/Gridap.jl/dev/ODEs/) contains a detailed description of the framework for transient problems implemented in Gridap, including a [classification of transient problem](https://gridap.github.io/Gridap.jl/dev/ODEs/#Classification-of-ODEs), a [classification of numerical schemes](https://gridap.github.io/Gridap.jl/dev/ODEs/#Classification-of-numerical-schemes), an overview of the [high-level API](https://gridap.github.io/Gridap.jl/dev/ODEs/#High-level-API-in-Gridap) which this tutorial illustrates and of the [internals of the ODE module](https://gridap.github.io/Gridap.jl/dev/ODEs/#Low-level-implementation), as well as some [notes on and analysis of the numerical schemes implemented in Gridap](https://gridap.github.io/Gridap.jl/dev/ODEs/#Numerical-schemes-formulation-and-implementation).
 

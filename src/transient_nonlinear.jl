@@ -1,14 +1,12 @@
-# ## Introduction
-
 # In this tutorial, we will learn
 # * How to write a nonlinear transient weak form in Gridap
 # * How to setup a time-marching scheme for a nonlinear ODE
 
-# We assume that the reader is familiar with Gridap's API for linear transient PDEs, introduced in [Tutorial 17](https://gridap.github.io/Tutorials/stable/pages/t0017_transient_linear/). We focus here on more advanced features of the ODE module of Gridap, applied to a nonlinear time-dependent PDE.
+# We assume that the reader is familiar with Gridap's API for linear transient PDEs, introduced in [Tutorial 17](@ref transient_linear.jl). We focus here on more advanced features of the ODE module of Gridap, applied to a nonlinear time-dependent PDE.
 
 # ## Problem statement
 
-# We consider the same problem as in [Tutorial 17](https://gridap.github.io/Tutorials/stable/pages/t0017_transient_linear/), and use the same notations: find $u(t): \Omega \to \mathbb{R}$ such that
+# We consider the same problem as in [Tutorial 17](@ref transient_linear.jl), and use the same notations: find $u(t): \Omega \to \mathbb{R}$ such that
 # ```math
 # \left\lbrace
 # \begin{aligned}

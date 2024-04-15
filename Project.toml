@@ -33,8 +33,8 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-Gridap = "=0.17.19"
-GridapDistributed = "=0.3"
+Gridap = "=0.17.19, 0.18"
+GridapDistributed = "=0.3, 0.4"
 GridapGmsh = "=0.7"
 GridapP4est = "=0.3"
 GridapPETSc = "=0.5"

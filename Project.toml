@@ -35,7 +35,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 [compat]
 Gridap = "0.18"
 GridapDistributed = "0.4"
-GridapGmsh = "=0.7"
+GridapGmsh = "0.7"
 GridapP4est = "=0.3"
 GridapPETSc = "0.5"
 MPI = "0.20"

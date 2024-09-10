@@ -145,7 +145,7 @@ writevtk(get_triangulation(gₕ), "target", cellfields=["gₕ"=>gₕ])
 # functions in Raviart-Thomas spaces are vector-valued. The degrees of
 # freedom of the RT spaces are fluxes of the function across the edge
 # of the element. Refer to the
-# [tutorial](https://gridap.github.io/Tutorials/dev/pages/t007_darcy/)
+# [tutorial](@ref darcy.jl)
 # on Darcy equation with RT for more information on the RT
 # elements.
 

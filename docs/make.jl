@@ -32,7 +32,8 @@ nbviwer_logo = "https://img.shields.io/badge/show-nbviewer-579ACA.svg"
 for (i,(title,filename)) in enumerate(Tutorials.files)
   # Generate strings
   tutorial_prefix = string("t",@sprintf "%03d_" i)
-  tutorial_title = string("# # Tutorial ", i, ": ", title)
+  tutorial_id = replace(filename, " " => "_")
+  tutorial_title = string("# # [Tutorial ", i, ": ", title, "](@id ", tutorial_id, ")")
   tutorial_file = string(tutorial_prefix,splitext(filename)[1])
   notebook_filename = string(tutorial_file, ".ipynb")
   binder_url = joinpath("@__BINDER_ROOT_URL__","notebooks", notebook_filename)

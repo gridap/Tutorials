@@ -21,7 +21,8 @@ files = [
   "On using DrWatson.jl"=>"validation_DrWatson.jl",
   "Interpolation of CellFields"=>"interpolation_fe.jl",
   "Poisson equation on parallel distributed-memory computers"=>"poisson_distributed.jl",
-  "Transient Poisson equation"=>"poisson_transient.jl",
+  "Transient Poisson equation"=>"transient_linear.jl",
+  "Transient nonlinear equation"=>"transient_nonlinear.jl",
   "Topology optimization"=>"TopOptEMFocus.jl",
   "Unfitted Poisson"=>"unfitted_poisson.jl"]
 

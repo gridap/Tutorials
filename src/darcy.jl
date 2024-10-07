@@ -78,7 +78,7 @@ uD = VectorValue(0.0,0.0)
 U = TrialFESpace(V,uD)
 P = TrialFESpace(Q)
 
-# When the singe-field spaces have been designed, the multi-field test and trial spaces are expressed as arrays of single-field ones in a natural way.
+# When the sinlge-field spaces have been designed, the multi-field test and trial spaces are expressed as arrays of single-field ones in a natural way.
 
 Y = MultiFieldFESpace([V, Q])
 X = MultiFieldFESpace([U, P])

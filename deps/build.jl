@@ -5,6 +5,7 @@ repo_src = joinpath(@__DIR__,"..","src")
 notebooks_dir = joinpath(@__DIR__,"..","notebooks")
 
 files = [
+  "Gmsh/Gridap workflow"=>"gmsh_gridap.jl"
   "Poisson equation"=>"poisson.jl",
   "Code validation"=>"validation.jl",
   "Linear elasticity"=>"elasticity.jl",

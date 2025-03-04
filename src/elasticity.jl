@@ -177,9 +177,9 @@ end
 
 a(u,v) = ∫( ε(v) ⊙ (σ_bimat∘(ε(u),tags)) )*dΩ
 
-# In previous line, pay attention in the usage of the new constitutive law `σ_bimat`. Note that we have passed the vector `tags` containing the material identifiers in the last argument of the function`.
+# In previous line, pay attention in the usage of the new constitutive law `σ_bimat`. Note that we have passed the vector `tags` containing the material identifiers in the last argument of the function.
 #
-# At this point, we can build the FE problem again and solve it
+# At this point, we can build the FE problem again and solve it:
 
 op = AffineFEOperator(a,l,U,V0)
 uh = solve(op)
@@ -189,5 +189,17 @@ uh = solve(op)
 writevtk(Ω,"results_bimat",cellfields=
   ["uh"=>uh,"epsi"=>ε(uh),"sigma"=>σ_bimat∘(ε(uh),tags)])
 
+# #### Constant multi-material law
+#
+# A material law depending on the model tags but not on the fields can be defined as follow:
+
+tags_field = CellField(tags, Ω)
+σ_from_tag(tag) = tag==alu_tag ? 1. : 0.
+σ_bimat_cst = σ_from_tag ∘ tags_field
+
+# `tags_field` is a field which value at $x$ is the tag of the cell containing $x$. `σ_bimat_cst` is used like a constant in (bi)linear form definition and solution export:
+
+a(u,v) = ∫( σ_bimat_cst * ∇(u)⋅∇(v))*dΩ
+writevtk(Ω,"const_law",cellfields= ["sigma"=>σ_bimat_cst])
 
 #  Tutorial done!

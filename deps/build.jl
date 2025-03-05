@@ -14,6 +14,7 @@ files = [
   "Darcy equation (with RT)"=>"darcy.jl",
   "Incompressible Navier-Stokes"=>"inc_navier_stokes.jl",
   "Stokes equation" => "stokes.jl",
+  "Advection-diffusion" => "advection_diffusion.jl",
   "Isotropic damage model" => "isotropic_damage.jl",
   "Fluid-Structure Interaction"=>"fsi_tutorial.jl",
   "Electromagnetic scattering in 2D"=>"emscatter.jl",

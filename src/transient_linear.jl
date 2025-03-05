@@ -78,10 +78,10 @@ f(t) = x -> sin(t) * sinpi(x[1]) * sinpi(x[2])
 m(t, dtu, v) = ∫(v * dtu)dΩ
 a(t, u, v) = ∫(α(t) * ∇(v) ⋅ ∇(u))dΩ
 l(t, v) = ∫(v * f(t))dΩ
-op = TransientLinearFEOperator((m, a), l, Ug, V0)
+op = TransientLinearFEOperator((a, m), l, Ug, V0)
 
 # In our case, the mass term ($m(t, \cdot, \cdot)$) is constant in time. We can take advantage of that to save some computational effort, and indicate it to Gridap as follows
-op_opt = TransientLinearFEOperator((m, a), l, Ug, V0, constant_forms=(true, false))
+op_opt = TransientLinearFEOperator((a, m), l, Ug, V0, constant_forms=(true, false))
 
 # If the stiffness term ($a(t, \cdot, \cdot)$) had been constant in time, we could have set `constant_forms=(true, true)`.
 

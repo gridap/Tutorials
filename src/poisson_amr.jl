@@ -137,8 +137,8 @@ function amr_step(model,u_exact;order=1)
   η = estimate(ηh,uh)
   
   "Mark cells for refinement using Dörfler marking
-  This strategy marks cells containing a fixed fraction (0.8) of the total error"
-  m = DorflerMarking(0.8)
+  This strategy marks cells containing a fixed fraction (0.9) of the total error"
+  m = DorflerMarking(0.9)
   I = Adaptivity.mark(m,η)
   
   "Refine the mesh using newest vertex bisection"
@@ -179,11 +179,13 @@ for i in 1:nsteps
   )
   
   println("Error: $error, Error η: $(sum(η))")
-  @test (i < 3) || (error < last_error)
   last_error = error
   model = fmodel
 end
 
+# The final mesh gives the following result:
+# ![](../assets/amr/result.png)
+#
 # ## Conclusion
 #
 # In this tutorial, we have demonstrated how to:

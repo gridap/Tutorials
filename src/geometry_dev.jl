@@ -295,14 +295,17 @@ writevtk(new_grid,"half_cylinder_quadratic")
 # 1. Standard non-periodic mesh:
 model = cartesian_model((0,1,0,1),(3,3))
 plot_node_numbering(model)
+# ![](../assets/geometry/nodes_nonperiodic.png)
 
 # 2. Mesh with periodicity in x-direction:
 model = cartesian_model((0,1,0,1),(3,3),isperiodic=(true,false))
 plot_node_numbering(model)
+# ![](../assets/geometry/nodes_halfperiodic.png)
 
 # 3. Mesh with periodicity in both directions:
 model = cartesian_model((0,1,0,1),(3,3),isperiodic=(true,true))
 plot_node_numbering(model)
+# ![](../assets/geometry/nodes_fullperiodic.png)
 
 # Notice how the vertex numbers (displayed at node positions) show the topological
 # connectivity, while the nodes remain at their physical positions.
@@ -361,7 +364,7 @@ cell_vertex_ids = Table(cell_vertex_ids)
 
 # Get coordinates for the vertices:
 vertex_coords = node_coords[vertex_to_node]
-polys = map(get_polytope,reffes)
+polytopes = map(get_polytope,reffes)
 
 # #### Step 4: Create the Model
 #
@@ -385,3 +388,4 @@ mobius = UnstructuredDiscreteModel(grid,topo,labels)
 
 # Visualize the vertex numbering:
 plot_node_numbering(mobius)
+# ![](../assets/geometry/mobius.png)

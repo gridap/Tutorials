@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>21 Poisson with AMR · Gridap tutorials</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="Gridap tutorials logo"/></a><div class="docs-package-name"><span class="docs-autofit">Gridap tutorials</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><a class="tocitem" href="../t001_poisson/">1 Poisson equation</a></li><li><a class="tocitem" href="../t002_validation/">2 Code validation</a></li><li><a class="tocitem" href="../t003_elasticity/">3 Linear elasticity</a></li><li><a class="tocitem" href="../t004_p_laplacian/">4 p-Laplacian</a></li><li><a class="tocitem" href="../t005_hyperelasticity/">5 Hyper-elasticity</a></li><li><a class="tocitem" href="../t006_dg_discretization/">6 Poisson equation (with DG)</a></li><li><a class="tocitem" href="../t007_darcy/">7 Darcy equation (with RT)</a></li><li><a class="tocitem" href="../t008_inc_navier_stokes/">8 Incompressible Navier-Stokes</a></li><li><a class="tocitem" href="../t009_stokes/">9 Stokes equation</a></li><li><a class="tocitem" href="../t010_advection_diffusion/">10 Advection-diffusion</a></li><li><a class="tocitem" href="../t011_isotropic_damage/">11 Isotropic damage model</a></li><li><a class="tocitem" href="../t012_fsi_tutorial/">12 Fluid-Structure Interaction</a></li><li><a class="tocitem" href="../t013_emscatter/">13 Electromagnetic scattering in 2D</a></li><li><a class="tocitem" href="../t014_validation_DrWatson/">14 On using DrWatson.jl</a></li><li><a class="tocitem" href="../t015_interpolation_fe/">15 Interpolation of CellFields</a></li><li><a class="tocitem" href="../t016_poisson_distributed/">16 Poisson equation on parallel distributed-memory computers</a></li><li><a class="tocitem" href="../t017_transient_linear/">17 Transient Poisson equation</a></li><li><a class="tocitem" href="../t018_transient_nonlinear/">18 Transient nonlinear equation</a></li><li><a class="tocitem" href="../t019_TopOptEMFocus/">19 Topology optimization</a></li><li><a class="tocitem" href="../t020_poisson_unfitted/">20 Poisson on unfitted meshes</a></li><li class="is-active"><a class="tocitem" href>21 Poisson with AMR</a><ul class="internal"><li><a class="tocitem" href="#Problem-Overview-1"><span>Problem Overview</span></a></li><li><a class="tocitem" href="#Error-Estimation-and-AMR-Process-1"><span>Error Estimation and AMR Process</span></a></li><li><a class="tocitem" href="#Required-Packages-1"><span>Required Packages</span></a></li><li><a class="tocitem" href="#Problem-Setup-1"><span>Problem Setup</span></a></li><li><a class="tocitem" href="#AMR-Step-Function-1"><span>AMR Step Function</span></a></li><li><a class="tocitem" href="#Main-AMR-Loop-1"><span>Main AMR Loop</span></a></li><li><a class="tocitem" href="#Conclusion-1"><span>Conclusion</span></a></li></ul></li><li><a class="tocitem" href="../t022_poisson_dev_fe/">22 Low-level API - Poisson equation</a></li><li><a class="tocitem" href="../t023_geometry_dev/">23 Low-level API - Geometry</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>21 Poisson with AMR</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>21 Poisson with AMR</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/gridap/Tutorials/blob/master/src/poisson_amr.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="poisson_amr.jl-1"><a class="docs-heading-anchor" href="#poisson_amr.jl-1">Tutorial 21: Poisson with AMR</a><a class="docs-heading-anchor-permalink" href="#poisson_amr.jl-1" title="Permalink"></a></h1><p><a href="https://mybinder.org/v2/gh/gridap/Tutorials/gh-pages?filepath=v0.18.1/notebooks/t021_poisson_amr.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt/></a> <a href="https://nbviewer.jupyter.org/github/gridap/Tutorials/blob/gh-pages/v0.18.1/notebooks/t021_poisson_amr.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt/></a></p><p>In this tutorial, we will learn:</p><ul><li>How to use adaptive mesh refinement (AMR) with Gridap</li><li>How to set up a Poisson problem on an L-shaped domain</li><li>How to implement error estimation and marking strategies</li><li>How to visualize the AMR process and results</li></ul><h2 id="Problem-Overview-1"><a class="docs-heading-anchor" href="#Problem-Overview-1">Problem Overview</a><a class="docs-heading-anchor-permalink" href="#Problem-Overview-1" title="Permalink"></a></h2><p>We will solve the Poisson equation on an L-shaped domain using adaptive mesh refinement. The L-shaped domain is known to introduce a singularity at its reentrant corner, making it an excellent test case for AMR. The problem is:</p><div>\[\begin{aligned}
+-\Delta u &amp;= f  &amp;&amp;\text{in } \Omega \\
+u &amp;= g &amp;&amp;\text{on } \partial\Omega
+\end{aligned}\]</div><p>where Ω is the L-shaped domain, and we choose an exact solution with a singularity to demonstrate the effectiveness of AMR.</p><h2 id="Error-Estimation-and-AMR-Process-1"><a class="docs-heading-anchor" href="#Error-Estimation-and-AMR-Process-1">Error Estimation and AMR Process</a><a class="docs-heading-anchor-permalink" href="#Error-Estimation-and-AMR-Process-1" title="Permalink"></a></h2><p>We use a residual-based a posteriori error estimator η. For each element K in the mesh, the local error indicator ηK is computed as:</p><div>\[\eta_K^2 = h_K^2\|f + \Delta u_h\|_{L^2(K)}^2 + h_K\|\lbrack\!\lbrack \nabla u_h \cdot n \rbrack\!\rbrack \|_{L^2(\partial K)}^2\]</div><p>where:</p><ul><li><code>h_K</code> is the diameter of element K</li><li><code>u_h</code> is the computed finite element solution</li><li>The first term measures the element residual</li><li>The second term measures the jump in the normal derivative across element boundaries</li></ul><p>The AMR process follows these steps in each iteration:</p><ol><li><strong>Solve</strong>: Compute the finite element solution u_h on the current mesh</li><li><strong>Estimate</strong>: Calculate error indicators ηK for each element</li><li><strong>Mark</strong>: Use Dörfler marking to select elements for refinement<ul><li>Sort elements by error indicator</li><li>Mark elements containing a fixed fraction (here 80%) of total error</li></ul></li><li><strong>Refine</strong>: Refine selected elements to obtain a new mesh. In this example, we will be using the newest vertex bisection (NVB) method to keep the mesh conforming (without any hanging nodes).</li></ol><p>This adaptive loop continues until either:</p><ul><li>A maximum number of iterations is reached</li><li>The estimated error falls below a threshold</li><li>The solution achieves desired accuracy</li></ul><p>The process automatically concentrates mesh refinement in regions of high error, particularly around the reentrant corner where the solution has reduced regularity. This results in better accuracy per degree of freedom compared to uniform refinement.</p><h2 id="Required-Packages-1"><a class="docs-heading-anchor" href="#Required-Packages-1">Required Packages</a><a class="docs-heading-anchor-permalink" href="#Required-Packages-1" title="Permalink"></a></h2><pre><code class="language-julia">using Gridap, Gridap.Geometry, Gridap.Adaptivity
+using DataStructures</code></pre><h2 id="Problem-Setup-1"><a class="docs-heading-anchor" href="#Problem-Setup-1">Problem Setup</a><a class="docs-heading-anchor-permalink" href="#Problem-Setup-1" title="Permalink"></a></h2><p>We define an exact solution that contains a singularity at the corner (0.5, 0.5) of the L-shaped domain. This singularity will demonstrate how AMR automatically refines the mesh in regions of high error.</p><pre><code class="language-julia">ϵ = 1e-2
+r(x) = ((x[1]-0.5)^2 + (x[2]-0.5)^2)^(1/2)
+u_exact(x) = 1.0 / (ϵ + r(x))</code></pre><p>Create an L-shaped domain by removing a quadrant from a unit square. The domain is [0,1]² \ [0.5,1]×[0.5,1]</p><pre><code class="language-julia">function LShapedModel(n)
+  model = CartesianDiscreteModel((0,1,0,1),(n,n))
+  cell_coords = map(mean,get_cell_coordinates(model))
+  l_shape_filter(x) = (x[1] &lt; 0.5) || (x[2] &lt; 0.5)
+  mask = map(l_shape_filter,cell_coords)
+  return simplexify(DiscreteModelPortion(model,mask))
+end</code></pre><p>Define the L2 norm for error estimation. These will be used to compute both local and global error measures.</p><pre><code class="language-julia">l2_norm(he,xh,dΩ) = ∫(he*(xh*xh))*dΩ
+l2_norm(xh,dΩ) = ∫(xh*xh)*dΩ</code></pre><h2 id="AMR-Step-Function-1"><a class="docs-heading-anchor" href="#AMR-Step-Function-1">AMR Step Function</a><a class="docs-heading-anchor-permalink" href="#AMR-Step-Function-1" title="Permalink"></a></h2><p>The <code>amr_step</code> function performs a single step of the adaptive mesh refinement process:</p><ol><li>Solves the Poisson problem on the current mesh</li><li>Estimates the error using residual-based error indicators</li><li>Marks cells for refinement using Dörfler marking</li><li>Refines the mesh using newest vertex bisection (NVB)</li></ol><pre><code class="language-julia">function amr_step(model,u_exact;order=1)
+  &quot;Create FE spaces with Dirichlet boundary conditions on all boundaries&quot;
+  reffe = ReferenceFE(lagrangian,Float64,order)
+  V = TestFESpace(model,reffe;dirichlet_tags=[&quot;boundary&quot;])
+  U = TrialFESpace(V,u_exact)
+
+  &quot;Setup integration measures&quot;
+  Ω = Triangulation(model)
+  Γ = Boundary(model)
+  Λ = Skeleton(model)
+
+  dΩ = Measure(Ω,4*order)
+  dΓ = Measure(Γ,2*order)
+  dΛ = Measure(Λ,2*order)
+
+  &quot;Compute cell sizes for error estimation&quot;
+  hK = CellField(sqrt.(collect(get_array(∫(1)dΩ))),Ω)
+
+  &quot;Get normal vectors for boundary and interface terms&quot;
+  nΓ = get_normal_vector(Γ)
+  nΛ = get_normal_vector(Λ)
+
+  &quot;Define the weak form&quot;
+  ∇u(x)  = ∇(u_exact)(x)
+  f(x)   = -Δ(u_exact)(x)
+  a(u,v) = ∫(∇(u)⋅∇(v))dΩ
+  l(v)   = ∫(f*v)dΩ
+
+  &quot;Define the residual error estimator
+  It includes volume residual, boundary jump, and interface jump terms&quot;
+  ηh(u)  = l2_norm(hK*(f + Δ(u)),dΩ) +           # Volume residual
+           l2_norm(hK*(∇(u) - ∇u)⋅nΓ,dΓ) +       # Boundary jump
+           l2_norm(jump(hK*∇(u)⋅nΛ),dΛ)          # Interface jump
+
+  &quot;Solve the FE problem&quot;
+  op = AffineFEOperator(a,l,U,V)
+  uh = solve(op)
+
+  &quot;Compute error indicators&quot;
+  η = estimate(ηh,uh)
+
+  &quot;Mark cells for refinement using Dörfler marking
+  This strategy marks cells containing a fixed fraction (0.9) of the total error&quot;
+  m = DorflerMarking(0.9)
+  I = Adaptivity.mark(m,η)
+
+  &quot;Refine the mesh using newest vertex bisection&quot;
+  method = Adaptivity.NVBRefinement(model)
+  amodel = refine(method,model;cells_to_refine=I)
+  fmodel = Adaptivity.get_model(amodel)
+
+  &quot;Compute the global error for convergence testing&quot;
+  error = sum(l2_norm(uh - u_exact,dΩ))
+  return fmodel, uh, η, I, error
+end</code></pre><h2 id="Main-AMR-Loop-1"><a class="docs-heading-anchor" href="#Main-AMR-Loop-1">Main AMR Loop</a><a class="docs-heading-anchor-permalink" href="#Main-AMR-Loop-1" title="Permalink"></a></h2><p>We perform multiple AMR steps, refining the mesh iteratively and solving the problem on each refined mesh. This demonstrates how the error decreases as the mesh is adaptively refined in regions of high error.</p><pre><code class="language-julia">nsteps = 5
+order = 1
+model = LShapedModel(10)
+
+last_error = Inf
+for i in 1:nsteps
+  fmodel, uh, η, I, error = amr_step(model,u_exact;order)
+
+  is_refined = map(i -&gt; ifelse(i ∈ I, 1, -1), 1:num_cells(model))
+
+  Ω = Triangulation(model)
+  writevtk(
+    Ω,&quot;model_$(i-1)&quot;,append=false,
+    cellfields = [
+      &quot;uh&quot; =&gt; uh,                    # Computed solution
+      &quot;η&quot; =&gt; CellField(η,Ω),        # Error indicators
+      &quot;is_refined&quot; =&gt; CellField(is_refined,Ω),  # Refinement markers
+      &quot;u_exact&quot; =&gt; CellField(u_exact,Ω),       # Exact solution
+    ],
+  )
+
+  println(&quot;Error: $error, Error η: $(sum(η))&quot;)
+  last_error = error
+  model = fmodel
+end</code></pre><p>The final mesh gives the following result: <img src="../../assets/amr/result.png" alt/></p><h2 id="Conclusion-1"><a class="docs-heading-anchor" href="#Conclusion-1">Conclusion</a><a class="docs-heading-anchor-permalink" href="#Conclusion-1" title="Permalink"></a></h2><p>In this tutorial, we have demonstrated how to:</p><ol><li>Implement adaptive mesh refinement for the Poisson equation</li><li>Use residual-based error estimation to identify regions needing refinement</li><li>Apply Dörfler marking to select cells for refinement</li><li>Visualize the AMR process and solution convergence</li></ol><p>The results show how AMR automatically refines the mesh near the singularity, leading to more efficient and accurate solutions compared to uniform refinement.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../t020_poisson_unfitted/">« 20 Poisson on unfitted meshes</a><a class="docs-footer-nextpage" href="../t022_poisson_dev_fe/">22 Low-level API - Poisson equation »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 9 March 2025 11:36">Sunday 9 March 2025</span>. Using Julia version 1.10.8.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

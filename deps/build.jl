@@ -18,14 +18,17 @@ files = [
   "Isotropic damage model" => "isotropic_damage.jl",
   "Fluid-Structure Interaction"=>"fsi_tutorial.jl",
   "Electromagnetic scattering in 2D"=>"emscatter.jl",
-  "Low-level API Poisson equation"=>"poisson_dev_fe.jl",
   "On using DrWatson.jl"=>"validation_DrWatson.jl",
   "Interpolation of CellFields"=>"interpolation_fe.jl",
   "Poisson equation on parallel distributed-memory computers"=>"poisson_distributed.jl",
   "Transient Poisson equation"=>"transient_linear.jl",
   "Transient nonlinear equation"=>"transient_nonlinear.jl",
   "Topology optimization"=>"TopOptEMFocus.jl",
-  "Unfitted Poisson"=>"unfitted_poisson.jl"]
+  "Poisson on unfitted meshes"=>"poisson_unfitted.jl",
+  "Poisson with AMR"=>"poisson_amr.jl",
+  "Low-level API - Poisson equation"=>"poisson_dev_fe.jl",
+  "Low-level API - Geometry" => "geometry_dev.jl",
+]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)
 for (i,(title,filename)) in enumerate(files)

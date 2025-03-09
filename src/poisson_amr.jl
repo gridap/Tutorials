@@ -28,12 +28,12 @@
 # the local error indicator ηK is computed as:
 #
 # ```math
-# \eta_K^2 = h_K^2\|f + \Delta u_h\|_{L^2(K)}^2 + h_K\|\jump{\nabla u_h \cdot n}\|_{L^2(\partial K)}^2
+# \eta_K^2 = h_K^2\|f + \Delta u_h\|_{L^2(K)}^2 + h_K\|\lbrack\!\lbrack \nabla u_h \cdot n \rbrack\!\rbrack \|_{L^2(\partial K)}^2
 # ```
 #
 # where:
-# - h_K is the diameter of element K
-# - u_h is the computed finite element solution
+# - `h_K` is the diameter of element K
+# - `u_h` is the computed finite element solution
 # - The first term measures the element residual
 # - The second term measures the jump in the normal derivative across element boundaries
 #
@@ -96,12 +96,12 @@ l2_norm(xh,dΩ) = ∫(xh*xh)*dΩ
 # 4. Refines the mesh using newest vertex bisection (NVB)
 
 function amr_step(model,u_exact;order=1)
-  # Create FE spaces with Dirichlet boundary conditions on all boundaries
+  "Create FE spaces with Dirichlet boundary conditions on all boundaries"
   reffe = ReferenceFE(lagrangian,Float64,order)
   V = TestFESpace(model,reffe;dirichlet_tags=["boundary"])
   U = TrialFESpace(V,u_exact)
   
-  # Setup integration measures
+  "Setup integration measures"
   Ω = Triangulation(model)
   Γ = Boundary(model)
   Λ = Skeleton(model)
@@ -110,43 +110,43 @@ function amr_step(model,u_exact;order=1)
   dΓ = Measure(Γ,2*order)
   dΛ = Measure(Λ,2*order)
   
-  # Compute cell sizes for error estimation
+  "Compute cell sizes for error estimation"
   hK = CellField(sqrt.(collect(get_array(∫(1)dΩ))),Ω)
 
-  # Get normal vectors for boundary and interface terms
+  "Get normal vectors for boundary and interface terms"
   nΓ = get_normal_vector(Γ)
   nΛ = get_normal_vector(Λ)
 
-  # Define the weak form
+  "Define the weak form"
   ∇u(x)  = ∇(u_exact)(x)
   f(x)   = -Δ(u_exact)(x)
   a(u,v) = ∫(∇(u)⋅∇(v))dΩ
   l(v)   = ∫(f*v)dΩ
   
-  # Define the residual error estimator
-  # It includes volume residual, boundary jump, and interface jump terms
+  "Define the residual error estimator
+  It includes volume residual, boundary jump, and interface jump terms"
   ηh(u)  = l2_norm(hK*(f + Δ(u)),dΩ) +           # Volume residual
            l2_norm(hK*(∇(u) - ∇u)⋅nΓ,dΓ) +       # Boundary jump
            l2_norm(jump(hK*∇(u)⋅nΛ),dΛ)          # Interface jump
   
-  # Solve the FE problem
+  "Solve the FE problem"
   op = AffineFEOperator(a,l,U,V)
   uh = solve(op)
   
-  # Compute error indicators
+  "Compute error indicators"
   η = estimate(ηh,uh)
   
-  # Mark cells for refinement using Dörfler marking
-  # This strategy marks cells containing a fixed fraction (0.8) of the total error
+  "Mark cells for refinement using Dörfler marking
+  This strategy marks cells containing a fixed fraction (0.8) of the total error"
   m = DorflerMarking(0.8)
   I = Adaptivity.mark(m,η)
   
-  # Refine the mesh using newest vertex bisection
+  "Refine the mesh using newest vertex bisection"
   method = Adaptivity.NVBRefinement(model)
   amodel = refine(method,model;cells_to_refine=I)
   fmodel = Adaptivity.get_model(amodel)
 
-  # Compute the global error for convergence testing
+  "Compute the global error for convergence testing"
   error = sum(l2_norm(uh - u_exact,dΩ))
   return fmodel, uh, η, I, error
 end
@@ -163,13 +163,10 @@ model = LShapedModel(10)
 
 last_error = Inf
 for i in 1:nsteps
-  # Perform one AMR step
   fmodel, uh, η, I, error = amr_step(model,u_exact;order)
   
-  # Create indicator field for refined cells
   is_refined = map(i -> ifelse(i ∈ I, 1, -1), 1:num_cells(model))
   
-  # Visualize results
   Ω = Triangulation(model)
   writevtk(
     Ω,"model_$(i-1)",append=false,
@@ -181,7 +178,6 @@ for i in 1:nsteps
     ],
   )
   
-  # Print error information and verify convergence
   println("Error: $error, Error η: $(sum(η))")
   @test (i < 3) || (error < last_error)
   last_error = error

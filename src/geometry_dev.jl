@@ -150,12 +150,10 @@ function get_face_to_face_graph(topo,Df)
   face_to_face = Vector{Vector{Int}}(undef,n_faces)
   for face in 1:n_faces
     nbors = Int[]
-    # Find faces sharing vertices with current face
     for vertex in face_to_vertices[face]
-      append!(nbors,vertex_to_faces[vertex])
+      append!(nbors,vertex_to_faces[vertex]) # Add incident faces
     end
-    # Remove self-reference and duplicates
-    face_to_face[face] = filter(!isequal(face),unique(nbors))
+    face_to_face[face] = filter(!isequal(face),unique(nbors)) # Remove self-reference and duplicates
   end
 
   return face_to_face

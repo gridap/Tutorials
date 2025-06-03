@@ -183,8 +183,8 @@ for i in 1:nsteps
   )
   
   println("Error: $error, Error η: $(sum(η))")
-  last_error = error
-  model = fmodel
+  global last_error = error
+  global model = fmodel
 end
 
 # The final mesh gives the following result:

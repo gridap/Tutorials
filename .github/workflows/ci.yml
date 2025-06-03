@@ -25,7 +25,7 @@ jobs:
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
-      - run: cd test/; julia --project=.. --color=yes --check-bounds=yes runtests.jl poisson.jl validation.jl elasticity.jl
+      - run: cd test/; julia --project=.. --color=yes --check-bounds=yes runtests.jl poisson.jl validation.jl elasticity.jl lagrange_multipliers.jl
   tutorials_set_2:
     name: Tutorials2 ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
@@ -46,7 +46,7 @@ jobs:
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
-      - run: cd test/; julia --project=.. --color=yes --check-bounds=yes runtests.jl p_laplacian.jl hyperelasticity.jl dg_discretization.jl fsi_tutorial.jl
+      - run: cd test/; julia --project=.. --color=yes --check-bounds=yes runtests.jl p_laplacian.jl hyperelasticity.jl dg_discretization.jl fsi_tutorial.jl poisson_amr.jl
   tutorials_set_3:
     name: Tutorials3 ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}

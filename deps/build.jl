@@ -26,6 +26,7 @@ files = [
   "Topology optimization"=>"TopOptEMFocus.jl",
   "Poisson on unfitted meshes"=>"poisson_unfitted.jl",
   "Poisson with AMR"=>"poisson_amr.jl",
+  "Lagrange multipliers" => "lagrange_multipliers.jl",
   "Low-level API - Poisson equation"=>"poisson_dev_fe.jl",
   "Low-level API - Geometry" => "geometry_dev.jl",
 ]

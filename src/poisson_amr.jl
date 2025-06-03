@@ -79,7 +79,11 @@ function LShapedModel(n)
   cell_coords = map(mean,get_cell_coordinates(model))
   l_shape_filter(x) = (x[1] < 0.5) || (x[2] < 0.5)
   mask = map(l_shape_filter,cell_coords)
-  return simplexify(DiscreteModelPortion(model,mask))
+  model = simplexify(DiscreteModelPortion(model,mask))
+
+  grid = get_grid(model)
+  topo = get_grid_topology(model)
+  return UnstructuredDiscreteModel(grid, topo, FaceLabeling(topo))
 end
 
 # Define the L2 norm for error estimation.

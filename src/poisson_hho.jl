@@ -3,6 +3,12 @@
 # for solving the Poisson equation. HHO methods are a class of modern hybridizable finite element methods
 # that provide optimal convergence rates while enabling static condensation for efficient solution.
 #
+# HHO is a mathematically complex method. This tutorial will **NOT** cover the method nor 
+# its mathematical foundations. You should be familiar with both before going into 
+# the tutorial itself. 
+# We also recommend going through the HDG tutorial first, which shares many of the 
+# same concepts but is simpler to understand.
+#
 # ## Problem statement
 #
 # We consider the Poisson equation with Dirichlet boundary conditions:
@@ -82,7 +88,6 @@ N = TrialFESpace(M,u)
 mfs = MultiField.BlockMultiFieldStyle(2,(1,1))
 X   = MultiFieldFESpace([V, N];style=mfs)
 Y   = MultiFieldFESpace([V, M];style=mfs) 
-Xp  = FESpaces.PatchFESpace(X,ptopo)
 
 # ## PatchTopology and PatchTriangulation
 #
@@ -114,13 +119,26 @@ dΓp = Measure(Γp,qdegree)
 # A key feature of HHO is the use of local solves to define local projections of our bulk and 
 # skeleton variables. Just like for static condensation, we will use patch assembly to 
 # gather the contributions from each patch and solve the local problems.
+# The result is then an element of the space we are projecting to, given as a 
+# linear combination of the basis of that space. This whole abstraction is taken 
+# care of by the `LocalOperator` object. 
 #
-# For the mixed-order Poisson problem, we require two local projections:
-#   - First, an L2 local projection operator onto the mesh faces.
-#   - Second, the so-called reconstruction operator. This operator is highly tied to the 
-#     ellipic projector, and projects our bulk-skeleton variable pair onto a bulk 
-#     space of higher order.
-# The operators are defined as follows:
+# For the mixed-order Poisson problem, we require two local projections. 
+#
+# ### L2 projection operator
+#
+# First, an L2 local projection operator onto the mesh faces. This is the simplest 
+# operator we can define, such that given $u$ in some undefined space, we find $Pu \in V$ st
+#
+# $$(Pu,q) = (u,q) \forall q \in V$$
+#
+# This signature for the `LocalOperator` assumes that the rhs and lhs for each local problem
+# are given by a single cell contribution (no patch assembly required).
+# Note also the use of `FESpaceWithoutBCs`, which strips the boundary conditions from the 
+# space `V`. This is because we do not want to take into account boundary conditions 
+# when projecting onto the space.
+# The local solve map is given by `LocalSolveMap`, which by default uses Julia's LU 
+# factorization to solve the local problem exactly.
 
 function projection_operator(V, Ω, dΩ)
   Π(u,Ω) = change_domain(u,Ω,DomainStyle(u))
@@ -131,6 +149,18 @@ function projection_operator(V, Ω, dΩ)
   )
   return P
 end
+
+# ### Reconstruction operator
+# 
+# Finally, we build the so-called reconstruction operator. This operator is highly tied to the 
+# ellipic projector, and projects our bulk-skeleton variable pair onto a bulk space of higher order.
+#
+# It's definition can be found in HHO literature, and requires solving a constrained
+# local problem on each cell and its faces. We therefore use patch assembly, and impose 
+# our constraint using an additional space `Λ` as a local Lagrange multiplier. 
+# Naturally, we want to eliminate the multiplier and return a solution in the reconstructed 
+# space `L`. This is taken care of by the `LocalPenaltySolveMap`, and the kwarg `space_out = L`
+# which overrides the default behavior of returning a solution in the test space `Y`.
 
 function reconstruction_operator(ptopo,order,X,Ω,Γp,dΩp,dΓp)
   L = FESpaces.PolytopalFESpace(Ω, Float64, order+1; space=:P)
@@ -153,7 +183,7 @@ end
 PΓ = projection_operator(M, Γp, dΓp)
 R  = reconstruction_operator(ptopo,order,Y,Ωp,Γp,dΩp,dΓp)
 
-# ## Weakform
+# ## Weakform and assembly
 #
 # We can now define: 
 #   - The consistency term `a`
@@ -178,7 +208,27 @@ end
 
 l((vΩ,vΓ)) = ∫(f⋅vΩ)dΩp
 
-# ## Assembly without static condensation
+# ### Patch-FESpaces
+#
+# An additional difficulty in HHO methods is that our reconstructed functions `R(u)` are 
+# hard to assemble. They are defined on the cells, but depend on skeleton degrees of freedom. 
+# We therefore cannot assemble them using the original FESpace `N`. Instead, we will create \
+# view of the original space that is defined on the patches, and can be used to assemble 
+# the local contributions depending on `R`. It can be done by the means of `PatchFESpace`:
+
+Xp  = FESpaces.PatchFESpace(X,ptopo)
+
+# ### Assembly without static condensation
+#
+# We can now proceed to evaluate and assemble all our contributions. Note that some of 
+# the contributions depend on the reconstructed variables, e.g `a(u,v)`, and need to 
+# be assembled using the `PatchFESpace` `Xp`, while others can be assembled using the original 
+# FESpace `X` (e.g. `s(u,v)` and `l(v)`). 
+# Assembly is therefore somewhat more complex than in the standard case. We need to 
+# collect the contributions for every (test,trial) pair, and then merge them into a single
+# data structure that can be passed to the assembler.
+# In the case of mixed-order HHO, we only have two combinations, (`Xp`, `Xp`) and (`X`, `X`), 
+# but the cross-terms appear also in the case of the original HHO formulation. 
 
 global_assem = SparseMatrixAssembler(X,Y)
 
@@ -199,7 +249,7 @@ eu  = ui - u
 l2u = sqrt(sum( ∫(eu * eu)dΩp))
 h1u = l2u + sqrt(sum( ∫(∇(eu) ⋅ ∇(eu))dΩp))
 
-# ## Assembly with static condensation
+# ### Assembly with static condensation
 
 patch_assem = FESpaces.PatchAssembler(ptopo,X,Y)
 

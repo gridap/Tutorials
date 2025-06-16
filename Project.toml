@@ -4,6 +4,7 @@ authors = ["Santiago Badia <santiago.badia@monash.edu>", "Francesc Verdugo <fver
 version = "0.17.0"
 
 [deps]
+BlockArrays = "8e7c35d0-a365-5155-bbbb-fb81a777f24e"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
@@ -35,6 +36,7 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
+BlockArrays = "1.6.3"
 DataStructures = "0.18.22"
 Gridap = "0.19"
 GridapDistributed = "0.4"

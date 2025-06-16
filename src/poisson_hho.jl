@@ -41,7 +41,8 @@ using Gridap.Arrays
 
 # ## Geometry
 #
-# We generate a 2-dimensional simplicial mesh from a Cartesian grid:
+# We generate a 2-dimensional simplicial mesh from a Cartesian grid, then taking its Voronoi 
+# dual to create a polytopal mesh. 
 
 u(x) = sin(2*π*x[1])*sin(2*π*x[2])
 f(x) = -Δ(u)(x)

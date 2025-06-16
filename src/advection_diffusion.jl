@@ -82,20 +82,25 @@
 
 # The meshed model is like following:
 
-# ![Pentagon_2D_Mesh](Pentagon_2D_Mesh.png)
+# ![Pentagon_2D_Mesh](../assets/advection_diffusion/Pentagon_2D_Mesh.png)
 
 # ## Numerical Scheme
 
-# The weak form of a PDE is a reformulation that allows the problem to be solved in a broader function space. Instead of requiring the solution to satisfy the PDE at every point (as in the strong form), the weak form requires the solution to satisfy an integral equation. This makes it particularly suitable for numerical methods such as the Finite Element Method.
+# The weak form of a PDE is a reformulation that allows the problem to be solved in a broader 
+# function space. Instead of requiring the solution to satisfy the PDE at every point (as in the strong form), 
+# the weak form requires the solution to satisfy an integral equation. This makes it particularly suitable for 
+# numerical methods such as the Finite Element Method.
 
-# Since we already hcave the original PDE (strong form), we can multiply each side by a test function $v \in H^1(\Omega)$(functions with square-integrable first derivatives). $v$ satisfies the Dirichlet boundary condition of $0$. Make integral on both sides.
+# Since we already hcave the original PDE (strong form), we can multiply each side by a test 
+# function $v \in H^1(\Omega)$(functions with square-integrable first derivatives). $v$ satisfies 
+# the Dirichlet boundary condition of $0$. Make integral on both sides.
 
 # The weak form associated with this formulation is, find $T \in H^1(\Omega)$, such that:
-# $$
+# ```math
 # \int_\Omega v (\mathbf{u} \cdot \nabla T) \, \mathrm{d}\Omega 
 # + \int_\Omega D \nabla T \cdot \nabla v \, \mathrm{d}\Omega 
 # = 0
-# $$
+# ```
 
 # ## FE spaces         
 
@@ -106,7 +111,7 @@ using GridapGmsh
 
 # Import the model from file using GmshDiscreteModel:
 
-model_pentagon = GmshDiscreteModel("pentagon_mesh.msh")
+model_pentagon = GmshDiscreteModel("../models/pentagon_mesh.msh")
 
 # Set up the test FE space $V_0$, which conforms the zero value boundary conditions.
 
@@ -165,8 +170,8 @@ writevtk(Ω,"results_non_zero",cellfields=["uh_non_zero"=>uh_non_zero])
 
 # We can use the ParaView to preview the results clearly. Here is the temperature distribution without any flow velocity:
 
-# ![Result_zero](Result_zero.png)
+# ![Result_zero](../assets/advection_diffusion/Result_zero.png)
 
 # Here is the temperature distribution with a flow velocity of 2 going up:
 
-# ![Result_zero](Result_non_zero.png)
+# ![Result_zero](../assets/advection_diffusion/Result_non_zero.png)

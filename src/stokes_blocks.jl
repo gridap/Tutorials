@@ -41,9 +41,9 @@
 # ```
 #
 # where:
-# - $$A$$: Vector Laplacian (velocity block)
-# - $$B$$: Divergence operator 
-# - $$B^T$$: Gradient operator
+# - $A$: Vector Laplacian (velocity block)
+# - $B$: Divergence operator 
+# - $B^T$: Gradient operator
 #
 # ## Solution strategy
 #

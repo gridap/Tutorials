@@ -10,7 +10,7 @@ function get_title(files,filename)
   error("File $filename not found!")
 end
 
-if (length(ARGS) != 0)
+if !iszero(length(ARGS))
   files = [get_title(Tutorials.files,filename)=>filename for filename in ARGS]
 else
   files = Tutorials.files

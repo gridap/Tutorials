@@ -42,7 +42,10 @@ jobs:
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
-      - run: cd test/; julia --project=.. --color=yes --check-bounds=yes ${{ matrix.test_set.files }}
+      - run: | 
+          cd test/
+          julia --project=.. maketests.jl
+          julia --project=.. --color=yes --check-bounds=yes ${{ matrix.test_set.files }}
   docs:
     name: Documentation
     runs-on: ubuntu-latest

@@ -5,8 +5,8 @@ on:
   - create
 jobs:
 
-  tutorials_set_1:
-    name: Tutorials1 ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
+  tutorials:
+    name: Tutorials ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }} - ${{ matrix.test_set.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -17,6 +17,23 @@ jobs:
           - ubuntu-latest
         arch:
           - x64
+        test_set:
+          - name: Basics
+            files: "poisson.jl elasticity.jl lagrange_multipliers.jl dg_discretization.jl darcy.jl stokes.jl advection_diffusion.jl"
+          - name: Nonlinear
+            files: "p_laplacian.jl hyperelasticity.jl inc_navier_stokes.jl"
+          - name: Applications
+            files: "fsi_tutorial.jl emscatter.jl isotropic_damage.jl TopOptEMFocus.jl"
+          - name: Transient
+            files: "isotropic_damage.jl  transient_linear.jl transient_nonlinear.jl "
+          - name: Hybrid
+            files: "poisson_hdg.jl poisson_hho.jl"
+          - name: Plugins
+            files: "stokes_blocks.jl poisson_amr.jl poisson_unfitted.jl"
+          - name: MPI
+            files: "runtests_mpi.jl"
+          - name: Other
+            files: "validation.jl validation_DrWatson.jl interpolation_fe.jl poisson_dev_fe.jl geometry_dev.jl"
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
@@ -25,91 +42,7 @@ jobs:
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
-      - run: cd test/; julia --project=.. --color=yes --check-bounds=yes runtests.jl poisson.jl validation.jl elasticity.jl lagrange_multipliers.jl
-  tutorials_set_2:
-    name: Tutorials2 ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - '1.10'
-        os:
-          - ubuntu-latest
-        arch:
-          - x64
-    steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
-      - uses: julia-actions/cache@v2
-      - uses: julia-actions/julia-buildpkg@v1
-      - run: cd test/; julia --project=.. --color=yes --check-bounds=yes runtests.jl p_laplacian.jl hyperelasticity.jl dg_discretization.jl fsi_tutorial.jl poisson_amr.jl
-  tutorials_set_3:
-    name: Tutorials3 ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - '1.10'
-        os:
-          - ubuntu-latest
-        arch:
-          - x64
-    steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
-      - uses: julia-actions/cache@v2
-      - uses: julia-actions/julia-buildpkg@v1
-      - run: cd test/; julia --project=.. --color=yes --check-bounds=yes runtests.jl darcy.jl  inc_navier_stokes.jl stokes.jl poisson_dev_fe.jl emscatter.jl
-  tutorials_set_4:
-    name: Tutorials4 ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - '1.10'
-        os:
-          - ubuntu-latest
-        arch:
-          - x64
-    steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
-      - uses: julia-actions/cache@v2
-      - uses: julia-actions/julia-buildpkg@v1
-      - run: cd test/; julia --project=.. --color=yes --check-bounds=yes runtests.jl isotropic_damage.jl validation_DrWatson.jl interpolation_fe.jl transient_linear.jl transient_nonlinear.jl TopOptEMFocus.jl
-  tutorials_mpi:
-    name: TutorialsMPI ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - '1.10'
-        os:
-          - ubuntu-latest
-        arch:
-          - x64
-    steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
-      - uses: julia-actions/cache@v2
-      - uses: julia-actions/julia-buildpkg@v1
-      - run: cd test/; julia --project=.. --color=yes --check-bounds=yes runtests_mpi.jl
+      - run: cd test/; julia --project=.. --color=yes --check-bounds=yes ${{ matrix.test_set.files }}
   docs:
     name: Documentation
     runs-on: ubuntu-latest

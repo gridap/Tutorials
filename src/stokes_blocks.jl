@@ -3,12 +3,14 @@
 # This example solves the incompressible Stokes equations, given by 
 # 
 # ```math
-# \begin{align*}
+# \left\lbrace
+# \begin{aligned}
 # -\Delta u - \nabla p &= f \quad \text{in} \quad \Omega, \\
 # \nabla \cdot u &= 0 \quad \text{in} \quad \Omega, \\
 # u &= \hat{x} \quad \text{in} \quad \Gamma_\text{top} \subset \partial \Omega, \\
 # u &= 0 \quad \text{in} \quad \partial \Omega \backslash \Gamma_\text{top} \\
-# \end{align*}
+# \end{aligned}
+# \right.
 # ```
 # 
 # where $\Omega = [0,1]^d$. 
@@ -39,9 +41,9 @@
 # ```
 #
 # where:
-# - A: Vector Laplacian (velocity block)
-# - B: Divergence operator 
-# - B^T: Gradient operator
+# - $$A$$: Vector Laplacian (velocity block)
+# - $$B$$: Divergence operator 
+# - $$B^T$$: Gradient operator
 #
 # ## Solution strategy
 #
@@ -99,6 +101,8 @@ V = TestFESpace(model,reffe_u,dirichlet_tags=["walls","top"]);
 U = TrialFESpace(V,[u_walls,u_top]);
 Q = TestFESpace(model,reffe_p;conformity=:L2,constraint=:zeromean) 
 
+# ## Block multi-field spaces
+#
 # Our first difference will come from how we define our multi-field spaces: 
 # Because we want to be able to use the block-structure of the linear system, 
 # we have to assemble our problem by blocks. The block structure of the resulting 
@@ -118,7 +122,7 @@ mfs = BlockMultiFieldStyle(2,(1,1),(1,2))
 X = MultiFieldFESpace([U,Q];style=mfs)
 Y = MultiFieldFESpace([V,Q];style=mfs)
 
-# ## Weak form
+# ## Weak form and integration
 
 Ω = Triangulation(model)
 dΩ = Measure(Ω,qdegree)
@@ -130,7 +134,7 @@ l((v,q)) = ∫(v⋅f)dΩ
 
 op = AffineFEOperator(a,l,X,Y)
 
-# ## Block structure of the linear system
+# ### Block structure of the linear system
 #
 # As per usual, we can extract the matrix and vector of the linear system from the operator.
 # Notice now that unlike in previous examples, the matrix is a `BlockMatrix` type, from 
@@ -194,14 +198,23 @@ uh, ph = solve(solver_PD, op)
 #
 # We will also represent the off-diagonal blocks using the `LinearSystemBlock` type.
 
-bblocks = [     u_block        LinearSystemBlock();
+sblocks = [     u_block        LinearSystemBlock();
            LinearSystemBlock()      p_block       ]
 coeffs = [1.0 1.0;
           0.0 1.0]
-PU = BlockTriangularSolver(bblocks,[u_solver,p_solver],coeffs,:upper)
+PU = BlockTriangularSolver(sblocks,[u_solver,p_solver],coeffs,:upper)
 solver_PU = FGMRESSolver(20,PU;atol=1e-10,rtol=1.e-12,verbose=true)
 
 uh, ph = solve(solver_PU, op)
 
 # As you can see, the block upper-triangular preconditioner is quite better 
 # than the block diagonal one.
+
+# ## Going further
+#
+# If you want to see more examples of how to use the block solvers,
+# you can check the documentation in [GridapSolvers.jl](https://gridap.github.io/GridapSolvers.jl/stable/),
+# as well as it's `test/Applications` folder.
+# 
+# There you will find more complicated examples, such as using a GMG solver to 
+# solve the velocity block. 

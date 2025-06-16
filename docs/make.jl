@@ -60,9 +60,9 @@ for (i,(title,filename)) in enumerate(Tutorials.files)
 end
 
 makedocs(
-    sitename = "Gridap tutorials",
-    format = Documenter.HTML(),
-    pages = pages
+  sitename = "Gridap tutorials",
+  format = Documenter.HTML(),
+  pages = pages
 )
 
 # Documenter can also automatically deploy documentation to gh-pages.
@@ -70,5 +70,5 @@ makedocs(
 # for more information.
 
 deploydocs(
-    repo = "github.com/gridap/Tutorials.git"
+  repo = "github.com/gridap/Tutorials.git"
 )

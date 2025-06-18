@@ -441,8 +441,8 @@ writevtk(model,"labels_cellwise",labels=labels_cw)
 # We can also create a `FaceLabeling` from a vertex filter. The resulting `FaceLabeling` will have
 # only one tag, gathering the d-faces whose vertices ALL fullfill `filter(x) == true`.
 
-filter(x) = abs(x[1]- 1.0) < 1.e-5
-labels_vf = Geometry.face_labeling_from_vertex_filter(topo, "top", filter)
+vfilter(x) = abs(x[1]- 1.0) < 1.e-5
+labels_vf = Geometry.face_labeling_from_vertex_filter(topo, "top", vfilter)
 writevtk(model,"labels_filter",labels=labels_vf)
 
 # `FaceLabeling` objects can also be merged together. The resulting `FaceLabeling` will have 

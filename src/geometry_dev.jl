@@ -6,6 +6,7 @@
 #    -  How to extract geometrical information from a `Grid`.
 #    -  How periodicity is handled in Gridap, and the difference between nodes and vertices.
 #    -  How to create a periodic model from scratch, use the example of a Mobius strip.
+#    -  How to create and manipulate `FaceLabeling` objects, which are used to handle boundary conditions.
 #
 # ## Required Packages
 
@@ -21,6 +22,7 @@ using Plots
 # 4. Geometric Mappings
 # 5. High-order Grids
 # 6. Periodicity in Gridap
+# 7. FaceLabelings
 #
 # ## 1. Utility Functions
 # We begin by defining helper functions that will be essential throughout this tutorial.
@@ -390,7 +392,7 @@ mobius = UnstructuredDiscreteModel(grid,topo,labels)
 plot_node_numbering(mobius)
 # ![](../assets/geometry/mobius.png)
 
-# ## FaceLabelings and boundary conditions
+# ## 7. FaceLabelings and boundary conditions
 #
 # The `FaceLabeling` component of a `DiscreteModel` is the way Gridap handles boundary conditions.
 # The basic idea is that, similar to Gmsh, we classify the d-faces (cells, faces, edges, nodes) of the mesh 

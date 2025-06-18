@@ -1,4 +1,3 @@
-# # Incompressible Stokes equations in a 2D/3D cavity
 # 
 # This example solves the incompressible Stokes equations, given by 
 # 

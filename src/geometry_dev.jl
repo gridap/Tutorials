@@ -6,6 +6,7 @@
 #    -  How to extract geometrical information from a `Grid`.
 #    -  How periodicity is handled in Gridap, and the difference between nodes and vertices.
 #    -  How to create a periodic model from scratch, use the example of a Mobius strip.
+#    -  How to create and manipulate `FaceLabeling` objects, which are used to handle boundary conditions.
 #
 # ## Required Packages
 
@@ -21,19 +22,20 @@ using Plots
 # 4. Geometric Mappings
 # 5. High-order Grids
 # 6. Periodicity in Gridap
+# 7. FaceLabelings
 #
 # ## 1. Utility Functions
 # We begin by defining helper functions that will be essential throughout this tutorial.
 # These functions help us visualize and work with our mesh structures.
 
-# Convert a CartesianDiscreteModel to an UnstructuredDiscreteModel for more generic handling
+# Convert a `CartesianDiscreteModel` to an `UnstructuredDiscreteModel` for more generic handling.
 function cartesian_model(args...; kwargs...)
   UnstructuredDiscreteModel(CartesianDiscreteModel(args...; kwargs...))
 end
 
-# Visualization function to plot nodes with their IDs
-# Input: node_coords - Array of node coordinates
-#        node_ids - Array of corresponding node IDs
+# Visualization function to plot nodes with their IDs. Input:
+# - node_coords: Array of node coordinates.
+# - node_ids: Array of corresponding node IDs.
 function plot_node_numbering(node_coords, node_ids)
   x = map(c -> c[1], node_coords)
   y = map(c -> c[2], node_coords)
@@ -43,8 +45,8 @@ function plot_node_numbering(node_coords, node_ids)
   vline!(unique(y), linestyle=:dash, color=:grey)
 end
 
-# Overloaded method to plot node numbering directly from a model
-# This function extracts the necessary information from the model and calls the base plotting function
+# Overloaded method to plot node numbering directly from a model.
+# This function extracts the necessary information from the model and calls the base plotting function.
 function plot_node_numbering(model)
   D = num_cell_dims(model)
   topo = get_grid_topology(model)
@@ -83,7 +85,7 @@ end
 #
 # ### Key Concept: Nodes vs. Vertices
 #
-# One of the most important distinctions in Gridap is between nodes and vertices:
+# A very important distinction in Gridap is between nodes and vertices:
 #
 #   - **Vertices** (Topological entities):
 #     * 0-dimensional entities in the `GridTopology`
@@ -91,7 +93,7 @@ end
 #     * Used for neighbor queries and mesh traversal
 #     * Number of vertices depends only on topology
 #
-#   - **Nodes** (Geometric entities):
+#   - **Nodes** (Geometrical entities):
 #     * Control points stored in the `Grid`
 #     * Define the geometry of elements
 #     * Used for interpolation and mapping
@@ -180,10 +182,10 @@ node_coordinates = get_node_coordinates(grid) # Physical coordinates of nodes
 #
 # There are two ways to get the coordinates of nodes for each cell:
 #
-# 1. Using standard Julia mapping:
+# A) Using standard Julia mapping:
 cell_to_node_coords = map(nodes -> node_coordinates[nodes], cell_to_nodes)
 
-# 2. Using Gridap's lazy evaluation system (more efficient for large meshes):
+# B) Using Gridap's lazy evaluation system (more efficient for large meshes):
 cell_to_node_coords = lazy_map(Broadcasting(Reindex(node_coordinates)),cell_to_nodes)
 
 # ### Geometric Mappings
@@ -230,7 +232,7 @@ writevtk(new_grid,"half_cylinder_linear")
 # our half-cylinder looks faceted. This is because we're still using linear elements
 # (straight edges) to approximate the curved geometry.
 #
-# ### Solution: High-order Elements
+# ### Example: High-order Elements
 #
 # To accurately represent curved geometries, we need high-order elements:
 
@@ -389,3 +391,96 @@ mobius = UnstructuredDiscreteModel(grid,topo,labels)
 # Visualize the vertex numbering:
 plot_node_numbering(mobius)
 # ![](../assets/geometry/mobius.png)
+
+# ## 7. FaceLabelings and boundary conditions
+#
+# The `FaceLabeling` component of a `DiscreteModel` is the way Gridap handles boundary conditions.
+# The basic idea is that, similar to Gmsh, we classify the d-faces (cells, faces, edges, nodes) of the mesh 
+# into different entities (physical groups in Gmsh terminology) which in turn have one or more 
+# tags/labels associated with them.
+# We can then query the `FaceLabeling` for the tags associated with a given d-face, 
+# or the d-faces associated with a given tag.
+#
+# We will now explore ways to create and manipulate `Facelabeling` objects.
+#
+# ### Creating FaceLabelings
+#
+# The simplest way to create a blank `FaceLabeling` is to use your `GridTopology`: 
+#
+
+model = cartesian_model((0,1,0,1),(3,3))
+topo = get_grid_topology(model)
+
+labels = FaceLabeling(topo)
+
+# The above `FaceLabeling` is by default created with 2 entities and 2 tags, associated to 
+# interior and boundary d-faces respectively. The boundary facets are chosen as the ones 
+# with a single neighboring cell. 
+# 
+# We can extract the low-level information from the `FaceLabeling` object:
+
+tag_names = get_tag_name(labels) # Each name is a string
+tag_entities = get_tag_entities(labels) # For each tag, a vector of entities
+cell_to_entity = get_face_entity(labels,2) # For each cell, its associated entity
+edge_to_entity = get_face_entity(labels,1) # For each edge, its associated entity
+node_to_entity = get_face_entity(labels,0) # For each node, its associated entity
+
+# It is usually more convenient to visualise it in Paraview by exporting to vtk: 
+
+writevtk(model,"labels_basic",labels=labels)
+
+# Another useful way to create a `FaceLabeling` is by providing a coloring for the mesh cells, 
+# where each color corresponds to a different tag.
+# The d-faces of the mesh will have all the tags associated to the cells that share them.
+
+cell_to_tag = [1,1,1,2,2,3,2,2,3]
+tag_to_name = ["A","B","C"]
+labels_cw = Geometry.face_labeling_from_cell_tags(topo,cell_to_tag,tag_to_name)
+writevtk(model,"labels_cellwise",labels=labels_cw)
+
+# We can also create a `FaceLabeling` from a vertex filter. The resulting `FaceLabeling` will have
+# only one tag, gathering the d-faces whose vertices ALL fullfill `filter(x) == true`.
+
+vfilter(x) = abs(x[1]- 1.0) < 1.e-5
+labels_vf = Geometry.face_labeling_from_vertex_filter(topo, "top", vfilter)
+writevtk(model,"labels_filter",labels=labels_vf)
+
+# `FaceLabeling` objects can also be merged together. The resulting `FaceLabeling` will have 
+# the union of the tags and entities of the original ones.
+# Note that this modifies the first `FaceLabeling` in place.
+
+labels = merge!(labels, labels_cw, labels_vf)
+writevtk(model,"labels_merged",labels=labels)
+
+# ### Creating new tags from existing ones
+#
+# Tags in a `FaceLabeling` support all the usual set operation, i.e union, intersection, 
+# difference and complementary. 
+
+cell_to_tag = [1,1,1,2,2,3,2,2,3]
+tag_to_name = ["A","B","C"]
+labels = Geometry.face_labeling_from_cell_tags(topo,cell_to_tag,tag_to_name)
+
+# Union: Takes as input a list of tags and creates a new tag that is the union of all of them.
+Geometry.add_tag_from_tags!(labels,"A∪B",["A","B"])
+
+# Intersection: Takes as input a list of tags and creates a new tag that is the intersection of all of them.
+Geometry.add_tag_from_tags_intersection!(labels,"A∩B",["A","B"])
+
+# Complementary: Takes as input a list of tags and creates a new tag that is the complementary of the union.
+Geometry.add_tag_from_tags_complementary!(labels,"!A",["A"])
+
+# Set difference: Takes as input two lists of tags (tags_include - tags_exclude) 
+# and creates a new tag that contains all the d-faces that are in the first list but not in the second.
+Geometry.add_tag_from_tags_setdiff!(labels,"A-B",["A"],["B"]) # set difference
+
+writevtk(model,"labels_setops",labels=labels)
+
+# ### FaceLabeling queries
+#
+# The most common way of query information from a `FaceLabeling` is to query a face mask for 
+# a given tag and face dimension. If multiple tags are provided, the union of the tags is returned.
+
+face_dim = 1
+mask = get_face_mask(labels,["A","C"],face_dim) # Boolean mask
+ids = findall(mask) # Edge IDs

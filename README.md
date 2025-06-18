@@ -2,19 +2,15 @@
 
 *Start solving PDEs in Julia*
 
-
 | **Documentation** |
 |:------------ |
 | [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://gridap.github.io/Tutorials/stable) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://gridap.github.io/Tutorials/dev)  |
 |**Build Status** |
 | [![Build Status](https://github.com/gridap/Tutorials/workflows/CI/badge.svg?branch=master)](https://github.com/gridap/Tutorials/actions?query=workflow%3ACI) |
 | **Community** |
-| [![Join the chat at https://gitter.im/Gridap-jl/community](https://badges.gitter.im/Gridap-jl/community.svg)](https://gitter.im/Gridap-jl/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) |
+| [![Join the chat at https://gitter.im/Gridap-jl/community](https://badges.gitter.im/Gridap-jl/community.svg)](https://gitter.im/Gridap-jl/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Join the chat in Slack](https://img.shields.io/badge/chat-on_slack-purple?style=flat&logo=slack&logoColor=white)(https://julialang.slack.com/archives/C02AK382QSG)]|
 | **Citation** |
 | [![DOI](https://joss.theoj.org/papers/10.21105/joss.02520/status.svg)](https://doi.org/10.21105/joss.02520) |
-
-
-
 
 ## What
 
@@ -35,7 +31,7 @@ Visit one of the following pages, depending of your needs, and start enjoying!
 - [**STABLE**](https://gridap.github.io/Tutorials/stable) &mdash; **Tutorials for the most recently tagged version of Gridap.jl.**
 - [**DEVEL**](https://gridap.github.io/Tutorials/dev) &mdash; *Tutorials for the in-development version of Gridap.jl.*
 
-## Generating tutorials locally 
+## Generating tutorials locally
 
 Note: **only if you intend to contribute to the tutorials as an advanced user/developer**
 
@@ -55,12 +51,11 @@ and then, each time that you perform a change on the tutorial sources, you have 
 julia --project=docs docs/make.jl # From the Unix shell, located at the root of Tutorials repo 
 ```
 
-to generate the tutorials. The files generated are available at `Tutorials/docs/build/`. 
-
+to generate the tutorials. The files generated are available at `Tutorials/docs/build/`.
 
 ## Gridap community
 
-Join to our [gitter](https://gitter.im/Gridap-jl/community) chat to ask questions and interact with the Gridap community.
+Join to our [gitter](https://gitter.im/Gridap-jl/community) or [slack](https://julialang.slack.com/archives/C02AK382QSG) chats to ask questions and interact with the Gridap community.
 
 ## How to cite Gridap
 
@@ -83,7 +78,4 @@ In order to give credit to the `Gridap` contributors, we simply ask you to cite 
 
 ## Contact
 
-
 Please, contact the project administrators, [Santiago Badia](mailto:santiago.badia@monash.edu) and [Francesc Verdugo](mailto:fverdugo@cimne.upc.edu), for further questions about licenses and terms of use.
-
-

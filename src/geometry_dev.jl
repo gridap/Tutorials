@@ -483,4 +483,4 @@ writevtk(model,"labels_setops",labels=labels)
 
 face_dim = 1
 mask = get_face_mask(labels,["A","C"],face_dim) # Boolean mask
-ids = findall(edges_mask_A) # Edge IDs
+ids = findall(mask) # Edge IDs

@@ -8,7 +8,7 @@
 |**Build Status** |
 | [![Build Status](https://github.com/gridap/Tutorials/workflows/CI/badge.svg?branch=master)](https://github.com/gridap/Tutorials/actions?query=workflow%3ACI) |
 | **Community** |
-| [![Join the chat at https://gitter.im/Gridap-jl/community](https://badges.gitter.im/Gridap-jl/community.svg)](https://gitter.im/Gridap-jl/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Join the chat in Slack](https://img.shields.io/badge/chat-on_slack-purple?style=flat&logo=slack&logoColor=white)(https://julialang.slack.com/archives/C02AK382QSG)]|
+| [![Join the chat at https://gitter.im/Gridap-jl/community](https://badges.gitter.im/Gridap-jl/community.svg)](https://gitter.im/Gridap-jl/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Join the chat in Slack](https://img.shields.io/badge/chat-on_slack-purple?style=flat&logo=slack&logoColor=white)](https://julialang.slack.com/archives/C02AK382QSG)|
 | **Citation** |
 | [![DOI](https://joss.theoj.org/papers/10.21105/joss.02520/status.svg)](https://doi.org/10.21105/joss.02520) |
 

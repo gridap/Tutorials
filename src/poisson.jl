@@ -54,7 +54,8 @@ model = DiscreteModelFromFile("../models/model.json")
 #
 # You can easily inspect the generated discrete model in [Paraview](https://www.paraview.org/) by writing it in `vtk` format.
 
-writevtk(model,"model")
+mkdir("output_path")
+writevtk(model,"output_path/model")
 
 # The previous line generates four different files `model_0.vtu`, `model_1.vtu`, `model_2.vtu`, and `model_3.vtu` containing the vertices, edges, faces, and cells present in the discrete model. Moreover, you can easily inspect which boundaries are defined within the model.
 #
@@ -137,7 +138,7 @@ uh = solve(solver,op)
 
 # The `solve` function returns the computed numerical solution `uh`. This object is an instance of `FEFunction`, the type used to represent a function in a FE space. We can inspect the result by writing it into a `vtk` file:
 
-writevtk(Ω,"results",cellfields=["uh"=>uh])
+writevtk(Ω,"output_path/results",cellfields=["uh"=>uh])
 
 #  which will generate a file named `results.vtu` having a nodal field named `"uh"` containing the solution of our problem (see next figure).
 #

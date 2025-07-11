@@ -40,6 +40,7 @@ for (i,(title,filename)) in enumerate(files)
   notebook = string(notebook_prefix,splitext(filename)[1])
   notebook_title = string("# # Tutorial ", i, ": ", title)
   function preprocess_notebook(content)
+    content = replace(content, "output_path" => notebook_prefix)
     return string(notebook_title, "\n\n", content)
   end
   Literate.notebook(joinpath(repo_src,filename), notebooks_dir; name=notebook, preprocess=preprocess_notebook, documenter=false, execute=false)

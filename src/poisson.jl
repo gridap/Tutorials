@@ -54,7 +54,7 @@ model = DiscreteModelFromFile("../models/model.json")
 #
 # You can easily inspect the generated discrete model in [Paraview](https://www.paraview.org/) by writing it in `vtk` format.
 
-mkdir("output_path")
+mkpath("output_path")
 writevtk(model,"output_path/model")
 
 # The previous line generates four different files `model_0.vtu`, `model_1.vtu`, `model_2.vtu`, and `model_3.vtu` containing the vertices, edges, faces, and cells present in the discrete model. Moreover, you can easily inspect which boundaries are defined within the model.

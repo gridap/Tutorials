@@ -66,7 +66,7 @@ model3d = CartesianDiscreteModel(domain3d,partition3d)
 
 # Let us return to the 2D `CartesianDiscreteModel` that we have already constructed. You can inspect it by writing it into vtk format. Note that you can also print a 3D model, but not a 4D one. In the future, it would be cool to generate a movie from a 4D model, but this functionality is not yet implemented.
 
-mkdir("output_path")
+mkpath("output_path")
 writevtk(model,"output_path/model")
 
 

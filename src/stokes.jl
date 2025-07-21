@@ -53,4 +53,5 @@ op = AffineFEOperator(a,l,X,Y)
 uh, ph = solve(op)
 
 # Export results to vtk
-writevtk(Ωₕ,"results",order=2,cellfields=["uh"=>uh,"ph"=>ph])
+mkpath("output_path")
+writevtk(Ωₕ,"output_path/results",order=2,cellfields=["uh"=>uh,"ph"=>ph])

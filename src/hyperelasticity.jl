@@ -96,7 +96,8 @@ function run(x0,disp_x,step,nsteps,cache)
 
   uh, cache = solve!(uh,solver,op,cache)
 
-  writevtk(Ω,"results_$(lpad(step,3,'0'))",cellfields=["uh"=>uh,"sigma"=>σ∘∇(uh)])
+  mkpath("output_path")
+  writevtk(Ω,"output_path/results_$(lpad(step,3,'0'))",cellfields=["uh"=>uh,"sigma"=>σ∘∇(uh)])
 
   return get_free_dof_values(uh), cache
 

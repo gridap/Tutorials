@@ -49,7 +49,8 @@ model = DiscreteModelFromFile("../models/solid.json")
 
 # In order to inspect it, write the model to vtk
 
-writevtk(model,"model")
+mkpath("output_path")
+writevtk(model,"output_path/model")
 
 # and open the resulting files with Paraview. The boundaries $\Gamma_{\rm B}$ and $\Gamma_{\rm G}$ are identified  with the names `"surface_1"` and `"surface_2"` respectively.  For instance, if you visualize the faces of the model and color them by the field `"surface_2"` (see next figure), you will see that only the faces on $\Gamma_{\rm G}$ have a value different from zero.
 #
@@ -118,7 +119,7 @@ uh = solve(op)
 #
 # Finally, we write the results to a file. Note that we also include the strain and stress tensors into the results file.
 
-writevtk(Ω,"results",cellfields=["uh"=>uh,"epsi"=>ε(uh),"sigma"=>σ∘ε(uh)])
+writevtk(Ω,"output_path/results",cellfields=["uh"=>uh,"epsi"=>ε(uh),"sigma"=>σ∘ε(uh)])
 
 # It can be clearly observed (see next figure) that the surface  $\Gamma_{\rm B}$ is pulled in $x_1$-direction and that the solid deforms accordingly.
 #
@@ -186,7 +187,7 @@ uh = solve(op)
 
 # Once the solution is computed, we can store the results in a file for visualization. Note that, we are including the stress tensor in the file (computed with the bi-material law).
 
-writevtk(Ω,"results_bimat",cellfields=
+writevtk(Ω,"output_path/results_bimat",cellfields=
   ["uh"=>uh,"epsi"=>ε(uh),"sigma"=>σ_bimat∘(ε(uh),tags)])
 
 # #### Constant multi-material law
@@ -200,6 +201,6 @@ tags_field = CellField(tags, Ω)
 # `tags_field` is a field which value at $x$ is the tag of the cell containing $x$. `σ_bimat_cst` is used like a constant in (bi)linear form definition and solution export:
 
 a(u,v) = ∫( σ_bimat_cst * ∇(u)⋅∇(v))*dΩ
-writevtk(Ω,"const_law",cellfields= ["sigma"=>σ_bimat_cst])
+writevtk(Ω,"output_path/const_law",cellfields= ["sigma"=>σ_bimat_cst])
 
 #  Tutorial done!

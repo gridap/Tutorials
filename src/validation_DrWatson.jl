@@ -117,7 +117,7 @@ end
 
 function run_or_load(case::Dict)
   produce_or_load(
-    projectdir("assets","validation_DrWatson"),
+    projectdir("notebooks","output_path"),
     case,
     run,
     prefix="res",
@@ -129,7 +129,7 @@ end
 
 map(run_or_load,dicts)
 
-# Note that the results of each case are stored in a binary database file in the `projectdir("assets","validation_DrWatson")` folder. Each result file stores the output dictionary that returns from `run(case)`.
+# Note that the results of each case are stored in a binary database file in the `projectdir("notebooks","output_path")` folder. Each result file stores the output dictionary that returns from `run(case)`.
 
 # We also observe that we set `tag=true` in `produce_or_load`. This option is *key to preserve reproducibility*. It adds to the output dictionary the field `:gitcommit`, thus allowing us to trace the status of the code, at which we obtained those results. Furthermore, if the git repo is dirty, one more field `:gitpatch` is added, storing the difference string.
 
@@ -143,7 +143,7 @@ using DataFrames
 
 # To collect all simulation results, it suffices to use the `collect_results!` function from `DrWatson.jl` from the folder where the results are stored.
 
-df = collect_results(projectdir("assets","validation_DrWatson"))
+df = collect_results(projectdir("notebooks","output_path"))
 
 # We order next the database by (ascending) mesh size and we extract the arrays of mesh sizes and errors
 

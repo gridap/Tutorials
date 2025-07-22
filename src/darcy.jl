@@ -136,7 +136,8 @@ uh, ph = xh
 
 # Since this is a multi-field example, the `solve` function returns a multi-field solution `xh`, which can be unpacked in order to finally recover each field of the problem. The resulting single-field objects can be visualized as in previous tutorials (see next figure).
 
-writevtk(trian,"darcyresults",cellfields=["uh"=>uh,"ph"=>ph])
+mkpath("output_path")
+writevtk(trian,"output_path/darcyresults",cellfields=["uh"=>uh,"ph"=>ph])
 
 # ![](../assets/darcy/darcy_results.png)
 #

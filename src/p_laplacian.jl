@@ -48,7 +48,8 @@ model = DiscreteModelFromFile("../models/model.json")
 
 # As stated before, we want to impose Dirichlet boundary conditions on $\Gamma_0$ and $\Gamma_g$,  but none of these boundaries is identified in the model. E.g., you can easily see by writing the model in vtk format
 
-writevtk(model,"model")
+mkpath("output_path")
+writevtk(model,"output_path/model")
 
 # and by opening the file `"model_0"` in Paraview that the boundary identified as `"sides"` only includes the vertices in the interior of $\Gamma_0$, but here we want to impose Dirichlet boundary conditions in the closure of $\Gamma_0$, i.e., also on the vertices on the contour of $\Gamma_0$. Fortunately, the objects on the contour of $\Gamma_0$ are identified  with the tag `"sides_c"` (see next figure). Thus, the Dirichlet boundary $\Gamma_0$ can be built as the union of the objects identified as `"sides"` and `"sides_c"`.
 #
@@ -134,7 +135,7 @@ uh, = solve!(uh0,solver,op)
 
 # We finish this tutorial by writing the computed solution for visualization (see next figure).
 
-writevtk(Ω,"results",cellfields=["uh"=>uh])
+writevtk(Ω,"output_path/results",cellfields=["uh"=>uh])
 
 # ![](../assets/p_laplacian/sol-plap.png)
 #

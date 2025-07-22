@@ -76,7 +76,8 @@ using Gridap
 model = DiscreteModelFromFile("../models/elasticFlag.json")
 
 # We can inspect the loaded geometry and associated parts by printing to a `vtk` file:
-writevtk(model,"model")
+mkpath("output_path")
+writevtk(model,"output_path/model")
 
 # This will produce an output in which we can identify the different parts of the domain, with the associated labels and tags.
 #
@@ -357,12 +358,12 @@ uhs, uhf, ph = solve(op)
 # ```
 # ### Visualization
 # The solution fields $[\mathbf{U}^h_{\rm S},\mathbf{U}^h_{\rm F},\mathbf{P}^h_{\rm F}]^T$ are defined over all the domain, extended with zeros on the inactive part. Calling the function `writevtk` passing the global triangulation, we will output the global fields.
-writevtk(Ω,"trian", cellfields=["uhs" => uhs, "uhf" => uhf, "ph" => ph])
+writevtk(Ω,"output_path/trian", cellfields=["uhs" => uhs, "uhf" => uhf, "ph" => ph])
 # ![](../assets/fsi/Global_solution.png)
 
 # However, we can also restrict the fields to the active part by calling the function `restrict` with the field along with the respective active triangulation.
-writevtk(Ω_s,"trian_solid",cellfields=["uhs"=>uhs])
-writevtk(Ω_f,"trian_fluid",cellfields=["ph"=>ph,"uhf"=>uhf])
+writevtk(Ω_s,"output_path/trian_solid",cellfields=["uhs"=>uhs])
+writevtk(Ω_f,"output_path/trian_fluid",cellfields=["ph"=>ph,"uhf"=>uhf])
 # ![](../assets/fsi/Local_solution.png)
 
 # ```@raw HTML

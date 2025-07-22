@@ -225,7 +225,8 @@ reffes, cell_types = compress_cell_data(cell_reffes)
 new_grid = UnstructuredGrid(new_node_coordinates,cell_to_nodes,reffes,cell_types)
 
 # Save for visualization:
-writevtk(new_grid,"half_cylinder_linear")
+mkpath("output_path")
+writevtk(new_grid,"output_path/half_cylinder_linear")
 
 #
 # If we visualize the result, we'll notice that despite applying a curved mapping,
@@ -267,7 +268,7 @@ new_node_coordinates = map(F,new_node_coordinates)
 
 # Create the high-order grid:
 new_grid = UnstructuredGrid(new_node_coordinates,new_cell_to_nodes,new_reffes,cell_types)
-writevtk(new_grid,"half_cylinder_quadratic")
+writevtk(new_grid,"output_path/half_cylinder_quadratic")
 
 # The resulting mesh now accurately represents the curved geometry of the half-cylinder,
 # with quadratic elements properly capturing the curvature (despite paraview still showing 
@@ -427,7 +428,7 @@ node_to_entity = get_face_entity(labels,0) # For each node, its associated entit
 
 # It is usually more convenient to visualise it in Paraview by exporting to vtk: 
 
-writevtk(model,"labels_basic",labels=labels)
+writevtk(model,"output_path/labels_basic",labels=labels)
 
 # Another useful way to create a `FaceLabeling` is by providing a coloring for the mesh cells, 
 # where each color corresponds to a different tag.
@@ -436,21 +437,21 @@ writevtk(model,"labels_basic",labels=labels)
 cell_to_tag = [1,1,1,2,2,3,2,2,3]
 tag_to_name = ["A","B","C"]
 labels_cw = Geometry.face_labeling_from_cell_tags(topo,cell_to_tag,tag_to_name)
-writevtk(model,"labels_cellwise",labels=labels_cw)
+writevtk(model,"output_path/labels_cellwise",labels=labels_cw)
 
 # We can also create a `FaceLabeling` from a vertex filter. The resulting `FaceLabeling` will have
 # only one tag, gathering the d-faces whose vertices ALL fullfill `filter(x) == true`.
 
 vfilter(x) = abs(x[1]- 1.0) < 1.e-5
 labels_vf = Geometry.face_labeling_from_vertex_filter(topo, "top", vfilter)
-writevtk(model,"labels_filter",labels=labels_vf)
+writevtk(model,"output_path/labels_filter",labels=labels_vf)
 
 # `FaceLabeling` objects can also be merged together. The resulting `FaceLabeling` will have 
 # the union of the tags and entities of the original ones.
 # Note that this modifies the first `FaceLabeling` in place.
 
 labels = merge!(labels, labels_cw, labels_vf)
-writevtk(model,"labels_merged",labels=labels)
+writevtk(model,"output_path/labels_merged",labels=labels)
 
 # ### Creating new tags from existing ones
 #
@@ -474,7 +475,7 @@ Geometry.add_tag_from_tags_complementary!(labels,"!A",["A"])
 # and creates a new tag that contains all the d-faces that are in the first list but not in the second.
 Geometry.add_tag_from_tags_setdiff!(labels,"A-B",["A"],["B"]) # set difference
 
-writevtk(model,"labels_setops",labels=labels)
+writevtk(model,"output_path/labels_setops",labels=labels)
 
 # ### FaceLabeling queries
 #

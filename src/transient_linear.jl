@@ -108,14 +108,12 @@ uh = solve(solver, op, t0, tF, uh0)
 
 # We highlight that `uh` is an iterable function and the result at each time step is only computed lazily when iterating over it. We can post-process the results and generate the corresponding `vtk` files using the `createpvd` and `createvtk` functions. The former will create a `.pvd` file with the collection of `.vtu` files saved at each time step by `createvtk`. The computation of the problem solutions will be triggered in the following loop:
 
-if !isdir("tmp")
-  mkdir("tmp")
-end
+mkpath("output_path/results")
 
-createpvd("results") do pvd
-  pvd[0] = createvtk(Ω, "tmp/results_0" * ".vtu", cellfields=["u" => uh0])
+createpvd("output_path/results") do pvd
+  pvd[0] = createvtk(Ω, "output_path/results/results_0" * ".vtu", cellfields=["u" => uh0])
   for (tn, uhn) in uh
-    pvd[tn] = createvtk(Ω, "tmp/results_$tn" * ".vtu", cellfields=["u" => uhn])
+    pvd[tn] = createvtk(Ω, "output_path/results/results_$tn" * ".vtu", cellfields=["u" => uhn])
   end
 end
 

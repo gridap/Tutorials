@@ -66,7 +66,8 @@ model3d = CartesianDiscreteModel(domain3d,partition3d)
 
 # Let us return to the 2D `CartesianDiscreteModel` that we have already constructed. You can inspect it by writing it into vtk format. Note that you can also print a 3D model, but not a 4D one. In the future, it would be cool to generate a movie from a 4D model, but this functionality is not yet implemented.
 
-writevtk(model,"model")
+mkpath("output_path")
+writevtk(model,"output_path/model")
 
 
 # If you open the generated files, you will see that the boundary vertices and facets are identified with the name "boundary". This is just what we need to impose the Dirichlet boundary conditions in this example.
@@ -113,7 +114,7 @@ e = u - uh
 
 # Once the error is defined, you can, e.g., visualize it.
 
-writevtk(Ω,"error",cellfields=["e" => e])
+writevtk(Ω,"output_path/error",cellfields=["e" => e])
 
 # This generates a file called `error.vtu`. Open it with Paraview to check that the error is of the order of the machine precision.
 #

@@ -120,6 +120,8 @@ function main(;n,nsteps)
   uh = zero(V)
   cache = nothing
 
+  mkpath("output_path")
+  
   for (istep,factor) in enumerate(factors)
 
     println("\n+++ Solving for load factor $factor in step $istep of $nsteps +++\n")
@@ -129,7 +131,7 @@ function main(;n,nsteps)
     rh = project(r,model,dΩ,order)
 
     writevtk(
-      Ω,"results_$(lpad(istep,3,'0'))",
+      Ω,"output_path/results_$(lpad(istep,3,'0'))",
       cellfields=["uh"=>uh,"epsi"=>ε(uh),"damage"=>dh,
                   "threshold"=>rh,"sigma_elast"=>σe∘ε(uh)])
 

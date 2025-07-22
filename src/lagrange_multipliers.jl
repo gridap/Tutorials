@@ -124,4 +124,5 @@ l2_error = sqrt(sum(∫(eh⋅eh)*dΩ))
 #
 # We can visualize the solution and error by writing them to a VTK file:
 
-writevtk(Ω, "results", cellfields=["uh"=>uh, "error"=>eh])
+mkpath("output_path")
+writevtk(Ω, "output_path/results", cellfields=["uh"=>uh, "error"=>eh])

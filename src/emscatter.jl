@@ -291,7 +291,8 @@ uh_t = CellField(x->H_t(x,xc,r,ϵ₁,λ),Ω)
 # ![](../assets/emscatter/Results.png)
 
 # ### Save to file and view
-writevtk(Ω,"demo",cellfields=["Real"=>real(uh),
+mkpath("output_path")
+writevtk(Ω,"output_path/demo",cellfields=["Real"=>real(uh),
         "Imag"=>imag(uh),
         "Norm"=>abs2(uh),
         "Real_t"=>real(uh_t),

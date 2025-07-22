@@ -33,11 +33,12 @@ function main_ex1(rank_partition,distribute)
   l(v) = ∫( v*f )dΩ
   op = AffineFEOperator(a,l,U,V)
   uh = solve(op)
-  writevtk(Ω,"results_ex1",cellfields=["uh"=>uh,"grad_uh"=>∇(uh)])
+  writevtk(Ω,"output_path/results_ex1",cellfields=["uh"=>uh,"grad_uh"=>∇(uh)])
 end
 
 # Once the `main_ex1` function has been defined, we have to trigger its execution on the different parts. To this end, one calls the `with_mpi` function of [`PartitionedArrays.jl`](https://github.com/fverdugo/PartitionedArrays.jl) right at the beginning of the program.
 
+mkpath("output_path")
 rank_partition = (2,2)
 with_mpi() do distribute
   main_ex1(rank_partition,distribute)
@@ -73,7 +74,7 @@ function main_ex2(rank_partition,distribute)
     op = AffineFEOperator(a,l,U,V)
     solver = PETScLinearSolver()
     uh = solve(solver,op)
-    writevtk(Ω,"results_ex2",cellfields=["uh"=>uh,"grad_uh"=>∇(uh)])
+    writevtk(Ω,"output_path/results_ex2",cellfields=["uh"=>uh,"grad_uh"=>∇(uh)])
   end
 end
 
@@ -112,7 +113,7 @@ function main_ex3(nparts,distribute)
     op = AffineFEOperator(a,l,U,V)
     solver = PETScLinearSolver()
     uh = solve(solver,op)
-    writevtk(Ω,"results_ex3",cellfields=["uh"=>uh,"grad_uh"=>∇(uh)])
+    writevtk(Ω,"output_path/results_ex3",cellfields=["uh"=>uh,"grad_uh"=>∇(uh)])
   end
 end
 
@@ -144,7 +145,7 @@ function main_ex4(nparts,distribute)
     op = AffineFEOperator(a,l,U,V)
     solver = PETScLinearSolver()
     uh = solve(solver,op)
-    writevtk(Ω,"results_ex4",cellfields=["uh"=>uh,"grad_uh"=>∇(uh)])
+    writevtk(Ω,"output_path/results_ex4",cellfields=["uh"=>uh,"grad_uh"=>∇(uh)])
   end
 end
 

@@ -131,8 +131,9 @@ g̃ₕ.cell_dof_values
 
 # We can visualize the results using Paraview
 
-writevtk(get_triangulation(fₕ), "source", cellfields=["fₕ"=>fₕ])
-writevtk(get_triangulation(gₕ), "target", cellfields=["gₕ"=>gₕ])
+mkpath("output_path")
+writevtk(get_triangulation(fₕ), "output_path/source", cellfields=["fₕ"=>fₕ])
+writevtk(get_triangulation(gₕ), "output_path/target", cellfields=["gₕ"=>gₕ])
 
 # which produces the following output
 

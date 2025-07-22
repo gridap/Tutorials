@@ -162,9 +162,11 @@ uh_non_zero = Gridap.Algebra.solve(op_non_zero)
 
 # Ouput the result as a `.vtk` file.
 
-writevtk(Ω,"results_zero",cellfields=["uh_zero"=>uh_zero])
+mkpath("output_path")
 
-writevtk(Ω,"results_non_zero",cellfields=["uh_non_zero"=>uh_non_zero])
+writevtk(Ω,"output_path/results_zero",cellfields=["uh_zero"=>uh_zero])
+
+writevtk(Ω,"output_path/results_non_zero",cellfields=["uh_non_zero"=>uh_non_zero])
 
 # ## Visualization
 

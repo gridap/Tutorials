@@ -421,11 +421,13 @@ function gf_p(p0::Vector, grad::Vector; r, β, η, phys_params, fem_params)
         grad[:] = dgdp
     end
     gvalue = gf_p(p0::Vector; r, β, η, phys_params, fem_params)
-    open("gvalue.txt", "a") do io
+    open("output_path/gvalue.txt", "a") do io
         write(io, "$gvalue \n")
     end
     gvalue
 end
+
+mkpath("output_path")
 
 # Using the following codes, we can check if we can get the derivatives correctly from the adjoint method by comparing it with the finite difference results.
 #
@@ -494,7 +496,7 @@ ax.aspect = AxisAspect(1)
 ax.title = "Design Shape"
 rplot = 110 # Region for plot
 limits!(ax, -rplot, rplot, (h1)/2-rplot, (h1)/2+rplot)
-save("shape.png", fig)
+save("output_path/shape.png", fig)
 
 
 # ![](../assets/TopOptEMFocus/shape.png)
@@ -512,7 +514,7 @@ Colorbar(fig[1,2], plt)
 ax.title = "|E|"
 ax.aspect = AxisAspect(1)
 limits!(ax, -rplot, rplot, (h1)/2-rplot, (h1)/2+rplot)
-save("Field.png", fig)
+save("output_path/Field.png", fig)
 
 # ![](../assets/TopOptEMFocus/Field.png)
 #

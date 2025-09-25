@@ -164,6 +164,7 @@ end
 nsteps = 5
 order = 1
 model = LShapedModel(10)
+mkpath("output_path")
 
 last_error = Inf
 for i in 1:nsteps
@@ -173,7 +174,7 @@ for i in 1:nsteps
   
   Ω = Triangulation(model)
   writevtk(
-    Ω,"model_$(i-1)",append=false,
+    Ω,"output_path/model_$(i-1)",append=false,
     cellfields = [
       "uh" => uh,                    # Computed solution
       "η" => CellField(η,Ω),        # Error indicators

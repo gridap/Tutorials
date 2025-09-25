@@ -151,7 +151,8 @@ uh, ph = solve(solver,op)
 
 # Finally, we write the results for visualization (see next figure).
 
-writevtk(Ωₕ,"ins-results",cellfields=["uh"=>uh,"ph"=>ph])
+mkpath("output_path")
+writevtk(Ωₕ,"output_path/ins-results",cellfields=["uh"=>uh,"ph"=>ph])
 
 # ![](../assets/inc_navier_stokes/ins_solution.png)
 #

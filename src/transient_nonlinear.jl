@@ -126,14 +126,12 @@ uh = solve(solver, op_sl, t0, tF, uh0)
 
 # Here again, we export the solution at each time step as follows
 
-if !isdir("tmp_nl")
-  mkdir("tmp_nl")
-end
+mkpath("output_path/results")
 
-createpvd("results_nl") do pvd
-  pvd[0] = createvtk(Ω, "tmp_nl/results_0" * ".vtu", cellfields=["u" => uh0])
+createpvd("output_path/results_nl") do pvd
+  pvd[0] = createvtk(Ω, "output_path/results/results_0" * ".vtu", cellfields=["u" => uh0])
   for (tn, uhn) in uh
-    pvd[tn] = createvtk(Ω, "tmp_nl/results_$tn" * ".vtu", cellfields=["u" => uhn])
+    pvd[tn] = createvtk(Ω, "output_path/results/results_$tn" * ".vtu", cellfields=["u" => uhn])
   end
 end
 

@@ -154,7 +154,8 @@ dΩ = Measure(Ω,degree)
 eh = uh - u
 l2_uh = sqrt(sum(∫(eh⋅eh)*dΩ))
 
-writevtk(Ω,"results",cellfields=["uh"=>uh,"qh"=>qh,"eh"=>eh])
+mkpath("output_path")
+writevtk(Ω,"output_path/results",cellfields=["uh"=>uh,"qh"=>qh,"eh"=>eh])
 
 # ## Going Further
 #

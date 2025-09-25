@@ -104,8 +104,9 @@ cutgeo = cut(bgmodel,geo3)
 # To illustrate this concept, we can plot both the background and active triangulations to compare them.
 
 Ω_bg = Triangulation(bgmodel)
-writevtk(Ω_bg,"bg_trian")
-writevtk(Ω_act,"act_trian")
+mkpath("output_path")
+writevtk(Ω_bg,"output_path/bg_trian")
+writevtk(Ω_act,"output_path/act_trian")
 
 # In the picture below of the background grid, white cells are _inactive_, whereas gray cells are _active_.
 #
@@ -116,7 +117,7 @@ writevtk(Ω_act,"act_trian")
 # An `EmbeddedDiscretization` instance (here, `cutgeo`) also generates subtriangulations on each cut cells to represent the portion of the cell which is inside the domain of analysis. We use these subtriangulations to generate the so called _physical_ triangulations. Physical triangulations are nothing other than a body-fitted mesh of our domain $\Omega$, but _we only use them to integrate the weak form_ of the problem in $\Omega$, we won't define FE spaces and assign DoFs on top of them. In [GridapEmbedded](https://github.com/gridap/GridapEmbedded.jl) we build physical triangulations using the `PHYSICAL` keyword.
 
 Ω = Triangulation(cutgeo,PHYSICAL)
-writevtk(Ω,"phys_trian")
+writevtk(Ω,"output_path/phys_trian")
 
 # Once again, we can combine plots of the physical and active triangulations to illustrate these concepts. In the first plot, we show the physical triangulation within the background one. 
 #
@@ -172,7 +173,7 @@ aggregates = aggregate(strategy,cutgeo)
 
 colors = color_aggregates(aggregates,bgmodel)
 Ω_bg = Triangulation(bgmodel)
-writevtk(Ω_bg,"aggs_on_bg_trian",celldata=["aggregate"=>aggregates,"color"=>colors])
+writevtk(Ω_bg,"output_path/aggs_on_bg_trian",celldata=["aggregate"=>aggregates,"color"=>colors])
 
 # Finally, we use the aggregates to constrain the exterior DoFs of `Vstd` in terms of the interior ones. This leads to the AgFEM space.
 
@@ -250,7 +251,7 @@ using Test
 @test el2/ul2 < 1.e-8
 @test eh1/uh1 < 1.e-7
 
-writevtk(Ω,"results.vtu",cellfields=["uh"=>uh])
+writevtk(Ω,"output_path/results.vtu",cellfields=["uh"=>uh])
 
 # ![fig10](../assets/unfitted_poisson/fig_results.png)
 

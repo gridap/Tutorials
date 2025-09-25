@@ -162,7 +162,8 @@ model = CartesianDiscreteModel(domain,partition)
 # to be generated in each direction (here $4\times4\times4$ cells). You can
 # write the model in vtk format to visualize it (see next figure).
 
- writevtk(model,"model")
+mkpath("output_path")
+writevtk(model,"output_path/model")
 
 # ![](../assets/dg_discretization/model.png)
 # 
@@ -240,7 +241,7 @@ U = TrialFESpace(V)
 # written into a vtk file for its visualization (see next figure, where the
 # interior facets $\mathcal{F}_\Lambda$ are clearly observed).
 
-writevtk(Λ,"strian")
+writevtk(Λ,"output_path/strian")
 
 # ![](../assets/dg_discretization/skeleton_trian.png)
 # 
@@ -329,7 +330,7 @@ uh = solve(op)
 # faces. We compute and visualize the jump of these values as follows (see next
 # figure):
 
-writevtk(Λ,"jumps",cellfields=["jump_u"=>jump(uh)])
+writevtk(Λ,"output_path/jumps",cellfields=["jump_u"=>jump(uh)])
 
 # Note that the jump of the numerical solution is very small, close to the
 # machine precision (as expected in this example with manufactured solution).

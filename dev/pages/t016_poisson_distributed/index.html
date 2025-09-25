@@ -18,8 +18,9 @@ using PartitionedArrays</code></pre><p>The first step in any <code>GridapDistrib
   l(v) = ∫( v*f )dΩ
   op = AffineFEOperator(a,l,U,V)
   uh = solve(op)
-  writevtk(Ω,&quot;results_ex1&quot;,cellfields=[&quot;uh&quot;=&gt;uh,&quot;grad_uh&quot;=&gt;∇(uh)])
-end</code></pre><p>Once the <code>main_ex1</code> function has been defined, we have to trigger its execution on the different parts. To this end, one calls the <code>with_mpi</code> function of <a href="https://github.com/fverdugo/PartitionedArrays.jl"><code>PartitionedArrays.jl</code></a> right at the beginning of the program.</p><pre><code class="language-julia">rank_partition = (2,2)
+  writevtk(Ω,&quot;output_path/results_ex1&quot;,cellfields=[&quot;uh&quot;=&gt;uh,&quot;grad_uh&quot;=&gt;∇(uh)])
+end</code></pre><p>Once the <code>main_ex1</code> function has been defined, we have to trigger its execution on the different parts. To this end, one calls the <code>with_mpi</code> function of <a href="https://github.com/fverdugo/PartitionedArrays.jl"><code>PartitionedArrays.jl</code></a> right at the beginning of the program.</p><pre><code class="language-julia">mkpath(&quot;output_path&quot;)
+rank_partition = (2,2)
 with_mpi() do distribute
   main_ex1(rank_partition,distribute)
 end</code></pre><p>The <code>with_mpi(f)</code> function receives one function (defined in-situ using Julia&#39;s do-block function call syntax here) assumed to have a single argument, the <code>distribute</code> function (see above). This function is called from <code>with_mpi(f)</code> and executed on each part. It in turn calls the <code>main_ex1</code> function, which does the actual work.</p><p>Although not illustrated in this tutorial, we note that one may also use the <code>with_debug(f)</code> <code>PartitionedArrays.jl</code> function, instead of <code>with_mpi(f)</code>. With this function, the code executes serially on a single process (and there is thus no need to use <code>mpiexecjl</code> to launch the program), although  the data structures are still partitioned into parts. This is very useful, among others, for interactive execution of the code, and debugging, before moving to MPI parallelism.</p><h2 id="Second-example:-GridapDistributed.jl-GridapPETSc.jl-for-the-linear-solver-1"><a class="docs-heading-anchor" href="#Second-example:-GridapDistributed.jl-GridapPETSc.jl-for-the-linear-solver-1">Second example: <code>GridapDistributed.jl</code> + <code>GridapPETSc.jl</code> for the linear solver</a><a class="docs-heading-anchor-permalink" href="#Second-example:-GridapDistributed.jl-GridapPETSc.jl-for-the-linear-solver-1" title="Permalink"></a></h2><pre><code class="language-julia">using GridapPETSc</code></pre><p>In this example we use <code>GridapPETSc.jl</code> to have access to a scalable linear solver. The code is almost identical as the one above (see below). The main difference is that now we are wrapping most of the code of the <code>main_ex2</code> function within a do-block syntax function call to the <code>GridapPETSc.with(args=split(options))</code> function. The <code>with</code> function receives as a first argument a function with no arguments with the instructions to be executed on each MPI task/subdomain (that we pass to it as an anonymous function with no arguments), along with the <code>options</code> to be passed to the PETSc linear solver. For a detailed explanation of possible options we refer to the PETSc library documentation. Note that the call to <code>PETScLinearSolver()</code> initializes the PETSc solver with these <code>options</code> (even though <code>options</code> is not actually passed to the linear solver constructor). Besides, we have to pass the created linear solver object <code>solver</code> to the <code>solve</code> function to override the default linear solver (i.e., a call to the backslash <code>\</code> Julia operator).</p><pre><code class="language-julia">function main_ex2(rank_partition,distribute)
@@ -42,7 +43,7 @@ end</code></pre><p>The <code>with_mpi(f)</code> function receives one function (
     op = AffineFEOperator(a,l,U,V)
     solver = PETScLinearSolver()
     uh = solve(solver,op)
-    writevtk(Ω,&quot;results_ex2&quot;,cellfields=[&quot;uh&quot;=&gt;uh,&quot;grad_uh&quot;=&gt;∇(uh)])
+    writevtk(Ω,&quot;output_path/results_ex2&quot;,cellfields=[&quot;uh&quot;=&gt;uh,&quot;grad_uh&quot;=&gt;∇(uh)])
   end
 end
 
@@ -75,7 +76,7 @@ function main_ex3(nparts,distribute)
     op = AffineFEOperator(a,l,U,V)
     solver = PETScLinearSolver()
     uh = solve(solver,op)
-    writevtk(Ω,&quot;results_ex3&quot;,cellfields=[&quot;uh&quot;=&gt;uh,&quot;grad_uh&quot;=&gt;∇(uh)])
+    writevtk(Ω,&quot;output_path/results_ex3&quot;,cellfields=[&quot;uh&quot;=&gt;uh,&quot;grad_uh&quot;=&gt;∇(uh)])
   end
 end
 
@@ -101,11 +102,11 @@ function main_ex4(nparts,distribute)
     op = AffineFEOperator(a,l,U,V)
     solver = PETScLinearSolver()
     uh = solve(solver,op)
-    writevtk(Ω,&quot;results_ex4&quot;,cellfields=[&quot;uh&quot;=&gt;uh,&quot;grad_uh&quot;=&gt;∇(uh)])
+    writevtk(Ω,&quot;output_path/results_ex4&quot;,cellfields=[&quot;uh&quot;=&gt;uh,&quot;grad_uh&quot;=&gt;∇(uh)])
   end
 end
 
 nparts = 4
 with_mpi() do distribute
   main_ex4(nparts,distribute)
-end</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../t015_interpolation_fe/">« 15 Interpolation of CellFields</a><a class="docs-footer-nextpage" href="../t017_transient_linear/">17 Transient Poisson equation »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 1 September 2025 22:01">Monday 1 September 2025</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../t015_interpolation_fe/">« 15 Interpolation of CellFields</a><a class="docs-footer-nextpage" href="../t017_transient_linear/">17 Transient Poisson equation »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 25 September 2025 00:53">Thursday 25 September 2025</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

@@ -47,6 +47,8 @@ using Gridap
 # ## Discrete model
 #
 # As in any FE simulation, we need a discretization of the computational domain (i.e., a FE mesh). All geometrical data needed for solving a FE problem is provided in Gridap by types inheriting from the abstract type `DiscreteModel`. In the following line, we build an instance of `DiscreteModel` by loading a `json` file.
+# The "model.json" file stores the mesh (nodes, elements) and the named boundary tags ("circle", "square", "triangle", "sides") that we later use to assign Dirichlet and Neumann boundaries.
+
 
 model = DiscreteModelFromFile("../models/model.json")
 
@@ -76,6 +78,8 @@ writevtk(model,"output_path/model")
 
 order = 1
 reffe = ReferenceFE(lagrangian,Float64,order)
+
+# V0: test space V_h^0. This space contains H¹-conforming functions that vanish on the Dirichlet boundary tagged as "sides" in model.json.
 V0 = TestFESpace(model,reffe;conformity=:H1,dirichlet_tags="sides")
 
 # Here, we have used the `TestFESpace` constructor, which constructs a particular FE space (to be used as a test space) from a set of options described as positional and key-word arguments. The first positional argument is the model on top of which we want to build the space. The second positional argument contains information about the type of FE interpolation (the reference FE in this case). With `ReferenceFE(lagrangian,Float64,order)` We select a scalar-valued Lagrangian reference FE of order 1, where the value of the shape functions will be represented with  64-bit floating point numbers. With the key-word argument `conformity` we define the regularity of the interpolation at the boundaries of the cells in the mesh. Here, we use `conformity=:H1`, which means that the resulting interpolation space is a subset of $H^1(\Omega)$ (i.e., continuous shape functions). On the other hand, we pass the identifiers of the Dirichlet boundary via the `dirichlet_tags` argument. In this case, we mark as Dirichlet all objects of the discrete model identified with the `"sides"` tag. Since this is a test space, the corresponding shape functions vanishes at the Dirichlet boundary.
@@ -83,6 +87,7 @@ V0 = TestFESpace(model,reffe;conformity=:H1,dirichlet_tags="sides")
 # Once the space $V_0$ is discretized in the code, we proceed with the approximation of the trial space $U_g$.
 
 g(x) = 2.0
+# Ug: trial space U_h^g. It uses the same basis as V0, but the degrees of freedom on "sides" are fixed to the Dirichlet data g.
 Ug = TrialFESpace(V0,g)
 
 # To this end, we have used the `TrialFESpace` constructors. Note that we have passed a function representing the value of the Dirichlet boundary condition, when building the trial space.
@@ -94,6 +99,7 @@ Ug = TrialFESpace(V0,g)
 
 degree = 2
 Ω = Triangulation(model)
+# dΩ represents integration over the 3D domain Ω (a volume integral), matching the dΩ notation in the weak form.
 dΩ = Measure(Ω,degree)
 
 # Here, we build a triangulation from the cells of the model and build (an approximation of) the Lebesgue measure using a quadrature rule of degree 2 in the cells of this triangulation. This is enough for integrating the corresponding terms of the weak form exactly for an interpolation of order 1.
@@ -102,6 +108,7 @@ dΩ = Measure(Ω,degree)
 
 neumanntags = ["circle", "triangle", "square"]
 Γ = BoundaryTriangulation(model,tags=neumanntags)
+# dΓ represents integration over the Neumann boundary Γ_N (surface integral), mirroring the boundary integral that appears in the weak form.
 dΓ = Measure(Γ,degree)
 
 # In addition, we have created a quadrature of degree 2 on top of the cells in the triangulation for the Neumann boundary.
@@ -110,16 +117,37 @@ dΓ = Measure(Γ,degree)
 #
 # With all the ingredients presented so far, we are ready to define the weak form. This is done by defining functions representing the bi-linear and linear forms:
 
+# From strong form to weak form (code viewpoint)
+#
+# In the strong form we have:
+#     -Δu = f in Ω,   u = g on Γ_D,   ∂u/∂n = h on Γ_N.
+#
+# To obtain the weak form, we multiply by a test function v (which vanishes on Γ_D) and integrate by parts, giving:
+#     ∫_Ω ∇u⋅∇v dΩ = ∫_Ω f v dΩ + ∫_{Γ_N} h v dΓ
+#
+# The code below encodes the left-hand side as a(u,v) and the right-hand side as b(v), using the same symbols ∇, dΩ, and dΓ as in the mathematical notation.
+
 f(x) = 1.0
 h(x) = 3.0
 a(u,v) = ∫( ∇(v)⋅∇(u) )*dΩ
 b(v) = ∫( v*f )*dΩ + ∫( v*h )*dΓ
+# Math ⇔ Code mapping:
+#   a(u,v) = ∫( ∇(v)⋅∇(u) )*dΩ      ↔    ∫_Ω ∇u⋅∇v dΩ
+#   b(v)   = ∫(v*f)*dΩ + ∫(v*h)*dΓ  ↔    ∫_Ω f v dΩ + ∫_{Γ_N} h v dΓ
+#
+
 
 # Note that by using the integral function `∫`, the Lebesgue measures `dΩ`, `dΓ`, and the gradient function `∇`, the weak form is written with an obvious relation with the corresponding mathematical notation.
 
 #  ## FE Problem
 #
 #  At this point, we can build the FE problem that, once solved, will provide the numerical solution we are looking for. A FE problem is represented in Gridap by types inheriting from the abstract type `FEOperator` (both for linear and nonlinear cases). Since we want to solve a linear problem, we use the concrete type `AffineFEOperator`, i.e., a problem represented by a matrix and a right hand side vector.
+
+# Summary so far:
+#   - V0 implements the test space V_h^0 (zero on Γ_D).
+#   - Ug implements the trial space U_h^g (Dirichlet value g).
+#   - a(u,v) and b(v) encode the variational problem.
+#   - op assembles the linear system A u = b for the FE method.
 
 op = AffineFEOperator(a,b,Ug,V0)
 
@@ -136,11 +164,19 @@ solver = LinearFESolver(ls)
 
 uh = solve(solver,op)
 
-# The `solve` function returns the computed numerical solution `uh`. This object is an instance of `FEFunction`, the type used to represent a function in a FE space. We can inspect the result by writing it into a `vtk` file:
+# The `solve` function returns the computed numerical solution `uh`. This object
+# is an instance of `FEFunction`, the type used to represent a function in a FE
+# space. We can inspect the result by writing it into a `vtk` file:
 
 writevtk(Ω,"output_path/results",cellfields=["uh"=>uh])
 
-#  which will generate a file named `results.vtu` having a nodal field named `"uh"` containing the solution of our problem (see next figure).
+# This call generates a file `results.vtu` with a nodal scalar field named "uh".
+# If you open it in ParaView and color by "uh":
+#   * you see the value of the finite element solution u_h across the domain Ω,
+#   * on the "sides" boundary you should see u_h ≈ 2.0 (the Dirichlet data g),
+#   * on the "circle", "triangle", and "square" boundaries the behavior reflects the Neumann data h.
+# This gives a quick visual check that the boundary conditions in the code match the mathematical problem we stated at the beginning.
+
 #
 # ![](../assets/poisson/fig_uh.png)
 #

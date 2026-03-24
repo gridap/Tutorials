@@ -264,11 +264,13 @@ function patch_weakform()
 end
 
 op = MultiField.StaticCondensationOperator(X,patch_assem,patch_weakform())
-ui, ub = solve(op) 
+xh = solve(op) 
 
-eu  = ui - u
-l2u = sqrt(sum( ∫(eu * eu)dΩp))
-h1u = l2u + sqrt(sum( ∫(∇(eu) ⋅ ∇(eu))dΩp))
+uT, uF = xh
+
+eh = R(xh) - u
+l2err = sqrt(sum( ∫(eh * eh)dΩp))
+h1err = l2err + sqrt(sum( ∫(∇(eh) ⋅ ∇(eh))dΩp))
 
 # ## Going further
 #
@@ -279,4 +281,16 @@ h1u = l2u + sqrt(sum( ∫(∇(eu) ⋅ ∇(eu))dΩp))
 #   - [Poisson with original HHO formulation](https://github.com/gridap/Gridap.jl/blob/75efc9a7a7e286c27e7ca3ddef5468e591845484/test/GridapTests/HHOPolytopalTests.jl)
 #   - [Incompressible Stokes](https://github.com/gridap/Gridap.jl/blob/75efc9a7a7e286c27e7ca3ddef5468e591845484/test/GridapTests/HHOMixedStokesPolytopal.jl) 
 #   - [Linear Elasticity](https://github.com/gridap/Gridap.jl/blob/75efc9a7a7e286c27e7ca3ddef5468e591845484/test/GridapTests/HHOMixedElasticity.jl)
+#
+# You can also check out the following reference:
+#
+# @misc{GridapHybrid,
+#   title={A natural language framework for non-conforming hybrid polytopal methods in Gridap.jl}, 
+#   author={Jordi Manyer and Jai Tushar and Santiago Badia},
+#   year={2026},
+#   eprint={2603.00880},
+#   archivePrefix={arXiv},
+#   primaryClass={cs.MS},
+#   url={https://arxiv.org/abs/2603.00880}, 
+# }
 #

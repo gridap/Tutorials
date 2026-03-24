@@ -10,3 +10,4 @@ tmp/
 .vscode/
 *.code-workspace
 *.DS_Store
+CLAUDE.md

@@ -1,3 +1,4 @@
+#
 # In this tutorial, we will implement a Hybridizable Discontinuous Galerkin (HDG) method
 # for solving the Poisson equation. The HDG method is an efficient variant of DG methods
 # that introduces an auxiliary variable m on mesh interfaces to reduce the global system size.
@@ -162,4 +163,16 @@ writevtk(Ω,"output_path/results",cellfields=["uh"=>uh,"qh"=>qh,"eh"=>eh])
 # By modifying the stabilisation term, HDG can also work on polytopal meshes. An driver 
 # solving the same problem on a polytopal mesh is available [in the Gridap repository](https://github.com/gridap/Gridap.jl/blob/75efc9a7a7e286c27e7ca3ddef5468e591845484/test/GridapTests/HDGPolytopalTests.jl). 
 # A tutorial for HHO on polytopal meshes is also available. 
+#
+# You can also check out the following reference:
+#
+# @misc{GridapHybrid,
+#   title={A natural language framework for non-conforming hybrid polytopal methods in Gridap.jl}, 
+#   author={Jordi Manyer and Jai Tushar and Santiago Badia},
+#   year={2026},
+#   eprint={2603.00880},
+#   archivePrefix={arXiv},
+#   primaryClass={cs.MS},
+#   url={https://arxiv.org/abs/2603.00880}, 
+# }
 #

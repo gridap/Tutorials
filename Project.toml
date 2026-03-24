@@ -36,8 +36,8 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-BlockArrays = "1.6.3"
-DataStructures = "0.18.22"
+BlockArrays = "1"
+DataStructures = "0.19"
 Gridap = "0.20"
 GridapDistributed = "0.4"
 GridapEmbedded = "0.9.9"
@@ -47,7 +47,7 @@ GridapPETSc = "0.5"
 GridapSolvers = "0.6"
 MPI = "0.20"
 SpecialFunctions = "1"
-julia = "1.6"
+julia = "1.10"
 
 [extras]
 MPIPreferences = "3da0fdf6-3ccc-4f1b-acd9-58baa6c99267"

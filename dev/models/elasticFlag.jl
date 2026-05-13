@@ -2,9 +2,9 @@ using Gridap
 using Gridap.Io
 using GridapGmsh
 
-model = GmshDiscreteModel("elasticFlag.msh")
+meshdir(args...) = joinpath(@__DIR__, args...)
+model = GmshDiscreteModel(meshdir("elasticFlag.msh"))
 
-writevtk(model,"elasticFlag")
+writevtk(model,meshdir("elasticFlag"))
 
-fn = "elasticFlag.json"
-to_json_file(model,fn)
+to_json_file(model,meshdir("elasticFlag.json"))

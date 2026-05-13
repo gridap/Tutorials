@@ -191,7 +191,7 @@ R  = reconstruction_operator(ptopo,order,Y,Ωp,Γp,dΩp,dΓp)
 #   - The stabilization term `s`
 #   - The rhs term `l`
 
-hTinv = CellField(1 ./ collect(get_array(∫(1)dΩp)), Ωp)
+hTinv = CellField(1 ./ collect(get_array(∫(1)dΩp) .^ (1/2)), Ωp)
 
 function a(u,v)
   Ru_Ω, Ru_Γ = R(u)

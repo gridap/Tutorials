@@ -105,6 +105,8 @@ P = TrialFESpace(Q)
 Y = MultiFieldFESpace([V, Q])
 X = MultiFieldFESpace([U, P])
 
+# `scale_dof` is not used here, because currently $H^1$ and $L^2$ conforming elements both use the same Piola map in Gridap (the trivial one).
+
 # ## Triangulation and integration quadrature
 #
 # From the discrete model we can define the triangulation and integration measure

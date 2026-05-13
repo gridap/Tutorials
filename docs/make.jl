@@ -36,8 +36,8 @@ for (i,(title,filename)) in enumerate(Tutorials.files)
   tutorial_title = string("# # [Tutorial ", i, ": ", title, "](@id ", tutorial_id, ")")
   tutorial_file = string(tutorial_prefix,splitext(filename)[1])
   notebook_filename = string(tutorial_file, ".ipynb")
-  binder_url = joinpath("@__BINDER_ROOT_URL__","notebooks", notebook_filename)
-  nbviwer_url = joinpath("@__NBVIEWER_ROOT_URL__","notebooks", notebook_filename)
+  binder_url = "https://mybinder.org/v2/gh/gridap/Tutorials/gh-pages?filepath=notebooks/" * notebook_filename
+  nbviwer_url = "https://nbviewer.jupyter.org/github/gridap/Tutorials/blob/gh-pages/notebooks/" * notebook_filename
   binder_badge = string("# [![](",binder_logo,")](",binder_url,")")
   nbviwer_badge = string("# [![](",nbviwer_logo,")](",nbviwer_url,")")
 

@@ -3,10 +3,9 @@ using Gridap
 using Gridap.Io
 using GridapGmsh
 
-model = GmshDiscreteModel("solid.msh")
+meshdir(args...) = joinpath(@__DIR__, args...)
+model = GmshDiscreteModel(meshdir("solid.msh"))
 
-writevtk(model,"solid")
+writevtk(model,meshdir("solid"))
 
-fn = "solid.json"
-to_json_file(model,fn)
-
+to_json_file(model,meshdir("solid.json"))

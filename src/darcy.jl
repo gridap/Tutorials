@@ -63,14 +63,18 @@ model = CartesianDiscreteModel(domain,partition)
 # Next, we build the FE spaces. We consider the first order RT space for the flux and the discontinuous pressure space as described above.  This mixed FE pair satisfies the inf-sup condition and, thus, it is stable.
 
 order = 1
+h = 1/100
 
 V = FESpace(model, ReferenceFE(raviart_thomas,Float64,order),
-      conformity=:HDiv, dirichlet_tags=[5,6])
+      conformity=:HDiv, dirichlet_tags=[5,6], scale_dof=true, global_meshsize=h)
 
 Q = FESpace(model, ReferenceFE(lagrangian,Float64,order),
-      conformity=:L2)
+      conformity=:L2, scale_dof=true, global_meshsize=h)
 
-# Note that the Dirichlet boundary for the flux are the bottom and top sides of the squared domain (identified with the boundary tags 5, and 6 respectively), whereas no Dirichlet data can be imposed on the pressure space. We select `conformity=:HDiv` for the flux (i.e., shape functions with $H^1(\mathrm{div};\Omega)$ regularity) and `conformity=:L2` for the pressure (i.e. discontinuous shape functions).
+# We select `conformity=:HDiv` for the flux (i.e., shape functions with $H^1(\mathrm{div};\Omega)$ regularity) and `conformity=:L2` for the pressure (i.e. discontinuous shape functions).
+# Note that the Dirichlet boundary for the flux are the bottom and top sides of the squared domain (identified with the boundary tags 5, and 6 respectively), whereas no Dirichlet data can be imposed on the pressure space.
+#
+# The `scale_dof=true` argument is given to cancel the scaling of the DoFs with the meshsize `h` that is introduced by the piola map, e.g. `h`$^{2-1}$ (2 is the dimension) for the div-conforming contra-variant Piola map. This is usefull for mixed elements of different conformity that use small or non-uniform meshsize. On a uniform Cartesian mesh like `model` used here, we also passed `global_meshsize=1/100`. This argument fixes the local meshsize estimate needed to re-scale the DoFs, avoiding the computation of the volume of each face of the mesh that own a DoF. But this should only be used on quasi-uniform and shape-regular meshes.
 #
 # From these objects, we construct the trial spaces. Note that we impose homogeneous boundary conditions for the flux.
 

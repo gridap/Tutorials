@@ -31,9 +31,9 @@ files = [
   "Block assembly and solvers: Incompressible Stokes example"=>"stokes_blocks.jl",
   "Lagrange multipliers" => "lagrange_multipliers.jl",
   "Low-level API - Arrays"=>"arrays_dev.jl",
-  "Low-level API - Poisson equation"=>"poisson_dev_fe.jl",
   "Low-level API - Geometry" => "geometry_dev.jl",
   "Low-level API - ReferenceFEs" => "reffes_dev.jl",
+  "Low-level API - Poisson equation"=>"poisson_dev_fe.jl",
 ]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)

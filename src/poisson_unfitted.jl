@@ -129,7 +129,7 @@ writevtk(Ω,"output_path/phys_trian")
 #
 # In the third plot, we show the region represented by physical triangulation (shaded in gray) embedded in the active grid (black-contoured cells).
 #
-# ![fig5](../assets/unfitted_poisson/fig_physical_trian_3.png" width="420")
+# ![fig5](../assets/unfitted_poisson/fig_physical_trian_3.png)
 #
 # **In a nutshell,** to define the unfitted FE formulation of the problem we need the \"active\" and \"physical\" triangulations of the domain. The former triangulation is used to define the FE spaces, whereas the latter is used to integrate the weak form. We use a level-set function to derive both of them.
 #

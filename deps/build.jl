@@ -34,6 +34,7 @@ files = [
   "Low-level API - Geometry" => "geometry_dev.jl",
   "Low-level API - ReferenceFEs" => "reffes_dev.jl",
   "Low-level API - Poisson equation"=>"poisson_dev_fe.jl",
+  "Low-level API - TensorValues"=>"tensor_values_dev.jl",
 ]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)

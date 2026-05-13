@@ -1,7 +1,7 @@
 name = "Tutorials"
 uuid = "ab87341f-2653-5384-8dc6-691ea82e91b3"
-authors = ["Santiago Badia <santiago.badia@monash.edu>", "Francesc Verdugo <fverdugo@cimne.upc.edu>"]
 version = "0.20.0"
+authors = ["Santiago Badia <santiago.badia@monash.edu>", "Francesc Verdugo <fverdugo@cimne.upc.edu>"]
 
 [deps]
 BlockArrays = "8e7c35d0-a365-5155-bbbb-fb81a777f24e"
@@ -40,12 +40,13 @@ BlockArrays = "1"
 DataStructures = "0.19"
 Gridap = "0.20"
 GridapDistributed = "0.4"
-GridapEmbedded = "0.9.9"
+GridapEmbedded = "0.9"
 GridapGmsh = "0.7"
 GridapP4est = "0.3"
 GridapPETSc = "0.5"
 GridapSolvers = "0.7"
 MPI = "0.20"
+PartitionedArrays = "0.3"
 SpecialFunctions = "1"
 julia = "1.10"
 

@@ -33,7 +33,7 @@ files = [
   "Low-level API - Arrays"=>"arrays_dev.jl",
   "Low-level API - Poisson equation"=>"poisson_dev_fe.jl",
   "Low-level API - Geometry" => "geometry_dev.jl",
-  "Low-level API - Custom ReferenceFEs" => "crouzeix_raviart_reffe.jl",
+  "Low-level API - ReferenceFEs" => "reffes_dev.jl",
 ]
 
 Sys.rm(notebooks_dir;recursive=true,force=true)

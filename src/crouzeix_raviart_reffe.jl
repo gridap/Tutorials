@@ -211,8 +211,16 @@ function ReferenceFE(p::Polytope, ::MyCrouzeixRaviart, ::Type{T}, order) where T
   ReferenceFEs.MomentBasedReferenceFE(my_crouzeix_raviart, p, pre, moms, L2Conformity())
 end
 
-# We also need a `get_face_own_dofs` override for `L2Conformity`.  Without it,
-# the default `L2Conformity` dispatch places all DOFs on the cell interior,
+# ## Step 7 — Global Conformity 
+#
+# Locally, everything is in place. However, an `FESpace` requires gluing local 
+# spaces together accross cell boundaries. Although we provide certain pre-set 
+# conformities, depending on how complicated your element is you might have 
+# to tinker a bit. 
+#
+# In our case, although CR is discontinuous, we still want to enforce continuity of 
+# DoFs accross faces. Thus, we also need a `get_face_own_dofs` override for `L2Conformity`.  
+# Without it, the default `L2Conformity` dispatch places all DOFs on the cell interior,
 # which would make adjacent cells independent and break the nonconforming
 # inter-element coupling that CR relies on.
 
@@ -224,6 +232,14 @@ end
 # facet ownership), so that when the `FESpace` machinery builds the global DOF
 # numbering, it recognises that the edge DOF is shared between the two adjacent
 # cells — exactly the nonconforming H1 interpretation.
+#
+# Another thing you might have to do is provide a `Pullback` that maps reference
+# shapefunctions to physical ones (beyond mapping quadrature points).  
+# This is important for HDiv, HCurl and other vector-valued elements with nontrivial 
+# Piola transforms, but for CR the standard pullback suffices.
+# To learn more about pullbacks, see the following files:
+#  - `src/ReferenceFEs/Pullbacks.jl` — the abstract `Pullback` type and local behaviour
+#  - `src/FESpaces/Pullbacks.jl` — space-level pullback behaviour
 
 #
 # ## Verification: Poisson convergence

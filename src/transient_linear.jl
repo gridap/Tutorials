@@ -81,13 +81,13 @@ l(t, v) = ∫(v * f(t))dΩ
 op = TransientLinearFEOperator((a, m), l, Ug, V0)
 
 # In our case, the mass term ($m(t, \cdot, \cdot)$) is constant in time. We can take advantage of that to save some computational effort, and indicate it to Gridap as follows
-op_opt = TransientLinearFEOperator((a, m), l, Ug, V0, constant_forms=(true, false))
+op_opt = TransientLinearFEOperator((a, m), l, Ug, V0, constant_forms=(false, true))
 
-# If the stiffness term ($a(t, \cdot, \cdot)$) had been constant in time, we could have set `constant_forms=(true, true)`.
+# If also the stiffness term ($a(t, \cdot, \cdot)$) had been constant in time, we could have set `constant_forms=(true, true)`.
 
 # ## Transient solver
 
-# Once we have defined the FE operator, we proceed with the definition of the ODE solver, i.e. the scheme that will be used for the integration in time. In this tutorial, we use the `ThetaMethod` with $\theta = 1/2$, resulting in a second-order scheme. The `ThetaMethod` function receives a solver for systems of equations, the time step size $\Delta t$ (constant) and the value of $\theta \in [0, 1]$. Since the ODE is linear the systems of equation that will arise in the time-marching scheme will be linear so we can provide `ThetaMethod` with a linear solver.
+# Once we have defined the FE operator, we proceed with the definition of the ODE solver, i.e. the scheme that will be used for the integration in time. In this tutorial, we use the `ThetaMethod` with $\theta = 1/2$, resulting in a second-order scheme. The `ThetaMethod` function receives a solver for systems of equations, the time step size $\Delta t$ (constant) and the value of $\theta \in [0, 1]$. Since the ODE is linear, the system of equations that will arise in the time-marching scheme will be linear, so we can provide `ThetaMethod` with a linear solver.
 
 ls = LUSolver()
 Δt = 0.05
